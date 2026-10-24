@@ -939,7 +939,10 @@ function applyOptionsChanges(changes) {
 				if (options.card_grid === true) debouncedApplyAestheticChanges();
 				break;
 			case "gpa_calc_bounds":
-				calculateGPA2();
+			case "gpa_threshold_mode":
+			case "gpa_course_bounds":
+				if (document.querySelector("#canvasrefined-gpa-unweighted")) calculateGPA2();
+				insertGrades();
 				break;
 			case "remlogo":
 			case "disable_color_overlay":
@@ -5268,7 +5271,7 @@ function fakeFeedbackScore(key) {
 function fakeGradeText(key) {
     const h = anonHash(String(key));
     const percent = Math.round((70 + (h % 300) / 10) * 10) / 10;
-    const letter = percentToLetterGrade(percent);
+    const letter = percentToLetterGrade(percent, key);
     return (letter ? `${letter} ` : "") + `${percent}%`;
 }
 
@@ -5489,8 +5492,11 @@ Dashboard grades
 // can reorder keys (e.g. alphabetically, where "A" precedes "A+"), which made
 // "+" grades unreachable and displayed e.g. 100% as "A". Cutoffs are coerced
 // with Number() so string values carried in by imported themes still match.
-function percentToLetterGrade(percent) {
-    const bounds = options.gpa_calc_bounds;
+function percentToLetterGrade(percent, courseId) {
+    const shared = options.gpa_calc_bounds;
+    const custom = options.gpa_threshold_mode === "course" ? options.gpa_course_bounds?.[courseId] : null;
+    const bounds = custom && shared ? Object.fromEntries(Object.entries(shared).map(([letter, values]) =>
+        [letter, { cutoff: custom[letter] ?? values.cutoff }])) : shared;
     if (!bounds || typeof percent !== "number") return null;
     let best = null;
     let bestCutoff = -Infinity;
@@ -5518,7 +5524,7 @@ function insertGrades() {
                             //let gradepercent = grade.enrollments[0].computed_current_score;
                             let percent = (gradepercent || "--") + "%";
                             if (options.card_letter === true) {
-                                const letter = percentToLetterGrade(gradepercent);
+                                const letter = percentToLetterGrade(gradepercent, course_id);
                                 if (letter) percent = `${letter} ${percent}`;
                             }
                             let gradeContainer = cards[i].querySelector(".canvasrefined-card-grade") || makeElement("a", cards[i].querySelector(".ic-DashboardCard__header"), { "className": "canvasrefined-card-grade" });
@@ -5859,62 +5865,21 @@ function calculateGPA2() {
         const weight = course.querySelector('.canvasrefined-course-weight').value;
         const credits = parseFloat(course.querySelector('.canvasrefined-course-credit').value);
         const grade = parseFloat(course.querySelector('.canvasrefined-course-percent').value);
-        if (weight === "dnc" || !credits || !grade) return;
-        let letter = "--";
-        let gpa;
-        if (grade >= options.gpa_calc_bounds["A+"].cutoff) {
-            gpa = options.gpa_calc_bounds["A+"].gpa;
-            letter = "A+";
-        } else if (grade >= options.gpa_calc_bounds["A"].cutoff) {
-            gpa = options.gpa_calc_bounds["A"].gpa;
-            letter = "A";
-        } else if (grade >= options.gpa_calc_bounds["A-"].cutoff) {
-            gpa = options.gpa_calc_bounds["A-"].gpa;
-            letter = "A-";
-        } else if (grade >= options.gpa_calc_bounds["B+"].cutoff) {
-            gpa = options.gpa_calc_bounds["B+"].gpa;
-            letter = "B+";
-        } else if (grade >= options.gpa_calc_bounds["B"].cutoff) {
-            gpa = options.gpa_calc_bounds["B"].gpa;
-            letter = "B";
-        } else if (grade >= options.gpa_calc_bounds["B-"].cutoff) {
-            gpa = options.gpa_calc_bounds["B-"].gpa;
-            letter = "B-"
-        } else if (grade >= options.gpa_calc_bounds["C+"].cutoff) {
-            gpa = options.gpa_calc_bounds["C+"].gpa;
-            letter = "C+";
-        } else if (grade >= options.gpa_calc_bounds["C"].cutoff) {
-            gpa = options.gpa_calc_bounds["C"].gpa;
-            letter = "C";
-        } else if (grade >= options.gpa_calc_bounds["C-"].cutoff) {
-            gpa = options.gpa_calc_bounds["C-"].gpa;
-            letter = "C-";
-        } else if (grade >= options.gpa_calc_bounds["D+"].cutoff) {
-            gpa = options.gpa_calc_bounds["D+"].gpa;
-            letter = "D+";
-        } else if (grade >= options.gpa_calc_bounds["D"].cutoff) {
-            gpa = options.gpa_calc_bounds["D"].gpa;
-            letter = "D";
-        } else if (grade >= options.gpa_calc_bounds["D-"].cutoff) {
-            gpa = options.gpa_calc_bounds["D-"].gpa;
-            letter = "D-";
-        } else {
-            letter = "F";
-            gpa = options.gpa_calc_bounds["F"].gpa;
+        const letter = Number.isFinite(grade) ? (percentToLetterGrade(grade, course.dataset.courseId) || "F") : "--";
+        course.querySelector(".canvasrefined-gpa-letter-grade").textContent = letter;
+        if (weight === "dnc" || !credits || !Number.isFinite(grade)) return;
+        const gpa = Number(options.gpa_calc_bounds[letter].gpa);
+
+        let weightMultiplier = 0;
+        if (weight === "ap") {
+            weightMultiplier = 1;
+        } else if (weight === "honors") {
+            weightMultiplier = .5;
         }
-            course.querySelector(".canvasrefined-gpa-letter-grade").textContent = letter;
 
-            let weightMultiplier = 0;
-            if (weight === "ap") {
-                weightMultiplier = 1;
-            } else if (weight === "honors") {
-                weightMultiplier = .5;
-            }
-            
-            qualityPoints += gpa * credits;
-            weightedQualityPoints += (gpa + weightMultiplier) * credits;
-            numCredits += credits;
-
+        qualityPoints += gpa * credits;
+        weightedQualityPoints += (gpa + weightMultiplier) * credits;
+        numCredits += credits;
 
     });
     document.querySelector("#canvasrefined-gpa-unweighted").textContent = (qualityPoints / numCredits).toFixed(2);
@@ -5952,6 +5917,7 @@ function createGPACalcCourse(location, course) {
     if (customs.hidden === true) return;
 
     let courseContainer = makeElement("div", location, { "className": course.id === "cumulative" ? "canvasrefined-gpa-cumulative" : "canvasrefined-gpa-course", "innerHTML": '<div class="canvasrefined-gpa-letter-grade"></div>' });
+    courseContainer.dataset.courseId = String(course.id);
     let courseName = makeElement("p", courseContainer, { "className": "canvasrefined-gpa-name", "textContent": customs.name === "" ? course.course_code : customs.name });
     let changerContainer = makeElement("div", courseContainer, { "className": "canvasrefined-gpa-percent-container" });
 

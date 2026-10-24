@@ -1079,18 +1079,32 @@
             <h2 style="margin-top: 0" data-i18n="gpa_settings">GPA Calculator Bounds</h2>
             <button class="big-button back-btn" data-i18n="back">Back</button>
         </div>
-        <div style="display: flex;gap: 8px;">
-            <div class="gpa-bounds option-container"></div>
-            <div class="gpa-bounds-explanation option-container">
-                The letter grade will be calculated as greater than or equal to the percentage given. <br><br>
-                If your school doesn't use the +/- system, you can enter 101 for those grades to remove them from the
-                calculation. (for example A+ = 101, A = 90, A- = 101)
-                <h3 class="header-small" style="margin-top: 20px;">GPA Scale Presets 0-4</h3>
+        <section class="option-container gpa-threshold-settings">
+            <h3 class="header-small">Grade thresholds</h3>
+            <label for="gpa-threshold-mode">Apply thresholds to</label>
+            <select id="gpa-threshold-mode">
+                <option value="all">All classes</option>
+                <option value="course">Each class separately</option>
+            </select>
+            <div id="gpa-course-picker" hidden>
+                <label for="gpa-threshold-course">Class</label>
+                <select id="gpa-threshold-course"></select>
+                <p id="gpa-no-courses" hidden>Open your Canvas dashboard to load your classes.</p>
+            </div>
+            <p>A letter grade requires at least the percentage shown. Enter 101 to disable a grade, such as A+ or A-.</p>
+            <p id="gpa-course-help" hidden>Classes start with the shared thresholds. Changes here apply only to the selected class. Switching modes keeps your saved thresholds.</p>
+            <div class="gpa-bounds"></div>
+        </section>
+        <section class="option-container gpa-points-settings">
+            <h3 class="header-small">GPA points</h3>
+            <p>Points for each letter grade apply to all classes, regardless of their percentage thresholds.</p>
+            <div class="gpa-points"></div>
+            <h3 class="header-small">GPA scale presets (0–4)</h3>
+            <div class="gpa-presets">
                 <button class="big-button" id="gpa-plus-minus">+/- GPA Scale</button>
                 <button class="big-button" id="gpa-by-letter">By Letter GPA Scale</button>
             </div>
-            
-        </div>
+        </section>
     </div>
 
 

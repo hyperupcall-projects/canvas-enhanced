@@ -111,8 +111,16 @@ h2 {margin-top: 20px;font-weight:600}
 .social-buttons.hidden {display: none}
 #setSingleColor, #setGradientColor {padding: 8px 20px;margin-top:5px;}
 .gpa-bounds-input {font-size: 14px;background: var(--inputbg); border: none;padding:6px;color: #e2e2e2;margin-top: 6px;border-radius: 6px; font-family: inherit; width: 55px; box-sizing: border-box;text-align: right}
-.gpa-bounds span {font-size: 16px; width: 25px;display: inline-block}
-.gpa-bounds-explanation {width:200px;height:100%;flex: 1;}
+.gpa-bounds, .gpa-points {display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:0 12px;}
+.gpa-setting-row {display:flex;align-items:center;gap:10px;font-size:14px;}
+.gpa-setting-row > span:first-child {width:28px;}
+.gpa-setting-row > span:last-child {color:#ababab;}
+.gpa-threshold-settings, .gpa-points-settings {margin-top:12px;}
+.gpa-threshold-settings p, .gpa-points-settings p {font-size:12px;color:#ababab;line-height:1.5;}
+.gpa-threshold-settings select {display:block;width:100%;margin:6px 0 12px;padding:8px;border:0;border-radius:6px;background:var(--inputbg);color:#e2e2e2;font-family:inherit;color-scheme:dark;}
+.gpa-threshold-settings [hidden] {display:none;}
+.gpa-presets {display:flex;gap:8px;}
+.gpa-presets button {flex:1;}
 .tab-header {display: flex;justify-content: space-between;gap:20px;align-items:center}
 .custom-links-container, .custom-card-left {flex: 1;}
 .custom-card-inputs {display: flex; gap: 10px;margin-top: 10px;}

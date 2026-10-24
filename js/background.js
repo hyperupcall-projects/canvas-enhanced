@@ -58,6 +58,8 @@ chrome.runtime.onInstalled.addListener(function () {
             "hover_preview": true,
             "full_width": null,
             "remlogo": null,
+            "gpa_threshold_mode": "all",
+            "gpa_course_bounds": {},
             "gpa_calc_bounds": {
                 "A+": { "cutoff": 97, "gpa": 4.0 },
                 "A": { "cutoff": 93, "gpa": 4 },

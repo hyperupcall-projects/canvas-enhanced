@@ -71,7 +71,7 @@ const exportCardStyles = ["imageSize", "cardRoundness", "imageRoundness", "cardS
 const exportLayout = ["full_width", "center_cards", "condensed_cards", "equal_height_cards", "remlogo", "hide_new_canvas", "hide_navbar", "tab_icons"];
 const exportSidebar = ["better_sidebar", "sidebar_scale"];
 const exportTodo = ["better_todo", "todo_hide_feedback", "todo_hide_read", "todo_full_height", "todo_confetti", "todo_progress_rings", "todo_timeframe", "todo_hr24", "todo_separate_scrollbar", "todo_alternate_colors", "todo_ignore_card_colors", "todo_remove_icons", "todo_show_scores", "hover_preview"];
-const exportGpa = ["gpa_calc", "gpa_calc_prepend", "gpa_calc_cumulative", "gpa_calc_weighted"];
+const exportGpa = ["gpa_calc", "gpa_calc_prepend", "gpa_calc_cumulative", "gpa_calc_weighted", "gpa_threshold_mode", "gpa_course_bounds"];
 // Master "On/off toggles" = every visual toggle (no GPA, no dark-mode schedule,
 // no personal productivity features). Includes the former separate Layout and
 // Sidebar groups, plus Grade Analytics and its colored-zones sub-toggle.
@@ -143,6 +143,8 @@ const defaultOptions = {
         "hover_preview": true,
         "full_width": null,
         "remlogo": null,
+        "gpa_threshold_mode": "all",
+        "gpa_course_bounds": {},
         "gpa_calc_bounds": {
             "A+": { "cutoff": 97, "gpa": 4.0 },
             "A": { "cutoff": 93, "gpa": 4 },
@@ -1470,7 +1472,7 @@ function setup() {
     // activate export checkbox
     document.querySelectorAll(".export-details input").forEach(input => {
         input.addEventListener("change", () => {
-            chrome.storage.sync.get(syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "gpa_calc_bounds"]), async storage => {
+            chrome.storage.sync.get(syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "gpa_calc_bounds", "gpa_threshold_mode", "gpa_course_bounds"]), async storage => {
                 let final = {};
                 for await (item of document.querySelectorAll(".export-details input")) {
                     if (item.checked) {
@@ -1731,8 +1733,14 @@ function setup() {
 }
 
 function applyGPAPreset(bounds) {
-    chrome.storage.sync.set({ "gpa_calc_bounds": bounds }, () => {
-        displayGPABounds();
+    // Presets change the global letter-to-points scale, preserving all cutoffs.
+    chrome.storage.sync.get(["gpa_calc_bounds"], storage => {
+        const current = storage.gpa_calc_bounds || defaultOptions.sync.gpa_calc_bounds;
+        const updated = Object.fromEntries(Object.entries(current).map(([letter, values]) =>
+            [letter, { ...values, gpa: bounds[letter].gpa }]));
+        chrome.storage.sync.set({ gpa_calc_bounds: updated }, () => {
+            displayGPABounds(document.getElementById("gpa-threshold-course").value);
+        });
     });
 }
 
@@ -2076,30 +2084,66 @@ function updateCards(key, value) {
 }
 
 
-function displayGPABounds() {
-    chrome.storage.sync.get(["gpa_calc_bounds"], storage => {
+function displayGPABounds(selectedCourse) {
+    chrome.storage.sync.get(["gpa_calc_bounds", "gpa_threshold_mode", "gpa_course_bounds", "custom_cards"], storage => {
         const order = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"];
-        const el = document.querySelector(".gpa-bounds");
-        el.textContent = "";
-        order.forEach(key => {
-            let inputs = makeElement("div", el, { "className": "gpa-bounds-item" });
-            inputs.innerHTML += '<div><span class="gpa-bounds-grade"></span><input class="gpa-bounds-input gpa-bounds-cutoff" type="text"></input><span style="margin-left:6px;margin-right:6px;">%</span><input class="gpa-bounds-input gpa-bounds-gpa" type="text" value=></input><span style="margin-left:6px">GPA</span></div>';
-            inputs.querySelector(".gpa-bounds-grade").textContent = key;
-            inputs.querySelector(".gpa-bounds-cutoff").value = storage["gpa_calc_bounds"][key].cutoff;
-            inputs.querySelector(".gpa-bounds-gpa").value = storage["gpa_calc_bounds"][key].gpa;
-
-            inputs.querySelector(".gpa-bounds-cutoff").addEventListener("change", function (e) {
-                chrome.storage.sync.get(["gpa_calc_bounds"], existing => {
-                    chrome.storage.sync.set({ "gpa_calc_bounds": { ...existing["gpa_calc_bounds"], [key]: { ...existing["gpa_calc_bounds"][key], "cutoff": parseFloat(e.target.value) } } });
-                });
-            });
-
-            inputs.querySelector(".gpa-bounds-gpa").addEventListener("change", function (e) {
-                chrome.storage.sync.get(["gpa_calc_bounds"], existing => {
-                    chrome.storage.sync.set({ "gpa_calc_bounds": { ...existing["gpa_calc_bounds"], [key]: { ...existing["gpa_calc_bounds"][key], "gpa": parseFloat(e.target.value) } } });
-                });
-            });
+        const bounds = storage.gpa_calc_bounds || defaultOptions.sync.gpa_calc_bounds;
+        const mode = document.getElementById("gpa-threshold-mode");
+        const picker = document.getElementById("gpa-threshold-course");
+        const perCourse = storage.gpa_threshold_mode === "course";
+        mode.value = perCourse ? "course" : "all";
+        document.getElementById("gpa-course-picker").hidden = !perCourse;
+        document.getElementById("gpa-course-help").hidden = !perCourse;
+        picker.textContent = "";
+        Object.entries(storage.custom_cards || {}).forEach(([id, course]) => {
+            makeElement("option", picker, { value: id, textContent: course.name || course.fullName || course.default || `Class ${id}` });
         });
+        if (selectedCourse && Array.from(picker.options).some(option => option.value === selectedCourse)) picker.value = selectedCourse;
+        const courseId = picker.value;
+        document.getElementById("gpa-no-courses").hidden = !!courseId;
+        picker.hidden = !courseId;
+        mode.onchange = () => chrome.storage.sync.set({ gpa_threshold_mode: mode.value }, () => displayGPABounds(courseId));
+        picker.onchange = () => displayGPABounds(picker.value);
+
+        function renderRows(container, field) {
+            container.textContent = "";
+            order.forEach(letter => {
+                const row = makeElement("label", container, { className: "gpa-setting-row" });
+                makeElement("span", row, { textContent: letter });
+                const savedCutoff = perCourse ? storage.gpa_course_bounds?.[courseId]?.[letter] : undefined;
+                const value = field === "cutoff" ? (savedCutoff ?? bounds[letter].cutoff) : bounds[letter].gpa;
+                const input = makeElement("input", row, {
+                    className: "gpa-bounds-input", type: "number", min: "0", step: "any", value,
+                    disabled: field === "cutoff" && perCourse && !courseId
+                });
+                if (field === "cutoff") input.max = "101";
+                input.setAttribute("aria-label", `${letter} ${field === "cutoff" ? "minimum percentage" : "GPA points"}`);
+                makeElement("span", row, { textContent: field === "cutoff" ? "%" : "points" });
+                input.addEventListener("change", () => {
+                    if (!input.checkValidity() || !Number.isFinite(input.valueAsNumber)) {
+                        input.value = value;
+                        return;
+                    }
+                    const number = input.valueAsNumber;
+                    chrome.storage.sync.get(["gpa_calc_bounds", "gpa_course_bounds"], existing => {
+                        const current = existing.gpa_calc_bounds || defaultOptions.sync.gpa_calc_bounds;
+                        let update;
+                        if (field === "cutoff" && perCourse) {
+                            const courses = existing.gpa_course_bounds || {};
+                            const cutoffs = courses[courseId] || Object.fromEntries(order.map(key => [key, current[key].cutoff]));
+                            update = { gpa_course_bounds: { ...courses, [courseId]: { ...cutoffs, [letter]: number } } };
+                        } else {
+                            update = { gpa_calc_bounds: { ...current, [letter]: { ...current[letter], [field]: number } } };
+                        }
+                        chrome.storage.sync.set(update, () => {
+                            if (chrome.runtime.lastError) displayAlert(true, "GPA settings could not be saved: " + chrome.runtime.lastError.message);
+                        });
+                    });
+                });
+            });
+        }
+        renderRows(document.querySelector(".gpa-bounds"), "cutoff");
+        renderRows(document.querySelector(".gpa-points"), "gpa");
     });
 }
 
