@@ -1654,6 +1654,8 @@ function courseRingColor(courseId, idx) {
 }
 
 function courseRingLabel(courseId) {
+    if (String(courseId) === "personal") return "Personal tasks";
+    if (options.hide_personal_details === true) return fakeCourseLabel(courseId);
     const card = options.custom_cards?.[String(courseId)] || options.custom_cards?.[courseId];
     return card?.default || `Course ${courseId}`;
 }
@@ -2553,7 +2555,7 @@ function fillTaskCourseOptions(courseSelect) {
         .filter(([, card]) => card?.hidden !== true)
         .map(([id, card]) => ({
             id,
-            label: card?.default || `Course ${id}`,
+            label: options.hide_personal_details === true ? fakeCourseLabel(id) : (card?.default || `Course ${id}`),
             color:
                 courseColors?.[String(id)]?.color ??
                 courseColors?.[id]?.color ??
@@ -4792,7 +4794,8 @@ function anonHash(str) {
 // course. Once the pool is exhausted (more than 15 courses), reuse is allowed.
 const anonCourseMap = new Map();
 function getAnonCourse(key) {
-    const k = String(key ?? "unknown");
+    // DOM links use "id:123"; planner data and settings use 123.
+    const k = String(key ?? "unknown").replace(/^id:(\d+)$/, "$1");
     if (!anonCourseMap.has(k)) {
         const used = new Set(anonCourseMap.values());
         let idx = anonHash(k) % FAKE_COURSES.length;
@@ -4844,7 +4847,7 @@ function anonFakeTerm(orig) {
 function anonCourseNameForItem(item) {
     const real = item?.context_name ?? "";
     if (options.hide_personal_details !== true) return real;
-    return fakeCourseLabel(item?.course_id ?? item?.context_id ?? "name:" + String(real).trim().toLowerCase());
+    return fakeCourseLabel(item?.course_id ?? item?.context_id ?? item?.plannable?.course_id ?? "name:" + String(real).trim().toLowerCase());
 }
 function anonTitleForItem(item) {
     const real = item?.plannable?.title ?? "";
@@ -4856,25 +4859,25 @@ function anonTitleForItem(item) {
 // Marked-text helpers. Original text/attributes are stashed in dataset entries
 // so toggling the option off restores the real content in place.
 function anonText(el, computeFake) {
-    if (!el || el.dataset.crAnonOrig !== undefined) return;
-    const orig = el.textContent;
-    el.dataset.crAnonOrig = orig;
-    el.textContent = computeFake(orig);
+    if (!el) return;
+    const current = el.textContent;
+    const previous = el.dataset.crAnonOrig;
+    if (previous !== undefined && current === computeFake(previous)) return;
+    // Canvas can rewrite an existing node without removing our markers.
+    el.dataset.crAnonOrig = current;
+    const fake = computeFake(current);
+    if (current !== fake) el.textContent = fake;
 }
 function anonAttr(el, attr, computeFake) {
     if (!el) return;
-    let attrs = {};
-    if (el.dataset.crAnonAttrs !== undefined) {
-        attrs = JSON.parse(el.dataset.crAnonAttrs);
-        if (attrs[attr] !== undefined) return;
-    } else {
-        el.dataset.crAnonAttrs = "{}";
-    }
-    const orig = el.getAttribute(attr);
-    if (orig == null) return;
-    attrs[attr] = orig;
+    const current = el.getAttribute(attr);
+    if (current == null) return;
+    const attrs = JSON.parse(el.dataset.crAnonAttrs || "{}");
+    if (attrs[attr] !== undefined && current === computeFake(attrs[attr])) return;
+    attrs[attr] = current;
     el.dataset.crAnonAttrs = JSON.stringify(attrs);
-    el.setAttribute(attr, computeFake(orig));
+    const fake = computeFake(current);
+    if (current !== fake) el.setAttribute(attr, fake);
 }
 function restoreAnonymized(root = document) {
     root.querySelectorAll("[data-cr-anon-orig]").forEach(el => {
@@ -4894,9 +4897,10 @@ function restoreAnonymized(root = document) {
 function anonymizeDashboardCard(card) {
     const link = card.querySelector('.ic-DashboardCard__link[href*="/courses/"]');
     const idMatch = link ? (link.getAttribute("href") || "").match(/courses\/(\d+)/) : null;
+    const titleNode = card.querySelector(".ic-DashboardCard__header-title span, .ic-DashboardCard__header-title");
     const key = idMatch
         ? "id:" + idMatch[1]
-        : "name:" + (card.querySelector(".ic-DashboardCard__header-title")?.textContent || "").trim().toLowerCase();
+        : "name:" + (titleNode?.dataset.crAnonOrig ?? titleNode?.textContent ?? "").trim().toLowerCase();
     const fakeLabel = fakeCourseLabel(key);
 
     // Snapshot the real names BEFORE anything is anonymized so substring
@@ -4906,13 +4910,14 @@ function anonymizeDashboardCard(card) {
     const titleEl = card.querySelector(".ic-DashboardCard__header-title");
     const origNames = [];
     if (titleEl) {
-        origNames.push((titleEl.getAttribute("title") || "").trim());
-        origNames.push(titleEl.textContent.trim());
+        origNames.push((JSON.parse(titleEl.dataset.crAnonAttrs || "{}").title || titleEl.getAttribute("title") || "").trim());
+        const inner = titleEl.querySelector("span") || titleEl;
+        origNames.push((inner.dataset.crAnonOrig ?? inner.textContent).trim());
     }
     const subtitleEl = card.querySelector(".ic-DashboardCard__header-subtitle");
     if (subtitleEl) {
-        origNames.push(subtitleEl.textContent.trim());
-        origNames.push((subtitleEl.getAttribute("title") || "").trim());
+        origNames.push((subtitleEl.dataset.crAnonOrig ?? subtitleEl.textContent).trim());
+        origNames.push((JSON.parse(subtitleEl.dataset.crAnonAttrs || "{}").title || subtitleEl.getAttribute("title") || "").trim());
     }
     const uniqueOrigNames = [...new Set(origNames.filter(n => n && n.length > 1))];
     const replaceNames = (s) => {
@@ -4957,12 +4962,12 @@ function anonymizeFeedbackLink(a) {
     const contextEl = details.querySelector(".event-details__context");
     const key = cMatch
         ? "id:" + cMatch[1]
-        : "name:" + (contextEl ? contextEl.textContent : "").trim().toLowerCase();
+        : "name:" + (contextEl?.dataset.crAnonOrig ?? contextEl?.textContent ?? "").trim().toLowerCase();
     const fakeLabel = fakeCourseLabel(key);
 
     if (contextEl) anonText(contextEl, () => fakeLabel);
     const titleEl = details.querySelector(".recent_feedback_title");
-    if (titleEl) anonText(titleEl, () => fakeAssignmentTitle(aMatch ? "a:" + aMatch[1] : "t:" + titleEl.textContent.trim()));
+    if (titleEl) anonText(titleEl, () => fakeAssignmentTitle(aMatch ? "a:" + aMatch[1] : "t:" + (titleEl.dataset.crAnonOrig ?? titleEl.textContent).trim()));
     const scoreEl = details.querySelector("p strong");
     if (scoreEl && /out of|\/.|%/.test(scoreEl.textContent)) {
         anonText(scoreEl, () => fakeFeedbackScore(aMatch ? "a:" + aMatch[1] : "t:" + (titleEl ? titleEl.textContent : "")));
@@ -4984,9 +4989,48 @@ function anonymizePersonalDetails(root = document) {
     try {
         root.querySelectorAll(".ic-DashboardCard").forEach(anonymizeDashboardCard);
         root.querySelectorAll(".recent_feedback a[href]").forEach(anonymizeFeedbackLink);
+        root.querySelectorAll("#global_nav_profile_link [title], #global_nav_profile_link [aria-label], #global_nav_profile_link img[alt]").forEach(el => {
+            for (const attr of ["title", "aria-label", "alt"]) anonAttr(el, attr, () => "Anonymous user");
+        });
+        root.querySelectorAll(".canvasrefined-reminder-content").forEach(link => {
+            const title = link.querySelector(".canvasrefined-reminder-title");
+            const id = (link.getAttribute("href") || "").match(/assignments\/(\d+)/)?.[1];
+            anonText(title, orig => fakeAssignmentTitle(id ? "a:" + id : "t:" + orig.trim()));
+        });
+        const profile = root.querySelector("#global_nav_profile_link");
+        for (const attr of ["title", "aria-label"]) anonAttr(profile, attr, () => "Account");
     } catch (e) {
         logError(e);
     }
+}
+
+// Keep private editable content out of screenshots without changing saved data.
+// CSS also covers widgets/avatars mounted asynchronously by Canvas.
+function applyPersonalDetailsPrivacyStyle() {
+    let style = document.getElementById("canvasrefined-personal-details-privacy");
+    if (options.hide_personal_details !== true) {
+        if (style) style.remove();
+        return;
+    }
+    if (style) return;
+    style = document.createElement("style");
+    style.id = "canvasrefined-personal-details-privacy";
+    const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="32" fill="#d9dfe5"/><circle cx="32" cy="23" r="12" fill="#596774"/><path d="M10 60v-6a22 22 0 0 1 44 0v6" fill="#596774"/></svg>');
+    style.textContent = `
+        #global_nav_profile_link .ic-avatar {
+            background: url("${avatar}") center / cover no-repeat !important;
+        }
+        #global_nav_profile_link img {
+            content: url("${avatar}") !important;
+            object-fit: cover !important;
+        }
+        .canvasrefined-dashboard-notes, .canvasrefined-gpa-card, .canvasrefined-gpa,
+        #better-todo-add-task-menu, #better-todo-add-task-btn,
+        #canvasrefined-global-search-header-btn, #canvasrefined-global-search-modal {
+            display: none !important;
+        }
+    `;
+    (document.head || document.documentElement).append(style);
 }
 
 // Course image removal (small checkbox under the toggle): hides the course
@@ -5015,7 +5059,10 @@ let anonPassScheduled = false;
 // Master switch: starts/stops the DOM watcher and (de)anonymizes in place.
 function setupPersonalDetailsHiding() {
     applyCourseImageHiding();
+    applyPersonalDetailsPrivacyStyle();
+    hideTodoPreview();
     if (options.hide_personal_details === true) {
+        document.getElementById("canvasrefined-global-search-modal")?.remove();
         if (!personalDetailsObserver) {
             personalDetailsObserver = new MutationObserver(() => {
                 if (anonPassScheduled) return;
@@ -5025,7 +5072,10 @@ function setupPersonalDetailsHiding() {
                     anonymizePersonalDetails();
                 });
             });
-            personalDetailsObserver.observe(document.documentElement, { childList: true, subtree: true });
+            personalDetailsObserver.observe(document.documentElement, {
+                childList: true, subtree: true, characterData: true,
+                attributes: true, attributeFilter: ["title", "aria-label", "alt", "src", "srcset"]
+            });
         }
         anonymizePersonalDetails();
     } else {
@@ -6244,6 +6294,7 @@ function onGlobalSearchShortcut(e) {
 }
 
 function openGlobalSearchModal() {
+    if (options.hide_personal_details === true) return;
     if (document.getElementById("canvasrefined-global-search-modal")) return;
 
     // Show the platform-appropriate modifier in keybind hints (⌘ on Mac).
