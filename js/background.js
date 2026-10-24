@@ -108,7 +108,6 @@ chrome.runtime.onInstalled.addListener(function () {
             "browser_show_likes": false,
             "imageSize": 100,
             "cardRoundness": 5,
-            "imageRoundness": 0,
             'cardSpacing': 0,
             "cardWidth": 262,
             "cardHeight": 146,
@@ -144,6 +143,14 @@ chrome.runtime.onInstalled.addListener(function () {
         "card_opacity",
         "card_blur",
         "card_transparency",
+        "imageRoundness",
+        "card_grid",
+        "card_grid_columns",
+        "card_grid_rows",
+        "card_grid_column_gap",
+        "card_grid_row_gap",
+        "card_grid_center_rows",
+        "card_grid_flex",
     ];
     chrome.storage.sync.remove(removedOptions);
     chrome.storage.local.remove(removedOptions);

@@ -257,7 +257,6 @@ input[type="checkbox"]:checked {background: #8dd28d;}
 .card-close-btn {background: none;border: none;color: #737373;font-size: 18px;cursor: pointer;padding: 8px;border-radius: 5px;}
 .card-edit-section {margin-bottom: 15px;}
 .card-edit-label {font-size: 13px;color: #c7c7c7;margin-bottom: 5px;display: block;}
-.card-image-preview {width: 100px;height: 60px;background-size: cover;background-position: center;border-radius: 6px;margin-top: 8px;border: 1px solid var(--borders);}
 
 @keyframes like {
     0% {

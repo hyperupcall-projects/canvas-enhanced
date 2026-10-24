@@ -36,21 +36,10 @@ const syncedSubOptions = [
 	"hover_preview",
 	"imageSize",
 	"cardRoundness",
-	"imageRoundness",
 	"cardSpacing",
 	"cardWidth",
 	"cardHeight",
 	"cardPadding",
-	// Card Grid settings — included here so theme exports, saved themes and
-	// previous-theme snapshots actually read them from storage (getExport
-	// drops keys it wasn't given).
-	"card_grid",
-	"card_grid_columns",
-	"card_grid_rows",
-	"card_grid_column_gap",
-	"card_grid_row_gap",
-	"card_grid_center_rows",
-	"card_grid_flex",
     "sidebar_scale",
 ];
 const localSwitches = [];
@@ -62,12 +51,13 @@ const removedStyleOptions = new Set([
     "customBackgroundNasaDaily", "nasaInfoOverlay", "fitImageToScreen",
     "nasaFitToScreen", "bg_opacity", "sidebar_opacity", "bg_blur",
     "sidebar_blur", "card_opacity", "card_blur", "card_transparency",
+    "imageRoundness", "card_grid", "card_grid_columns", "card_grid_rows", "card_grid_column_gap", "card_grid_row_gap", "card_grid_center_rows", "card_grid_flex",
 ]);
 
 // Theme export only carries visual settings, never personal productivity data.
 const exportDarkSchedule = ["auto_dark", "auto_dark_start", "auto_dark_end", "device_dark"];
 const exportCardColorToggles = ["gradient_cards", "disable_color_overlay"];
-const exportCardStyles = ["imageSize", "cardRoundness", "imageRoundness", "cardSpacing", "cardWidth", "cardHeight", "cardPadding", "card_grid", "card_grid_columns", "card_grid_rows", "card_grid_column_gap", "card_grid_row_gap", "card_grid_center_rows", "card_grid_flex"];
+const exportCardStyles = ["imageSize", "cardRoundness", "cardSpacing", "cardWidth", "cardHeight", "cardPadding"];
 const exportLayout = ["full_width", "center_cards", "condensed_cards", "equal_height_cards", "remlogo", "hide_new_canvas", "hide_navbar", "tab_icons"];
 const exportSidebar = ["better_sidebar", "sidebar_scale"];
 const exportTodo = ["better_todo", "todo_hide_feedback", "todo_hide_read", "todo_full_height", "todo_confetti", "todo_progress_rings", "todo_timeframe", "todo_hr24", "todo_separate_scrollbar", "todo_alternate_colors", "todo_ignore_card_colors", "todo_remove_icons", "todo_show_scores", "hover_preview"];
@@ -187,18 +177,10 @@ const defaultOptions = {
         "card_limit": 25,
         "imageSize": 100,
         "cardRoundness": 5,
-        "imageRoundness": 0,
         "cardSpacing": 0,
         "cardWidth": 262,
         "cardHeight": 146,
         "cardPadding": 0,
-        "card_grid": false,
-        "card_grid_columns": 4,
-        "card_grid_rows": 3,
-        "card_grid_column_gap": 12,
-        "card_grid_row_gap": 12,
-        "card_grid_center_rows": false,
-        "card_grid_flex": false,
     }
 };
 
@@ -211,25 +193,8 @@ chrome.storage.onChanged.addListener((changes) => {
         if (Object.keys(changes["custom_cards"].oldValue || {}).length !== Object.keys(changes["custom_cards"].newValue || {}).length) {
             displayAdvancedCards();
         }
-        // Hidden-card edits from the card menu change how many cells the
-        // grid preview should mark as filled.
-        updateCardGridPreview();
-        scheduleGridPreviewFollowUp();
     }
 });
-
-// The live card count is read from the dashboard tab's DOM, which applies
-// display:none for a newly hidden card in its own storage listener — a race
-// against the popup's. One debounced follow-up render re-syncs the preview
-// (and the cut-off warning) right after a card edit settles.
-let gridPreviewFollowUpTimer = null;
-function scheduleGridPreviewFollowUp() {
-    if (gridPreviewFollowUpTimer) clearTimeout(gridPreviewFollowUpTimer);
-    gridPreviewFollowUpTimer = setTimeout(() => {
-        gridPreviewFollowUpTimer = null;
-        updateCardGridPreview();
-    }, 800);
-}
 
 function displayErrors() {
     chrome.storage.local.get("errors", storage => {
@@ -412,14 +377,6 @@ function setupCardRoundnessInput(initial) {
     });
 }
 
-function setupImageRoundnessInput(initial) {
-    let el = document.querySelector("#imageRoundness");
-    el.value = initial;
-    el.addEventListener("input", (e) => {
-        debouncedCardStyleSet("imageRoundness", e.target.value);
-    });
-}
-
 function setupCardSpacingInput(initial) {
     let el = document.querySelector("#cardSpacing");
     el.value = initial;
@@ -451,134 +408,6 @@ function setupCardPaddingInput(initial) {
         debouncedCardStyleSet("cardPadding", e.target.value);
     });
 }
-
-// Card Grid (dashboard card layout). The toggle lives in menu.checkboxes;
-// this wires the reveal of the options panel plus the squares preview and
-// the "some cards may be cut off" warning.
-function setupCardGrid(initial) {
-    const panel = document.getElementById("card-grid-options");
-    if (!panel) return;
-    panel.style.display = initial === true ? "" : "none";
-    // Defer the first render: setupCardGrid runs inside the special-options
-    // loop BEFORE the column/row/gap inputs get their stored values
-    // (setupCardGridCountInput), so an immediate render would use the HTML
-    // defaults and look wrong until a value changes. A 0ms timeout runs once
-    // the whole synchronous setup pass is done.
-    setTimeout(() => updateCardGridPreview(), 0);
-    document.getElementById("card_grid").addEventListener("change", (e) => {
-        panel.style.display = e.target.checked ? "" : "none";
-        if (e.target.checked) updateCardGridPreview();
-    });
-    // Row-centering only affects the preview's last-row offset.
-    document.getElementById("card_grid_center_rows").addEventListener("change", () => {
-        updateCardGridPreview();
-    });
-    // Flexible grid changes what the warning means (cards wrap instead of
-    // being cut off), so re-render it on toggle.
-    document.getElementById("card_grid_flex")?.addEventListener("change", () => {
-        updateCardGridPreview();
-    });
-}
-
-// Grid count/spacing inputs for the card grid. Update the preview
-// immediately on every keystroke, but debounce the storage write like the
-// other card style number inputs. `fallback` is used when the field is
-// cleared/invalid — 1 for counts, 0 for spacings.
-function setupCardGridCountInput(id, initial, fallback = 1) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.value = initial;
-    el.addEventListener("input", (e) => {
-        updateCardGridPreview();
-        const num = parseInt(e.target.value, 10);
-        debouncedCardStyleSet(id, isNaN(num) ? fallback : num);
-    });
-}
-
-// Fallback count of dashboard cards that will occupy grid cells, used only
-// when no dashboard tab answered the live "getGridCardCount" query (e.g. the
-// options page was opened outside a Canvas window). Every stored card that
-// isn't hidden via the card menu would be shown, so it doesn't take up a
-// grid slot. Treated as truthy so legacy string values ("true") count too.
-function countActiveDashboardCards(cards) {
-    return Object.values(cards || {}).filter(c => c && typeof c === "object" && !c.hidden && !c.hide).length;
-}
-
-// Squares preview: one square per grid cell. Filled squares = cells covered
-// by an active (non-hidden) card; dim squares = empty cells. Warns when the
-// grid can't fit every active card.
-function updateCardGridPreview() {
-    const panel = document.getElementById("card-grid-options");
-    const preview = document.getElementById("card-grid-preview");
-    if (!panel || !preview || panel.style.display === "none") return;
-    const cols = Math.max(1, parseInt(document.getElementById("card_grid_columns").value, 10) || 1);
-    const rows = Math.max(1, parseInt(document.getElementById("card_grid_rows").value, 10) || 1);
-    const colGapRaw = parseInt(document.getElementById("card_grid_column_gap").value, 10);
-    const colGap = Math.max(0, Math.min(10, isNaN(colGapRaw) ? 12 : colGapRaw));
-    const total = cols * rows;
-    preview.style.gridTemplateColumns = `repeat(${cols}, 18px)`;
-    // Echo the chosen column spacing in the preview (clamped so extreme
-    // values don't blow the layout out).
-    preview.style.columnGap = `${colGap}px`;
-    preview.style.rowGap = "4px";
-    preview.innerHTML = "";
-    chrome.storage.sync.get(["custom_cards", "gpa_calc"], async s => {
-        // Grid may have been toggled off while the storage read was pending.
-        if (document.getElementById("card-grid-options").style.display === "none") return;
-        // Prefer the live count from an open dashboard tab: the page itself
-        // knows exactly which cards are rendered and not display:none (hidden
-        // via the card menu), so the preview/warning can't drift out of sync
-        // with stored data (stale entries, other-domain cards, legacy values).
-        // Fall back to the storage-derived count when no dashboard answers.
-        const live = await sendFromPopup("getGridCardCount");
-        let active = (live && typeof live.count === "number" && live.count >= 0)
-            ? live.count
-            : countActiveDashboardCards(s.custom_cards);
-        // The GPA calculator card occupies one card slot in the grid too.
-        if (s.gpa_calc === true) active += 1;
-        // Uneven-row centering: the real grid shifts the last partial row in
-        // half-card steps (double sub-columns — see centerUnevenGridRows).
-        // In the preview that's a margin on every square of that row; since
-        // the squares shift into space where no neighbor sits, nothing
-        // overlaps.
-        let lastRowStart = -1, offset = 0;
-        if (document.getElementById("card_grid_center_rows")?.checked === true && active > 0 && active < total) {
-            lastRowStart = Math.floor((active - 1) / cols) * cols;
-            const inLastRow = active - lastRowStart;
-            if (inLastRow < cols) offset = cols - inLastRow;
-        }
-        for (let i = 0; i < total; i++) {
-            const inShiftedRow = lastRowStart !== -1 && i >= lastRowStart;
-            // The shifted row's empty cells aren't rendered — the row's filled
-            // squares carry the offset, so the empties would misrepresent it.
-            if (inShiftedRow && i >= active) continue;
-            const square = document.createElement("div");
-            square.style.cssText = "width:18px;height:18px;border-radius:4px;box-sizing:border-box;";
-            square.style.background = i < active ? "#56Caf0" : "#3c3c3c";
-            if (inShiftedRow && offset > 0) {
-                square.style.marginLeft = `${offset * (18 + colGap) / 2}px`;
-            }
-            preview.appendChild(square);
-        }
-        const warning = document.getElementById("card-grid-warning");
-        if (warning) {
-            if (s.card_grid_flex === true) {
-                // Flexible grid never clips: cards wrap into new rows as the
-                // window narrows, so the cut-off warning doesn't apply.
-                warning.textContent = "Flexible grid is on - cards wrap to fit narrow windows instead of being cut off.";
-                warning.style.display = "block";
-            } else if (active > total) {
-                const gpaNote = s.gpa_calc === true ? " (including the GPA calculator)" : "";
-                warning.textContent = `\u26A0 Your grid holds ${total} card${total === 1 ? "" : "s"} but you have ${active} card${active === 1 ? "" : "s"}${gpaNote} - some cards may be cut off.`;
-                warning.style.display = "block";
-            } else {
-                warning.style.display = "none";
-            }
-        }
-    });
-}
-
-
 
 function toggleBetterSidebarSubOptions(betterSidebarOn) {
     const remlogoEl = document.getElementById("remlogo");
@@ -778,7 +607,7 @@ function setupFeatureSearch(menu) {
             add({ key: "custom:customDomain", text: label ? label.textContent.trim() : "Canvas URL", el: wrap || customDomain, action: () => goToMainElement(wrap || customDomain) });
         }
 
-        // Tabs: section headings (e.g. "Presets", "Popular Palettes", "Card Grid")
+        // Tabs: section headings (e.g. "Presets", "Popular Palettes")
         document.querySelectorAll(".tab .header-small").forEach(h => {
             if (shouldSkip(h)) return;
             const text = h.textContent.trim();
@@ -980,9 +809,6 @@ function setup() {
 			"hide_course_images",
 			// "hide_completed",
 			"hover_preview",
-			"card_grid",
-			"card_grid_center_rows",
-			"card_grid_flex",
 			"grade_analytics_zones",
 		],
 		tabs: {
@@ -1051,10 +877,6 @@ function setup() {
 				setup: (initial) => setupCardRoundnessInput(initial),
 			},
 			{
-				identifier: "imageRoundness",
-				setup: (initial) => setupImageRoundnessInput(initial),
-			},
-			{
 				identifier: "cardSpacing",
 				setup: (initial) => setupCardSpacingInput(initial),
 			},
@@ -1069,26 +891,6 @@ function setup() {
 			{
 				identifier: "cardPadding",
 				setup: (initial) => setupCardPaddingInput(initial),
-			},
-			{
-				identifier: "card_grid",
-				setup: (initial) => setupCardGrid(initial),
-			},
-			{
-				identifier: "card_grid_columns",
-				setup: (initial) => setupCardGridCountInput("card_grid_columns", initial),
-			},
-			{
-				identifier: "card_grid_rows",
-				setup: (initial) => setupCardGridCountInput("card_grid_rows", initial),
-			},
-			{
-				identifier: "card_grid_column_gap",
-				setup: (initial) => setupCardGridCountInput("card_grid_column_gap", initial, 0),
-			},
-			{
-				identifier: "card_grid_row_gap",
-				setup: (initial) => setupCardGridCountInput("card_grid_row_gap", initial, 0),
 			},
 
 			{
@@ -1701,7 +1503,7 @@ function setup() {
     });
 
     // Note: the card-style number inputs (imageSize, cardRoundness,
-    // imageRoundness, cardSpacing, cardWidth, cardHeight, cardPadding) are wired
+    // cardSpacing, cardWidth, cardHeight, cardPadding) are wired
     // via their setup*Input
     // handlers in menu.special above, which debounce the storage writes. The
     // duplicate listeners that used to live here referenced nonexistent
@@ -1883,19 +1685,10 @@ function saveCurrentTheme() {
                 "sidebar_scale": current["sidebar_scale"],
 				"imageSize": current["imageSize"],
 				"cardRoundness": current["cardRoundness"],
-				"imageRoundness": current["imageRoundness"],
 				"cardSpacing": current["cardSpacing"],
 				"cardWidth": current["cardWidth"],
 				"cardHeight": current["cardHeight"],
 				"cardPadding": current["cardPadding"],
-				// Card Grid (part of card styles): layout toggle, counts,
-				// spacing and uneven-row centering.
-				"card_grid": current["card_grid"],
-				"card_grid_columns": current["card_grid_columns"],
-				"card_grid_rows": current["card_grid_rows"],
-				"card_grid_column_gap": current["card_grid_column_gap"],
-				"card_grid_row_gap": current["card_grid_row_gap"],
-				"card_grid_center_rows": current["card_grid_center_rows"],
             }
             const now = new Date();
             local["saved_themes"][now.getTime()] = trimmed;
@@ -2055,7 +1848,7 @@ function updateCards(key, value) {
     chrome.storage.sync.get(["custom_cards"], result => {
         chrome.storage.sync.set({ "custom_cards": { ...result["custom_cards"], [key]: { ...result["custom_cards"][key], ...value } } }, () => {
             if (chrome.runtime.lastError) {
-                displayAlert(true, "The data you're entering is exceeding the storage limit, so it won't save. Try using shorter links, and make sure to press \"copy image address\" and not \"copy image\" for links.");
+                displayAlert(true, "The card settings exceed the storage limit and could not be saved. Try using shorter names or codes.");
             }
         })
     });
@@ -2140,19 +1933,6 @@ function displayAlert(bad, msg) {
     removeAlert = setTimeout(() => {
         clearAlert();
     }, 15000);
-}
-
-function setCustomImage(key, val) {
-    if (val !== "" && val !== "none") {
-        let test = new Image();
-        test.onerror = () => {
-            displayAlert(true, "It seems that the image link you provided isn't working. Make sure to right click on any images you want to use and select \"copy image address\" to get the correct link.");
-            updateCards(key, { "img": val });
-        }
-        test.onload = clearAlert;
-        test.src = val;
-    }
-    updateCards(key, { "img": val });
 }
 
 async function displayAdvancedCards() {
@@ -2273,13 +2053,6 @@ function showCardEditMenu(courseId, courseData) {
         </div>
         
         <div class="card-edit-section">
-            <label class="card-edit-label">Card Image URL</label>
-            <input type="text" class="card-input" id="card-image-input" 
-                   value="${courseData.img || ""}" placeholder="Enter image URL or 'none'">
-            <div class="card-image-preview" id="card-image-preview"></div>
-        </div>
-        
-        <div class="card-edit-section">
             <label class="card-edit-label">Hide Card</label>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <input type="checkbox" id="card-hide-input" ${courseData.hidden || courseData.hide ? "checked" : ""}>
@@ -2311,49 +2084,23 @@ function showCardEditMenu(courseId, courseData) {
 		.getElementById("reset-card-btn")
 		.addEventListener("click", () => resetCardToDefault(courseId));
 
-	updateImagePreview();
-	document
-		.getElementById("card-image-input")
-		.addEventListener("input", updateImagePreview);
-}
-
-function updateImagePreview() {
-	const imageInput = document.getElementById("card-image-input");
-	const preview = document.getElementById("card-image-preview");
-
-	if (imageInput && preview) {
-		const imageUrl = imageInput.value;
-		if (imageUrl && imageUrl !== "none" && imageUrl.trim() !== "") {
-			preview.style.backgroundImage = `url(${imageUrl})`;
-			preview.style.display = "block";
-		} else {
-			preview.style.backgroundImage = "none";
-			preview.style.display = "none";
-		}
-	}
 }
 
 function saveCardChanges(courseId) {
 	const nameInput = document.getElementById("card-name-input");
 	const codeInput = document.getElementById("card-code-input");
-	const imageInput = document.getElementById("card-image-input");
 	const hideInput = document.getElementById("card-hide-input");
 	const todoHiddenInput = document.getElementById("card-todo-hidden-input");
 
 	const updates = {
 		name: nameInput.value,
 		code: codeInput.value,
-		img: imageInput.value,
 		hidden: hideInput.checked,
 		hide: hideInput.checked,
 		hide_todo: todoHiddenInput.checked,
 	};
 
-	if (imageInput.value !== "" && imageInput.value !== "none") {
-		setCustomImage(courseId, imageInput.value);
-	} else {
-		updateCards(courseId, updates);
-	}
+	updateCards(courseId, updates);
 
 	displayAlert(false, "Card settings saved successfully!");
 
@@ -2366,7 +2113,7 @@ function saveCardChanges(courseId) {
 
 
 function resetCardToDefault(courseId) {
-	updateCards(courseId, { name: "", code: "", img: "", hidden: false, hide: false, hide_todo: false });
+	updateCards(courseId, { name: "", code: "", hidden: false, hide: false, hide_todo: false });
 	displayAlert(false, "Card reset to default settings!");
 
 	setTimeout(() => {
