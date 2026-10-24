@@ -264,28 +264,6 @@ function displayDarkModeFixUrls() {
 
 document.addEventListener("DOMContentLoaded", setup);
 
-// toggle visibility of the Discord/GitHub social links (persists locally)
-document.addEventListener("DOMContentLoaded", () => {
-    const toggle = document.getElementById("social-toggle");
-    const buttons = document.querySelector(".social-buttons");
-    if (!toggle || !buttons) return;
-    const KEY = "hide_socials";
-    const render = (hidden) => {
-        buttons.classList.toggle("hidden", hidden);
-        toggle.textContent = chrome.i18n.getMessage(hidden ? "show_links" : "hide_links");
-    };
-    chrome.storage.local.get(KEY, (res) => render(!!res[KEY]));
-    const flip = () => chrome.storage.local.get(KEY, (res) => {
-        const next = !res[KEY];
-        chrome.storage.local.set({ [KEY]: next });
-        render(next);
-    });
-    toggle.addEventListener("click", flip);
-    toggle.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
-    });
-});
-
 function setupAssignmentsSlider(initial) {
     let el = document.querySelector('#numAssignmentsSlider');
     el.value = initial;
@@ -767,7 +745,7 @@ function setupFeatureSearch(menu) {
             index.push(entry);
         }
 
-        // Big section buttons (Edit Dark Mode, Cards, Themes, GPA Settings, Report issue)
+        // Big section buttons (Edit Dark Mode, Cards, Themes, GPA Settings, Debug)
         document.querySelectorAll(".more-options-container .tab-btn").forEach(btn => {
             const span = btn.querySelector("span");
             add({ key: "tab:" + btn.id, text: span ? span.textContent.trim() : "", el: btn, action: () => openTab(btn.id) });
@@ -1025,9 +1003,9 @@ function setup() {
 				setup: displayThemeList,
 				tab: ".import-export",
 			},
-			"report-issue-btn": {
+			"debug-btn": {
 				setup: displayErrors,
-				tab: ".report-issue-container",
+				tab: ".debug-container",
 			},
 			"updates-btn": { setup: null, tab: ".updates-container" },
 		},
@@ -1271,7 +1249,7 @@ function setup() {
         updateStorageUsage();
     });
 
-    // activate planner cache clear button (Report issue tab). Clears the
+    // activate planner cache clear button (Debug tab). Clears the
     // cached planner items locally, then tells any open Canvas tabs to
     // re-fetch fresh data so the clear takes effect without a refresh.
     // Keep the key in sync with PLANNER_CACHE_KEY in content.js.
@@ -1284,7 +1262,7 @@ function setup() {
         updateStorageUsage();
     });
 
-    // ---- Storage usage display (Report issue tab) ----
+    // ---- Storage usage display (Debug tab) ----
     // Shows how much space the extension's settings, planner cache, and
     // other local data take, plus the storage quota available to it.
     function formatStorageBytes(bytes) {

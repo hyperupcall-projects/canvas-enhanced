@@ -98,8 +98,8 @@
   "full_width": {
     "message": "Painel de instrumentos de largura total"
   },
-  "report_issue": {
-    "message": "Relatar problema"
+  "debug": {
+    "message": "Debug"
   },
   "themes": {
     "message": "Temas"

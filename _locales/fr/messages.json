@@ -98,8 +98,8 @@
   "full_width": {
     "message": "Tableau de bord pleine largeur"
   },
-  "report_issue": {
-    "message": "Signaler un problème"
+  "debug": {
+    "message": "Debug"
   },
   "themes": {
     "message": "Thèmes"

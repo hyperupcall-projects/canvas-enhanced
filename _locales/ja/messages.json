@@ -98,8 +98,8 @@
   "full_width": {
     "message": "ダッシュボード全幅"
   },
-  "report_issue": {
-    "message": "問題を報告"
+  "debug": {
+    "message": "Debug"
   },
   "themes": {
     "message": "テーマ"

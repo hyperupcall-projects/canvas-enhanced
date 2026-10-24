@@ -1259,7 +1259,7 @@ function recieveMessage(request, sender, sendResponse) {
         case ("inspect"): sendResponse(inspectDarkMode(true)); break;
         case ("fixdm"): sendResponse(runDarkModeFixer(true)); break;
         case ("clearPlannerCache"):
-            // "Clear planner cache" (Report issue tab in the popup): drop
+            // "Clear planner cache" (Debug tab in the popup): drop
             // the cache, re-fetch fresh planner data, and re-render every
             // consumer in this tab.
             (async () => {

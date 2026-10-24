@@ -98,8 +98,8 @@
   "full_width": {
     "message": "仪表板全宽"
   },
-  "report_issue": {
-    "message": "报告问题"
+  "debug": {
+    "message": "Debug"
   },
   "themes": {
     "message": "主题"

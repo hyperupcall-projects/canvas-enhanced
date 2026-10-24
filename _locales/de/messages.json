@@ -98,8 +98,8 @@
   "full_width": {
     "message": "Dashboard in voller Breite"
   },
-  "report_issue": {
-    "message": "Problem melden"
+  "debug": {
+    "message": "Debug"
   },
   "themes": {
     "message": "Themen"

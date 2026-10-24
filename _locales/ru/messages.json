@@ -98,8 +98,8 @@
   "full_width": {
     "message": "Приборная панель на всю ширину"
   },
-  "report_issue": {
-    "message": "Сообщить о проблеме"
+  "debug": {
+    "message": "Debug"
   },
   "themes": {
     "message": "Темы"

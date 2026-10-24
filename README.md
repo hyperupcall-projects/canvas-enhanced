@@ -124,7 +124,7 @@ To install, run, and build with this repository locally,
 
 ### Add a new feature
 
-To contribute to this, first either make an issue with feature suggestion or post in the discord.
+To contribute to this, first open an issue with your feature suggestion.
 
 If nobody is working on the feature, you can clone the dev branch and make your changes while following these guidelines.
 

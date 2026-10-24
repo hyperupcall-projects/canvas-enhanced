@@ -98,8 +98,8 @@
   "full_width": {
     "message": "Instrumentpanel i full bredd"
   },
-  "report_issue": {
-    "message": "Rapportera problem"
+  "debug": {
+    "message": "Debug"
   },
   "themes": {
     "message": "Teman"

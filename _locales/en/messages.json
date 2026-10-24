@@ -122,8 +122,8 @@
     "full_width": {
         "message": "Full Width Fix"
     },
-    "report_issue": {
-        "message": "Report Issue"
+    "debug": {
+        "message": "Debug"
     },
     "themes": {
         "message": "Themes"
