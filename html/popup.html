@@ -3,18 +3,19 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Canvas Refined</title>
+    <title>Canvas Enhanced</title>
     <link href="../css/popup.css" rel="stylesheet">
+    <link href="../css/settings-theme.css" rel="stylesheet">
+    <script src="../js/settings-appearance.js"></script>
 
 </head>
 
-<body style="background: #1a1a1ad6; background: #232323">
-    <div id="gradientbg"></div>
+<body>
     <div id="alert"></div>
     <div class="main">
         <div class="header">
             <img id="bclogo" src="../icon/icon-128.png">
-            <h1 data-i18n="Canvas_Refined">Canvas Refined</h1>
+            <h1 data-i18n="Canvas_Refined">Canvas Enhanced</h1>
             <div class="header-search" id="header-search">
                 <svg class="header-search-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
                 <input type="text" id="feature-search" data-i18n-placeholder="search_features" placeholder="Search features..." autocomplete="off" spellcheck="false">
@@ -153,7 +154,7 @@
                         </div><span class="option-name" data-i18n="quiz_safe_mode">Quiz Safe Mode</span>
                         <span class="cr-info-bubble" tabindex="0" role="button" aria-label="Quiz Safe Mode info">
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                            <span class="cr-info-bubble-text" data-i18n="quiz_safe_mode_desc">Turns off most Canvas Refined features on quiz pages so you get the default Canvas quiz experience.</span>
+                            <span class="cr-info-bubble-text" data-i18n="quiz_safe_mode_desc">Turns off most Canvas Enhanced features on quiz pages so you get the default Canvas quiz experience.</span>
                         </span>
                     </div>
                     <div class="option" id="dashboard_notes">
@@ -399,6 +400,13 @@
                 </div>
             </div>
         </div>
+        <section class="option-container settings-export" aria-labelledby="settings-export-heading">
+            <h3 class="header-small" id="settings-export-heading">Export Settings</h3>
+            <p class="sub-text">Export feature preferences, Todo options, and GPA settings. Export colors, images, and card styles from Themes.</p>
+            <button type="button" id="settings-export" class="customization-button">Generate settings export</button>
+            <textarea class="card-input" id="settings-export-output" aria-label="Exported settings" placeholder="Settings JSON" readonly></textarea>
+            <button type="button" id="settings-export-copy" class="customization-button">Copy settings</button>
+        </section>
     </div>
 
     <div class="import-export tab" style="display: none">
@@ -757,7 +765,7 @@
         </div>
         <div class="export-details option-container">
             <h3 class="header-small" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                <span>Export Settings</span>
+                <span>Export Theme</span>
                 <span style="display:flex;gap:6px;">
                     <button type="button" id="export-check-all" class="customization-button" style="padding:4px 10px;font-size:11px;">Check all</button>
                     <button type="button" id="export-check-none" class="customization-button" style="padding:4px 10px;font-size:11px;">Check none</button>
@@ -767,7 +775,7 @@
                 <div class="export-inputs">
                     <div class="sub-option">
                         <input type="checkbox" id="export-dark" />
-                        <span>Dark mode</span>
+                        <span>Colors and appearance</span>
                     </div>
                     <div  class="sub-option">
                         <input type="checkbox" id="export-cards" />
@@ -780,18 +788,6 @@
                     <div class="sub-option">
                         <input type="checkbox" id="export-card-styles" />
                         <span>Card styles</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-toggles" />
-                        <span>On/off toggles</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-todo" />
-                        <span>Todo list</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-gpa" />
-                        <span>GPA settings</span>
                     </div>
                 </div>
                 <div style="flex: 1">

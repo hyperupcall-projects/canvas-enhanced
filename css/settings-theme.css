@@ -1,0 +1,44 @@
+/* Neutral settings surfaces; theme thumbnails retain their own colors. */
+:root {
+    color-scheme: light;
+    --settings-bg: #fff;
+    --settings-panel: #f7f7f8;
+    --settings-input: #ededf0;
+    --settings-text: #24262b;
+    --settings-muted: #60646c;
+    --settings-border: #d4d5da;
+    --settings-hover: #e3e4e8;
+    --settings-link: #1769aa;
+    --settings-error: #b4233b;
+    --inputbg: var(--settings-input);
+    --containerbg: var(--settings-panel);
+    --borders: var(--settings-border);
+}
+:root[data-settings-theme="dark"] {
+    color-scheme: dark;
+    --settings-bg: #18191c;
+    --settings-panel: #222328;
+    --settings-input: #303138;
+    --settings-text: #ececf0;
+    --settings-muted: #b5b6bf;
+    --settings-border: #454650;
+    --settings-hover: #3b3c45;
+    --settings-link: #82bfff;
+    --settings-error: #ff9ca9;
+}
+html, body {background: var(--settings-bg); color: var(--settings-text);}
+button:hover {background-color: var(--settings-hover);}
+input, select, textarea {color-scheme: inherit;}
+input::placeholder, textarea::placeholder {color: var(--settings-muted); opacity: 1;}
+.settings-export {margin-top: 16px;}
+.settings-export p {line-height: 1.5; margin-bottom: 12px;}
+#settings-export-output {display: block; min-height: 90px; margin: 10px 0;}
+#import-theme-dialog {background: var(--settings-bg); border-color: var(--settings-border);}
+.header {flex-wrap: wrap;}
+.header h1 {font-size: 22px;}
+.header-search {width: 100%; max-width: none;}
+.theme-button {color: #fff;}
+
+#theme-high-contrast-warning {color: var(--settings-text);}
+.cr-info-bubble-text {border-color: var(--settings-border);}
+.search-results {border: 1px solid var(--settings-border);}

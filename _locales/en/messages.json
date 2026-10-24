@@ -12,7 +12,7 @@
         "message": "System"
     },
     "Canvas_Refined": {
-        "message": "Canvas Refined"
+        "message": "Canvas Enhanced"
     },
     "search_features": {
         "message": "Search features..."
@@ -81,7 +81,7 @@
         "message": "Quiz Safe Mode"
     },
     "quiz_safe_mode_desc": {
-        "message": "Turns off most Canvas Refined features on quiz pages so you get the default Canvas quiz experience"
+        "message": "Turns off most Canvas Enhanced features on quiz pages so you get the default Canvas quiz experience"
     },
     "max_items": {
         "message": "Max Items: "

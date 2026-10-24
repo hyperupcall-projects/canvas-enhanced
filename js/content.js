@@ -655,10 +655,10 @@ async function detectCanvasPage() {
         if (Array.isArray(courses) && courses.length) {
             return { isCanvas: true, courses };
         }
-        console.log("Canvas Refined - this url doesn't seem to be a canvas url (1)");
+        console.log("Canvas Enhanced - this url doesn't seem to be a canvas url (1)");
         return { isCanvas: false, courses: null };
     } catch (err) {
-        console.log("Canvas Refined - this url doesn't seem to be a canvas url (2)");
+        console.log("Canvas Enhanced - this url doesn't seem to be a canvas url (2)");
         return { isCanvas: false, courses: null };
     }
 }
@@ -669,7 +669,7 @@ async function detectCanvasPage() {
 function addCanvasDomain(courses) {
     return getCards(courses).then(() => new Promise(resolve => {
         setTimeout(() => {
-            console.log("Canvas Refined - setting custom domain to " + domain);
+            console.log("Canvas Enhanced - setting custom domain to " + domain);
             chrome.storage.sync.get(["custom_domain"], storage => {
                 const domains = (storage.custom_domain || []).filter(d => d && d !== "");
                 domains.push(domain);
@@ -700,7 +700,7 @@ function showCanvasPrompt(courses) {
     const prompt = makeElement("div", backdrop, { "id": "canvasrefined-domain-prompt" });
     makeElement("h3", prompt, { "textContent": "New Canvas detected" });
     const text = makeElement("p", prompt, {});
-    text.append("Canvas Refined detected a Canvas page at ");
+    text.append("Canvas Enhanced detected a Canvas page at ");
     makeElement("span", text, { "className": "canvasrefined-domain-host", "textContent": host });
     text.append(". Add it to your canvas list?");
     const actions = makeElement("div", prompt, { "className": "canvasrefined-domain-prompt-actions" });
@@ -794,7 +794,7 @@ function startExtension() {
 
     chrome.storage.onChanged.addListener(applyOptionsChanges);
 
-    console.log("Canvas Refined - running");
+    console.log("Canvas Enhanced - running");
 }
 
 function applyOptionsChanges(changes) {
@@ -3176,7 +3176,7 @@ async function createTodoSections(location) {
 	}).catch(err => {
 		// A rejected data promise must not leave the todo list half-rendered or
 		// throw unhandled; the generation guard above keeps renders idempotent.
-		if (renderGen === todoRenderGen) console.warn("Canvas Refined - todo list render failed", err);
+		if (renderGen === todoRenderGen) console.warn("Canvas Enhanced - todo list render failed", err);
 	});
 }
 
@@ -6550,12 +6550,12 @@ function injectQuizSafeModeBanner(safeModeOn) {
 
         makeElement("div", banner, {
             className: "canvasrefined-quiz-safe-title",
-            textContent: "Canvas Refined — Quiz Safe Mode",
+            textContent: "Canvas Enhanced — Quiz Safe Mode",
         });
 
         makeElement("p", banner, {
             className: "canvasrefined-quiz-safe-info",
-            textContent: "This extension hasn't been 100% approved by all teachers. Quiz Safe Mode turns off most Canvas Refined features that could interfere with this quiz page, giving you the default Canvas quiz experience.",
+            textContent: "This extension hasn't been 100% approved by all teachers. Quiz Safe Mode turns off most Canvas Enhanced features that could interfere with this quiz page, giving you the default Canvas quiz experience.",
         });
 
         const toggleRow = makeElement("div", banner, { className: "canvasrefined-quiz-safe-row" });
@@ -7431,7 +7431,7 @@ function getColors() {
         }).catch(e => {
             // A failed colors fetch (e.g. an expired session) must not throw an
             // unhandled rejection or wipe the stored colors — keep the old ones.
-            console.warn("Canvas Refined - could not load course colors", e);
+            console.warn("Canvas Enhanced - could not load course colors", e);
             return options.custom_cards_3;
         });
     }

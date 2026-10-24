@@ -4,7 +4,7 @@
 
 ## Overview
 
-Canvas Refined ("the Extension") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and protect your information.
+Canvas Enhanced ("the Extension") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and protect your information.
 
 TLDR: we store some of your canvas info locally on your device and it stays fully local
 
@@ -99,4 +99,4 @@ This Extension operates in compliance with:
 
 ---
 
-By using Canvas Refined, you accept the terms of this Privacy Policy.
+By using Canvas Enhanced, you accept the terms of this Privacy Policy.

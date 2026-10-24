@@ -112,7 +112,7 @@ chrome.runtime.onInstalled.addListener(function () {
         }
     };
 
-    const updateMsg = "Canvas Refined was just updated!\nThis version added new themes, cumulative GPA into the GPA calculator, and a new sorting function for themes.";
+    const updateMsg = "Canvas Enhanced was just updated!\nThis version added new themes, cumulative GPA into the GPA calculator, and a new sorting function for themes.";
 
     // The Styles feature (custom fonts, custom CSS, custom backgrounds and the
     // opacity/blur sliders) was removed. Its settings are no longer read by

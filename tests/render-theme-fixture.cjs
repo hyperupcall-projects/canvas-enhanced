@@ -9,7 +9,7 @@ const script = fs.readFileSync('js/themes.js', 'utf8') + '\n' +
     content.slice(content.indexOf('const BC_LIGHT_DEFAULTS'), content.indexOf('let darkStyleInserted'));
 const fixture = `<!doctype html><meta charset="utf-8"><title>Theme rendering checks</title>
 <style>body{font:15px sans-serif;background:#eceef1;color:#222;margin:20px}h1{font-size:24px}#cases{display:grid;grid-template-columns:1fr 1fr;gap:14px}iframe{width:100%;height:255px;border:0;border-radius:8px}#result{white-space:pre-wrap;padding:15px;background:white}</style>
-<h1>Canvas Refined — light and dark palette checks</h1><pre id="result">RUNNING</pre><div id="cases"></div>
+<h1>Canvas Enhanced — light and dark palette checks</h1><pre id="result">RUNNING</pre><div id="cases"></div>
 <script>${script.replace(/<\/script/gi, '<\\/script')}
 const errors = [];
 let checks = 0;

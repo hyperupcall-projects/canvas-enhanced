@@ -60,10 +60,6 @@ const exportLayout = ["full_width", "center_cards", "condensed_cards", "equal_he
 const exportSidebar = ["better_sidebar", "sidebar_scale"];
 const exportTodo = ["better_todo", "todo_hide_feedback", "todo_hide_read", "todo_full_height", "todo_confetti", "todo_progress_rings", "todo_timeframe", "todo_hr24", "todo_separate_scrollbar", "todo_alternate_colors", "todo_ignore_card_colors", "todo_remove_icons", "todo_show_scores", "hover_preview"];
 const exportGpa = ["gpa_calc", "gpa_calc_prepend", "gpa_calc_cumulative", "gpa_calc_weighted", "gpa_threshold_mode", "gpa_course_bounds"];
-// Master "On/off toggles" = every visual toggle (no GPA,
-// no personal productivity features). Includes the former separate Layout and
-// Sidebar groups, plus Grade Analytics and its colored-zones sub-toggle.
-const exportToggles = ["dark_mode", "device_dark", "quiz_safe_mode", "grade_analytics", "grade_analytics_zones"].concat(exportCardColorToggles, exportLayout, exportSidebar, exportTodo);
 
 const apiurl = "none";
 
@@ -1192,75 +1188,7 @@ function setup() {
         }
     });
 
-    // copy export output to clipboard
-    document.querySelector("#export-copy").addEventListener("click", async () => {
-        const output = document.querySelector("#export-output");
-        const btn = document.querySelector("#export-copy");
-        const text = output.value;
-        if (!text) { displayAlert(true, "Nothing to copy — select what to export first."); return; }
-        const flash = () => { const old = btn.textContent; btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = old; }, 1200); };
-        try {
-            await navigator.clipboard.writeText(text);
-            flash();
-        } catch (e) {
-            output.select();
-            document.execCommand("copy");
-            flash();
-        }
-    });
-
-    // activate export checkbox
-    document.querySelectorAll(".export-details input").forEach(input => {
-        input.addEventListener("change", () => {
-            chrome.storage.sync.get(syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "gpa_calc_bounds", "gpa_threshold_mode", "gpa_course_bounds"]), async storage => {
-                let final = {};
-                for await (item of document.querySelectorAll(".export-details input")) {
-                    if (item.checked) {
-                        switch (item.id) {
-                            case "export-toggles":
-                                final = { ...final, ...(await getExport(storage, exportToggles)) };
-                                break;
-                            case "export-dark":
-                                final = { ...final, ...(await getExport(storage, ["dark_preset", "dark_mode", "device_dark"])) };
-                                break;
-                            case "export-cards":
-                                final = { ...final, ...(await getExport(storage, ["custom_cards"])) };
-                                break;
-                            case "export-colors":
-                                final = { ...final, ...(await getExport(storage, ["card_colors", ...exportCardColorToggles])) };
-                                break;
-                            case "export-card-styles":
-                                final = { ...final, ...(await getExport(storage, exportCardStyles)) };
-                                break;
-
-                            case "export-todo":
-                                final = { ...final, ...(await getExport(storage, exportTodo)) };
-                                break;
-                            case "export-gpa":
-                                final = { ...final, ...(await getExport(storage, [...exportGpa, "gpa_calc_bounds"])) };
-                                break;
-                        }
-                    }
-                }
-                document.querySelector("#export-output").value = JSON.stringify(final);
-            });
-        });
-    });
-
-    // Toggle all export checkboxes and dispatch one change event to refresh output.
-    const exportCheckboxes = () => document.querySelectorAll(".export-details input");
-    const refreshExport = () => {
-        const first = exportCheckboxes()[0];
-        if (first) first.dispatchEvent(new Event("change", { bubbles: true }));
-    };
-    document.querySelector("#export-check-all")?.addEventListener("click", () => {
-        exportCheckboxes().forEach(c => { c.checked = true; });
-        refreshExport();
-    });
-    document.querySelector("#export-check-none")?.addEventListener("click", () => {
-        exportCheckboxes().forEach(c => { c.checked = false; });
-        refreshExport();
-    });
+    setupExports();
 
     document.querySelector("#alert").addEventListener("click", clearAlert);
     // TODO: maybe fix this at some point, idk what is causing the error here
@@ -1429,13 +1357,75 @@ function displayThemeSubmissionForm() {
     document.getElementById("view-submissions-btn").classList.remove("active");
 }
 
+// Settings exports omit theme visuals, saved themes, notes, and task data.
+const settingsExportKeys = [...new Set([
+    ...syncedSwitches, ...syncedSubOptions, ...exportLayout, ...exportSidebar,
+    ...exportTodo, ...exportGpa, "gpa_calc_bounds", "hide_navbar",
+    "card_method_dashboard", "card_method_date", "card_limit"
+])].filter(key => ![...exportCardColorToggles, ...exportCardStyles].includes(key));
+
+const themeExportGroups = {
+    "export-dark": ["dark_preset", "dark_mode", "device_dark"],
+    "export-cards": ["custom_cards"],
+    "export-colors": ["card_colors", ...exportCardColorToggles],
+    "export-card-styles": exportCardStyles,
+};
+
+function setupExports() {
+    function wireCopy(buttonId, outputId) {
+        const button = document.getElementById(buttonId);
+        const output = document.getElementById(outputId);
+        button.addEventListener("click", async () => {
+            if (!output.value) {
+                displayAlert(true, "Generate an export first.");
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(output.value);
+            } catch (error) {
+                output.select();
+                if (!document.execCommand("copy")) {
+                    displayAlert(true, "Unable to copy. Select and copy the JSON manually.");
+                    return;
+                }
+            }
+            const label = button.textContent;
+            button.textContent = "Copied!";
+            setTimeout(() => { button.textContent = label; }, 1200);
+        });
+    }
+    wireCopy("export-copy", "export-output");
+    wireCopy("settings-export-copy", "settings-export-output");
+    document.getElementById("settings-export").addEventListener("click", async () => {
+        const storage = await chrome.storage.sync.get(settingsExportKeys);
+        document.getElementById("settings-export-output").value = JSON.stringify(storage);
+    });
+
+    const checkboxes = [...document.querySelectorAll(".export-details input")];
+    let generation = 0;
+    async function refreshExport() {
+        const current = ++generation;
+        const keys = checkboxes.filter(input => input.checked).flatMap(input => themeExportGroups[input.id]);
+        const storage = await chrome.storage.sync.get(keys);
+        const result = await getExport(storage, keys);
+        if (current === generation) document.getElementById("export-output").value = JSON.stringify(result);
+    }
+    checkboxes.forEach(input => input.addEventListener("change", refreshExport));
+    for (const [id, checked] of [["export-check-all", true], ["export-check-none", false]]) {
+        document.getElementById(id).addEventListener("click", () => {
+            checkboxes.forEach(input => { input.checked = checked; });
+            refreshExport();
+        });
+    }
+}
+
 async function getExport(storage, options) {
     let final = {};
     for (const option of options) {
         switch (option) {
             case "custom_cards":
                 let arr = [];
-                Object.keys(storage["custom_cards"]).forEach(key => {
+                Object.keys(storage["custom_cards"] || {}).forEach(key => {
                     const img = storage["custom_cards"][key].img;
                     if (img && img !== "none" && img.trim() !== "") arr.push(img);
                 });
@@ -1444,7 +1434,7 @@ async function getExport(storage, options) {
             case "card_colors":
                 final["card_colors"] = [];
                 try {
-                    final["card_colors"] = await sendFromPopup("getcolors");
+                    final["card_colors"] = (await sendFromPopup("getcolors")) || storage.card_colors || [];
                 } catch (e) {
                     console.log(e);
                 }
@@ -1484,7 +1474,7 @@ function updateSavedThemes(update) {
         await update(state);
         await chrome.storage.local.set(state);
     });
-    savedThemeWrites = operation.catch(error => console.warn("Canvas Refined: unable to save theme", error));
+    savedThemeWrites = operation.catch(error => console.warn("Canvas Enhanced: unable to save theme", error));
     return operation;
 }
 
@@ -1523,7 +1513,7 @@ function persistUnsavedTheme() {
         await chrome.storage.local.set({ active_theme: activeThemeSource });
         displaySavedThemes();
     });
-    unsavedThemeWrite = operation.catch(error => console.warn("Canvas Refined: unable to save draft", error));
+    unsavedThemeWrite = operation.catch(error => console.warn("Canvas Enhanced: unable to save draft", error));
     return operation;
 }
 
@@ -1550,7 +1540,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 window.addEventListener("pagehide", () => {
-    persistUnsavedTheme().catch(error => console.warn("Canvas Refined: unable to save draft", error));
+    persistUnsavedTheme().catch(error => console.warn("Canvas Enhanced: unable to save draft", error));
 });
 
 function nextSavedThemeKey(saved) {
