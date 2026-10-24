@@ -55,7 +55,6 @@ chrome.runtime.onInstalled.addListener(function () {
             // "hide_completed": false,
             "hide_completed_cards": false,
             "num_todo_items": 10,
-            "custom_font": { "link": "", "family": "" },
             "hover_preview": true,
             "full_width": null,
             "remlogo": null,
@@ -90,7 +89,6 @@ chrome.runtime.onInstalled.addListener(function () {
             "todo_progress_rings": "rings",
             "todo_confetti": true,
             "todo_show_scores": false,
-            "custom_font_skip_p": false,
             "device_dark": false,
             "cumulative_gpa": { "name": "Cumulative GPA", "hidden": false, "weight": "dnc", "credits": 999, "gr": 3.21 },
             // "show_updates": false,
@@ -106,24 +104,12 @@ chrome.runtime.onInstalled.addListener(function () {
             "gpa_calc_cumulative": false,
             "gpa_calc_weighted": true,
             "browser_show_likes": false,
-            "custom_styles": "",
             "imageSize": 100,
             "cardRoundness": 5,
             "imageRoundness": 0,
             'cardSpacing': 0,
             "cardWidth": 262,
             "cardHeight": 146,
-            "customCardStyles": false,
-            "customBackgroundLink": "",
-            "customBackgroundScale": 100,
-            "customBackgroundDaily": false,
-            "customBackgroundNasaDaily": false,
-            "nasaInfoOverlay": false,
-            "fitImageToScreen": false,
-            "bg_opacity": 65,
-            "sidebar_opacity": 100,
-            "bg_blur": 8,
-            "sidebar_blur": 0,
             "global_search": false,
             "grade_analytics": true,
             "grade_analytics_zones": false,
@@ -132,7 +118,42 @@ chrome.runtime.onInstalled.addListener(function () {
 
     const updateMsg = "Canvas Refined was just updated!\nThis version added new themes, cumulative GPA into the GPA calculator, and a new sorting function for themes.";
 
+    // The Styles feature (custom fonts, custom CSS, custom backgrounds and the
+    // opacity/blur sliders) was removed. Its settings are no longer read by
+    // anything, so drop them on install/update instead of leaving orphaned
+    // values behind — a long custom stylesheet in particular would otherwise
+    // sit in storage.sync forever, eating into the sync quota.
+    const removedOptions = [
+        "custom_font",
+        "custom_font_skip_p",
+        "custom_styles",
+        "customCardStyles",
+        "customBackgroundLink",
+        "customBackgroundScale",
+        "customBackgroundDaily",
+        "customBackgroundNasaDaily",
+        "nasaInfoOverlay",
+        "fitImageToScreen",
+        "nasaFitToScreen",
+        "bg_opacity",
+        "sidebar_opacity",
+        "bg_blur",
+        "sidebar_blur",
+        "card_opacity",
+        "card_blur",
+        "card_transparency",
+    ];
+    chrome.storage.sync.remove(removedOptions);
+    chrome.storage.local.remove(removedOptions);
+
     chrome.storage.local.get(null, local => {
+        // Daily background images and APOD metadata are no longer used.
+        const backgroundCacheKeys = Object.keys(local).filter(key =>
+            key.startsWith("picsum_daily_") || key.startsWith("nasa_apod_")
+        );
+        if (backgroundCacheKeys.length > 0) {
+            chrome.storage.local.remove(backgroundCacheKeys);
+        }
         chrome.storage.sync.get(null, async sync => {
             let newSyncOptions = {"update_msg": updateMsg};
             let newLocalOptions = {};
@@ -145,10 +166,6 @@ chrome.runtime.onInstalled.addListener(function () {
                 newLocalOptions[option] = default_options["local"][option];
             })
 
-            // migrate old setting name
-            if (sync["nasaFitToScreen"] !== undefined && sync["fitImageToScreen"] === undefined) {
-                newSyncOptions["fitImageToScreen"] = sync["nasaFitToScreen"];
-            }
 
             if (Object.keys(newLocalOptions).length > 0) {
                 chrome.storage.local.set(newLocalOptions);
@@ -166,79 +183,3 @@ chrome.runtime.onInstalled.addListener(function () {
         });
     });
 });
-
-// The NASA APOD API with the demo key is limited to 30 requests/hour and 50/day.
-// Calls are serialized through this worker; the API's own 429 responses handle limiting.
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message?.type === "getNasaBackground") {
-        getNasaBackground().then(sendResponse);
-        return true;
-    }
-});
-
-let nasaRequestQueue = Promise.resolve();
-function queuedNasaTask(task) {
-    const run = nasaRequestQueue.then(task, task);
-    nasaRequestQueue = run.catch(() => {});
-    return run;
-}
-
-async function getNasaBackground() {
-    return queuedNasaTask(async () => {
-        const date = new Date();
-        for (let i = 0; i < 7; i++) {
-            const dateStr = date.toISOString().slice(0, 10);
-            const cacheKey = `nasa_apod_${dateStr}`;
-            const metadataKey = `nasa_apod_meta_${dateStr}`;
-            const cached = await chrome.storage.local.get([cacheKey, metadataKey]);
-            if (cached[cacheKey]) return cached[cacheKey];
-
-            // Don't re-probe dates the API already told us don't exist
-            const missingKey = `nasa_apod_missing_${dateStr}`;
-            const missing = await chrome.storage.local.get(missingKey);
-            if (missing[missingKey]) {
-                date.setDate(date.getDate() - 1);
-                continue;
-            }
-
-            const data = await callNasaApi(dateStr);
-            if (data === "ratelimited" || data === null) return null;
-            if (data === "missing") {
-                await chrome.storage.local.set({ [missingKey]: true });
-                date.setDate(date.getDate() - 1);
-                continue;
-            }
-
-            const url = data.thumbnail_url || data.hdurl || data.url;
-            if (!url) return null;
-            const result = { url, scale: 100, date: dateStr };
-            const meta = { title: data.title || "", date: data.date || dateStr, copyright: data.copyright || "", explanation: data.explanation || "" };
-            // Write image + metadata atomically so the info overlay never sees a
-            // cached image with missing metadata.
-            await chrome.storage.local.set({ [cacheKey]: result, [metadataKey]: meta });
-            return result;
-        }
-        return null;
-    });
-}
-
-async function callNasaApi(dateStr) {
-    let response;
-    try {
-        response = await fetch(`https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&thumbs=true&date=${dateStr}`);
-    } catch (error) {
-        console.error("[CanvasRefined] Failed to fetch NASA APOD:", error);
-        return null;
-    }
-
-    if (response.status === 429) return "ratelimited";
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        if (errorData.code === 404 && (errorData.msg || "").toLowerCase().includes("no data available")) {
-            return "missing";
-        }
-        return null;
-    }
-
-    return await response.json().catch(() => null);
-}

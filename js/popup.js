@@ -20,7 +20,6 @@ const syncedSubOptions = [
 	"auto_dark",
 	"auto_dark_start",
 	"auto_dark_end",
-	"custom_font_skip_p",
 	"num_assignments",
 	"assignment_date_format",
 	"todo_hr24",
@@ -35,7 +34,6 @@ const syncedSubOptions = [
 	// "hide_completed",
 	"num_todo_items",
 	"hover_preview",
-	"customCardStyles",
 	"imageSize",
 	"cardRoundness",
 	"imageRoundness",
@@ -53,35 +51,31 @@ const syncedSubOptions = [
 	"card_grid_row_gap",
 	"card_grid_center_rows",
 	"card_grid_flex",
-	"customBackgroundLink",
-    "customBackgroundScale",
-    "customBackgroundDaily",
-    "customBackgroundNasaDaily",
-    "fitImageToScreen",
     "sidebar_scale",
-    "bg_opacity",
-    "sidebar_opacity",
-    "bg_blur",
-    "sidebar_blur",
-    "card_opacity",
-    "card_blur",
 ];
 const localSwitches = [];
+
+// Ignore obsolete Styles settings in older exports and saved themes.
+const removedStyleOptions = new Set([
+    "custom_font", "custom_font_skip_p", "custom_styles", "customCardStyles",
+    "customBackgroundLink", "customBackgroundScale", "customBackgroundDaily",
+    "customBackgroundNasaDaily", "nasaInfoOverlay", "fitImageToScreen",
+    "nasaFitToScreen", "bg_opacity", "sidebar_opacity", "bg_blur",
+    "sidebar_blur", "card_opacity", "card_blur", "card_transparency",
+]);
 
 // Theme export only carries visual settings, never personal productivity data.
 const exportDarkSchedule = ["auto_dark", "auto_dark_start", "auto_dark_end", "device_dark"];
 const exportCardColorToggles = ["gradient_cards", "disable_color_overlay"];
-const exportCardStyles = ["customCardStyles", "imageSize", "cardRoundness", "imageRoundness", "cardSpacing", "cardWidth", "cardHeight", "cardPadding", "card_grid", "card_grid_columns", "card_grid_rows", "card_grid_column_gap", "card_grid_row_gap", "card_grid_center_rows", "card_grid_flex"];
+const exportCardStyles = ["imageSize", "cardRoundness", "imageRoundness", "cardSpacing", "cardWidth", "cardHeight", "cardPadding", "card_grid", "card_grid_columns", "card_grid_rows", "card_grid_column_gap", "card_grid_row_gap", "card_grid_center_rows", "card_grid_flex"];
 const exportLayout = ["full_width", "center_cards", "condensed_cards", "equal_height_cards", "remlogo", "hide_new_canvas", "hide_navbar", "tab_icons"];
 const exportSidebar = ["better_sidebar", "sidebar_scale"];
 const exportTodo = ["better_todo", "todo_hide_feedback", "todo_hide_read", "todo_full_height", "todo_confetti", "todo_progress_rings", "todo_timeframe", "todo_hr24", "todo_separate_scrollbar", "todo_alternate_colors", "todo_ignore_card_colors", "todo_remove_icons", "todo_show_scores", "hover_preview"];
 const exportGpa = ["gpa_calc", "gpa_calc_prepend", "gpa_calc_cumulative", "gpa_calc_weighted"];
-const exportBackground = ["customBackgroundLink", "customBackgroundScale", "customBackgroundDaily", "customBackgroundNasaDaily", "fitImageToScreen", "card_transparency", "bg_opacity", "sidebar_opacity", "bg_blur", "sidebar_blur", "card_opacity", "card_blur"];
 // Master "On/off toggles" = every visual toggle (no GPA, no dark-mode schedule,
 // no personal productivity features). Includes the former separate Layout and
 // Sidebar groups, plus Grade Analytics and its colored-zones sub-toggle.
 const exportToggles = ["dark_mode", "quiz_safe_mode", "grade_analytics", "grade_analytics_zones"].concat(exportCardColorToggles, exportLayout, exportSidebar, exportTodo);
-const fontsDropdownStateKey = "fonts_dropdown_open";
 
 const apiurl = "none";
 
@@ -128,13 +122,6 @@ const defaultOptions = {
         "better_todo": true,
         "better_sidebar": false,
         "sidebar_scale": 100,
-        "bg_opacity": 65,
-        "sidebar_opacity": 100,
-        "bg_blur": 8,
-        "sidebar_blur": 0,
-        "card_transparency": false,
-        "card_opacity": 80,
-        "card_blur": 8,
         "todo_hr24": false,
 		"todo_separate_scrollbar": false,
 		"todo_alternate_colors": false,
@@ -153,8 +140,6 @@ const defaultOptions = {
         "card_letter": true,
         // "hide_completed": false,
         "num_todo_items": 10,
-        "custom_font": { "link": "", "family": "" },
-        "custom_font_skip_p": false,
         "hover_preview": true,
         "full_width": null,
         "remlogo": null,
@@ -212,12 +197,6 @@ const defaultOptions = {
         "card_grid_row_gap": 12,
         "card_grid_center_rows": false,
         "card_grid_flex": false,
-        "customCardStyles": false,
-        "customBackgroundLink": "",
-        "customBackgroundScale": 100,
-        "customBackgroundDaily": false,
-        "customBackgroundNasaDaily": false,
-        "fitImageToScreen": false,
     }
 };
 
@@ -336,31 +315,6 @@ function setupSidebarScaleSlider(initial) {
     });
 }
 
-// Generic range slider (0..max). `key` is the storage id, `valueId` is the
-// <span> that shows the live value, `resetId` is the small reset button that
-// restores `defaultValue`. `unit` is appended to the displayed value ("%" or "px").
-function setupRangeSlider(key, sliderId, valueId, resetId, defaultValue, max, unit, initial) {
-    const el = document.querySelector("#" + sliderId);
-    const out = document.querySelector("#" + valueId);
-    if (!el || !out) return;
-    const value = Math.max(0, Math.min(max, parseInt(initial)));
-    if (isNaN(value)) return;
-    el.value = value;
-    out.textContent = `${value}${unit}`;
-    el.addEventListener("input", function () {
-        out.textContent = `${this.value}${unit}`;
-        chrome.storage.sync.set({ [key]: parseInt(this.value) });
-    });
-    const reset = document.querySelector("#" + resetId);
-    if (reset) {
-        reset.addEventListener("click", () => {
-            const v = Math.max(0, Math.min(max, parseInt(defaultValue)));
-            el.value = v;
-            out.textContent = `${v}${unit}`;
-            chrome.storage.sync.set({ [key]: v });
-        });
-    }
-}
 
 // Progress display dropdown. Normalizes legacy boolean values:
 // true -> rings, false/undefined -> none.
@@ -644,101 +598,7 @@ function updateCardGridPreview() {
     });
 }
 
-function setupCustomBackgroundLink(initial) {
-    let el = document.querySelector("#customBackgroundLink");
-    el.value = initial || "";
-    toggleOpacityOptions();
-    el.addEventListener("input", (e) => {
-        chrome.storage.sync.set({ "customBackgroundLink": e.target.value });
-        renderBackgroundPresetSelection();
-        toggleOpacityOptions();
-    });
-}
 
-function setupCustomBackgroundScale(initial) {
-    const el = document.querySelector("#customBackgroundScale");
-    const output = document.querySelector("#customBackgroundScaleValue");
-    if (!el || !output) return;
-    const value = Number(initial) || 100;
-    el.value = value;
-    output.textContent = `${value}%`;
-    el.addEventListener("input", (e) => {
-        const nextValue = parseInt(e.target.value);
-        output.textContent = `${nextValue}%`;
-        chrome.storage.sync.set({ "customBackgroundScale": nextValue });
-        renderBackgroundPresetSelection();
-    });
-}
-
-function getDailyBackgroundPreset() {
-    if (typeof backgroundPresets === "undefined" || !Array.isArray(backgroundPresets) || backgroundPresets.length === 0) {
-        return null;
-    }
-
-    const today = new Date();
-    const dayNumber = Math.floor(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000);
-    return backgroundPresets[Math.abs(dayNumber) % backgroundPresets.length];
-}
-
-function syncCustomBackgroundDailyState(isDaily) {
-    const manualControls = document.getElementById("customBackgroundManualControls");
-    if (manualControls) {
-        manualControls.style.opacity = isDaily ? "0.45" : "1";
-        manualControls.style.pointerEvents = isDaily ? "none" : "auto";
-        manualControls.style.filter = isDaily ? "grayscale(1)" : "none";
-    }
-
-    ["customBackgroundLink", "customBackgroundScale", "clearCustomBackground"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.disabled = isDaily;
-    });
-
-    document.querySelectorAll(".background-preset-card").forEach(button => {
-        button.disabled = isDaily;
-    });
-
-    renderBackgroundPresetSelection();
-}
-
-function renderBackgroundPresetSelection() {
-    const isDaily = document.querySelector("#customBackgroundDaily")?.checked === true || document.querySelector("#customBackgroundNasaDaily")?.checked === true;
-    const dailyPreset = isDaily ? getDailyBackgroundPreset() : null;
-    const currentLink = isDaily ? (dailyPreset?.url || "") : (document.querySelector("#customBackgroundLink")?.value || "");
-    const currentScale = isDaily ? String(dailyPreset?.scale || "100") : String(document.querySelector("#customBackgroundScale")?.value || "100");
-    document.querySelectorAll(".background-preset-card").forEach(button => {
-        const matchesLink = button.dataset.backgroundUrl === currentLink;
-        const matchesScale = button.dataset.backgroundScale === currentScale;
-        button.classList.toggle("selected", matchesLink && matchesScale);
-    });
-}
-
-function displayBackgroundPresets() {
-    const container = document.querySelector("#background-presets");
-    if (!container || container.dataset.rendered === "true" || typeof backgroundPresets === "undefined") return;
-    container.dataset.rendered = "true";
-    container.innerHTML = backgroundPresets.map(preset => `
-        <button type="button" class="theme-button customization-button background-preset-card" data-background-url="${preset.url}" data-background-scale="${preset.scale}" style="background-image: linear-gradient(rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.42)), url('${preset.url}');">
-            <p class="theme-button-title">${preset.title}</p>
-            <p class="theme-button-creator">${preset.credit}</p>
-            <p class="background-preset-scale">Scale ${preset.scale}%</p>
-        </button>
-    `).join("");
-
-    container.querySelectorAll(".background-preset-card").forEach(button => {
-        button.addEventListener("click", () => {
-            const backgroundUrl = button.dataset.backgroundUrl;
-            const backgroundScale = parseInt(button.dataset.backgroundScale);
-            document.querySelector("#customBackgroundLink").value = backgroundUrl;
-            document.querySelector("#customBackgroundScale").value = backgroundScale;
-            document.querySelector("#customBackgroundScaleValue").textContent = `${backgroundScale}%`;
-            chrome.storage.sync.set({ "customBackgroundLink": backgroundUrl, "customBackgroundScale": backgroundScale });
-            renderBackgroundPresetSelection();
-            toggleOpacityOptions();
-        });
-    });
-    renderBackgroundPresetSelection();
-    syncCustomBackgroundDailyState(document.querySelector("#customBackgroundDaily")?.checked === true || document.querySelector("#customBackgroundNasaDaily")?.checked === true);
-}
 
 function toggleBetterSidebarSubOptions(betterSidebarOn) {
     const remlogoEl = document.getElementById("remlogo");
@@ -751,31 +611,6 @@ function toggleBetterSidebarSubOptions(betterSidebarOn) {
     }
 }
 
-// The opacity sliders live under "Edit dark mode" but only make sense (and
-// only show) when a custom background is active, since transparency without a
-// background image behind these surfaces would just expose the dark body.
-function customBackgroundActive() {
-    const link = document.querySelector("#customBackgroundLink");
-    const daily = document.querySelector("#customBackgroundDaily");
-    const nasa = document.querySelector("#customBackgroundNasaDaily");
-    return (link && link.value.trim() !== "") || (daily && daily.checked) || (nasa && nasa.checked);
-}
-
-function toggleOpacityOptions() {
-    const el = document.getElementById("opacity-options");
-    if (el) el.style.display = customBackgroundActive() ? "" : "none";
-    toggleCardTransparencyOptions();
-}
-
-// Card opacity/blur sliders only show when both a custom background is active
-// (so #opacity-options is visible) and the "Card transparency" checkbox is on.
-function toggleCardTransparencyOptions() {
-    const on = document.getElementById("card_transparency")?.checked === true;
-    const opacityRow = document.getElementById("card-transparency-options");
-    const blurRow = document.getElementById("card-transparency-blur-row");
-    if (opacityRow) opacityRow.style.display = on ? "" : "none";
-    if (blurRow) blurRow.style.display = on ? "" : "none";
-}
 
 // "Alternate colors" (Better Todo List sub-option) only makes sense in light
 // mode, so hide its checkbox whenever dark mode is on.
@@ -930,7 +765,7 @@ function setupFeatureSearch(menu) {
             index.push(entry);
         }
 
-        // Big section buttons (Edit Dark Mode, Cards, Themes, Styles, GPA Settings, Report issue)
+        // Big section buttons (Edit Dark Mode, Cards, Themes, GPA Settings, Report issue)
         document.querySelectorAll(".more-options-container .tab-btn").forEach(btn => {
             const span = btn.querySelector("span");
             add({ key: "tab:" + btn.id, text: span ? span.textContent.trim() : "", el: btn, action: () => openTab(btn.id) });
@@ -963,7 +798,7 @@ function setupFeatureSearch(menu) {
             add({ key: "custom:customDomain", text: label ? label.textContent.trim() : "Canvas URL", el: wrap || customDomain, action: () => goToMainElement(wrap || customDomain) });
         }
 
-        // Tabs: section headings (e.g. "Presets", "Custom styles", "Popular Palettes", "Custom Background")
+        // Tabs: section headings (e.g. "Presets", "Popular Palettes", "Card Grid")
         document.querySelectorAll(".tab .header-small").forEach(h => {
             if (shouldSkip(h)) return;
             const text = h.textContent.trim();
@@ -972,7 +807,7 @@ function setupFeatureSearch(menu) {
             add({ key: "heading:" + (btnId || "?") + ":" + text, text, el: h, action: () => goToTabElement(h) });
         });
 
-        // Tabs: checkbox sub-options (e.g. "Daily Random Image", "Custom Card Styles")
+        // Tabs: checkbox sub-options (e.g. "Center uneven rows", "Flexible grid")
         document.querySelectorAll(".tab .sub-option").forEach(sub => {
             if (shouldSkip(sub)) return;
             const text = labelOf(sub);
@@ -990,18 +825,6 @@ function setupFeatureSearch(menu) {
             add({ key: "color:" + (btnId || "?") + ":" + text, text, el: h, action: () => goToTabElement(h) });
         });
 
-        // Tab: range sliders that live in dedicated rows (Opacity & Blur, Image scale).
-        // These aren't .sub-option, so the generic blocks above miss them.
-        document.querySelectorAll(".tab .opacity-slider-row, .tab .background-scale-row").forEach(row => {
-            if (shouldSkip(row)) return;
-            const label = row.querySelector(".sub-text");
-            const input = row.querySelector("input[type='range']");
-            if (!label || !input) return;
-            const text = label.textContent.trim();
-            if (!text) return;
-            const btnId = tabElToBtnId.get(row.closest(".tab"));
-            add({ key: "slider:" + (btnId || "?") + ":" + (input.id || text), text, el: row, action: () => goToTabElement(row) });
-        });
 
         // Tab: preset buttons (dark mode presets + popular color palettes).
         document.querySelectorAll(".tab .preset-button").forEach(btn => {
@@ -1013,7 +836,7 @@ function setupFeatureSearch(menu) {
         });
 
         // Tab: standalone action buttons with distinct labels (GPA scale presets, revert colors).
-        ["gpa-plus-minus", "gpa-by-letter", "revert-colors", "clearCustomBackground"].forEach(id => {
+        ["gpa-plus-minus", "gpa-by-letter", "revert-colors"].forEach(id => {
             const btn = document.getElementById(id);
             if (!btn || shouldSkip(btn)) return;
             const text = btn.textContent.trim();
@@ -1165,7 +988,6 @@ function setup() {
 			"gpa_calc_prepend",
 			"auto_dark",
 			"assignment_date_format",
-			"custom_font_skip_p",
 			"todo_hr24",
 			"todo_separate_scrollbar",
 			"todo_alternate_colors",
@@ -1178,11 +1000,6 @@ function setup() {
 			"hide_course_images",
 			// "hide_completed",
 			"hover_preview",
-            "customBackgroundDaily",
-            "customBackgroundNasaDaily",
-            "fitImageToScreen",
-            "card_transparency",
-			"customCardStyles",
 			"card_grid",
 			"card_grid_center_rows",
 			"card_grid_flex",
@@ -1196,10 +1013,6 @@ function setup() {
 			"gpa-bounds-btn": {
 				setup: displayGPABounds,
 				tab: ".gpa-bounds-container",
-			},
-			"custom-font-btn": {
-				setup: displayCustomFont,
-				tab: ".custom-font-container",
 			},
 			"card-colors-btn": { setup: null, tab: ".card-colors-container" },
 			"customize-dark-btn": {
@@ -1239,30 +1052,7 @@ function setup() {
                 identifier: "sidebar_scale",
                 setup: (initial) => setupSidebarScaleSlider(initial),
             },
-            {
-                identifier: "bg_opacity",
-                setup: (initial) => setupRangeSlider("bg_opacity", "bgOpacitySlider", "bgOpacityValue", "bgOpacityReset", 65, 100, "%", initial),
-            },
-            {
-                identifier: "sidebar_opacity",
-                setup: (initial) => setupRangeSlider("sidebar_opacity", "sidebarOpacitySlider", "sidebarOpacityValue", "sidebarOpacityReset", 100, 100, "%", initial),
-            },
-            {
-                identifier: "bg_blur",
-                setup: (initial) => setupRangeSlider("bg_blur", "bgBlurSlider", "bgBlurValue", "bgBlurReset", 8, 30, "px", initial),
-            },
-            {
-                identifier: "sidebar_blur",
-                setup: (initial) => setupRangeSlider("sidebar_blur", "sidebarBlurSlider", "sidebarBlurValue", "sidebarBlurReset", 0, 30, "px", initial),
-            },
-            {
-                identifier: "card_opacity",
-                setup: (initial) => setupRangeSlider("card_opacity", "cardOpacitySlider", "cardOpacityValue", "cardOpacityReset", 80, 100, "%", initial),
-            },
-            {
-                identifier: "card_blur",
-                setup: (initial) => setupRangeSlider("card_blur", "cardBlurSlider", "cardBlurValue", "cardBlurReset", 8, 30, "px", initial),
-            },
+
 			{
 				identifier: "card_limit",
 				setup: (initial) => setupCardLimitSlider(initial),
@@ -1271,10 +1061,7 @@ function setup() {
 				identifier: "card_method_dashboard",
 				setup: (initial) => setupDashboardMethod(initial),
 			},
-			{
-				identifier: "custom_styles",
-				setup: (initial) => setupCustomStyle(initial),
-			},
+
 			{
 				identifier: "imageSize",
 				setup: (initial) => setupImageSizeInput(initial),
@@ -1323,14 +1110,7 @@ function setup() {
 				identifier: "card_grid_row_gap",
 				setup: (initial) => setupCardGridCountInput("card_grid_row_gap", initial, 0),
 			},
-			{
-				identifier: "customBackgroundLink",
-				setup: (initial) => setupCustomBackgroundLink(initial),
-			},
-            {
-                identifier: "customBackgroundScale",
-                setup: (initial) => setupCustomBackgroundScale(initial),
-            },
+
 			{
 				identifier: "todo_progress_rings",
 				setup: (initial) => setupProgressRingsSelect(initial),
@@ -1393,25 +1173,12 @@ function setup() {
 			if (!checkbox) {console.log(option); return;}
             checkbox.addEventListener("change", function (e) {
                 let status = this.checked;
-                if (option === "customBackgroundDaily" && status) {
-                    document.querySelector("#customBackgroundNasaDaily").checked = false;
-                    chrome.storage.sync.set({ "customBackgroundDaily": true, "customBackgroundNasaDaily": false });
-                } else if (option === "customBackgroundNasaDaily" && status) {
-                    document.querySelector("#customBackgroundDaily").checked = false;
-                    chrome.storage.sync.set({ "customBackgroundNasaDaily": true, "customBackgroundDaily": false });
-                } else {
-                    chrome.storage.sync.set(JSON.parse(`{"${option}": ${status}}`));
-                }
-                syncCustomBackgroundDailyState(document.querySelector("#customBackgroundDaily")?.checked === true || document.querySelector("#customBackgroundNasaDaily")?.checked === true);
-                toggleOpacityOptions();
+                chrome.storage.sync.set(JSON.parse(`{"${option}": ${status}}`));
             });
             const value = sync[option] !== undefined ? sync[option] : defaultOptions.sync[option];
             document.querySelector("#" + option).checked = value;
         });
-        syncCustomBackgroundDailyState(sync.customBackgroundDaily === true || sync.customBackgroundNasaDaily === true);
         toggleDarkModeDisable(sync.auto_dark);
-        displayBackgroundPresets();
-        toggleOpacityOptions();
     });
 
     const specialOptions = menu.special.map(obj => obj.identifier);
@@ -1703,7 +1470,7 @@ function setup() {
     // activate export checkbox
     document.querySelectorAll(".export-details input").forEach(input => {
         input.addEventListener("change", () => {
-            chrome.storage.sync.get(syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "custom_font", "gpa_calc_bounds", "custom_styles"]), async storage => {
+            chrome.storage.sync.get(syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "gpa_calc_bounds"]), async storage => {
                 let final = {};
                 for await (item of document.querySelectorAll(".export-details input")) {
                     if (item.checked) {
@@ -1726,21 +1493,7 @@ function setup() {
                             case "export-card-styles":
                                 final = { ...final, ...(await getExport(storage, exportCardStyles)) };
                                 break;
-                            case "export-customStyles": {
-                                // custom_styles is stored in storage.local
-                                // (see setupCustomStyle); fall back to the
-                                // legacy sync value for pre-migration themes.
-                                const localStyles = await chrome.storage.local.get("custom_styles");
-                                const styleSource = localStyles && localStyles["custom_styles"] !== undefined ? localStyles : storage;
-                                final = { ...final, ...(await getExport(styleSource, ["custom_styles"])) };
-                                break;
-                            }
-                            case "export-font":
-                                final = { ...final, ...(await getExport(storage, ["custom_font", "custom_font_skip_p"])) };
-                                break;
-                            case "export-background":
-                                final = { ...final, ...(await getExport(storage, exportBackground)) };
-                                break;
+
                             case "export-todo":
                                 final = { ...final, ...(await getExport(storage, exportTodo)) };
                                 break;
@@ -1975,67 +1728,11 @@ function setup() {
     // #*Value spans (threw on every input) and double-wrote to storage, which
     // is what blew the sync write quota when adjusting card styles quickly.
 
-    document.getElementById("clearCustomBackground").addEventListener("click", () => {
-                chrome.storage.sync.set({ "customBackgroundLink": "", "customBackgroundScale": 100 });
-        document.querySelector("#customBackgroundLink").value = "";
-		document.querySelector("#customBackgroundScale").value = 100;
-		document.querySelector("#customBackgroundScaleValue").textContent = "100%";
-		renderBackgroundPresetSelection();
-		sendFromPopup("updateBackground");
-        toggleOpacityOptions();
-    });
-
-    const applyFontsDropdownState = (isOpen) => {
-        const el = document.getElementById("quick-fonts");
-        const el2 = document.getElementsByClassName("custom-font")[0];
-        const arrow = document.getElementById("fontsDropdownArrow");
-        if (!el || !el2 || !arrow) return;
-        el.style.display = isOpen ? "flex" : "none";
-        el2.style.display = isOpen ? "block" : "none";
-        arrow.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
-    };
-
-    chrome.storage.local.get([fontsDropdownStateKey], (storage) => {
-        const isOpen = storage[fontsDropdownStateKey] !== false;
-        applyFontsDropdownState(isOpen);
-    });
-
-    document.getElementById("fontsDropdown").addEventListener("click", () => {
-        const el = document.getElementById("quick-fonts");
-        const el2 = document.getElementsByClassName("custom-font")[0];
-        if (!el || !el2) return;
-        const isCurrentlyOpen = getComputedStyle(el).display !== "none" && getComputedStyle(el2).display !== "none";
-        const nextOpen = !isCurrentlyOpen;
-        applyFontsDropdownState(nextOpen);
-        chrome.storage.local.set({ [fontsDropdownStateKey]: nextOpen });
-    });
-
-    // The "Keep original assignment font" toggle sits inline in the dropdown
-    // header; clicking it must not also collapse/expand the font dropdown.
-    const skipPToggle = document.getElementById("custom_font_skip_p");
-    if (skipPToggle) {
-        skipPToggle.closest("span").addEventListener("click", (e) => e.stopPropagation());
-    }
-
 }
 
 function applyGPAPreset(bounds) {
     chrome.storage.sync.set({ "gpa_calc_bounds": bounds }, () => {
         displayGPABounds();
-    });
-}
-
-function setupCustomStyle(initial) {
-    const el = document.getElementById("custom-styles");
-    // Custom CSS lives in storage.local (unlimitedStorage) — storage.sync's
-    // 8KB per-item quota silently dropped long stylesheets. `initial` is the
-    // legacy sync value, used until the user saves again (migrated to local
-    // on first save; content.js also self-migrates on page load).
-    chrome.storage.local.get("custom_styles", local => {
-        el.value = local && local["custom_styles"] !== undefined ? local["custom_styles"] : (initial || "");
-    });
-    el.addEventListener("change", (e) => {
-        chrome.storage.local.set({ "custom_styles": e.target.value });
     });
 }
 
@@ -2068,9 +1765,7 @@ async function getExport(storage, options) {
                     console.log(e);
                 }
                 break;
-			case "custom_styles":
-				final["custom_styles"] = storage["custom_styles"];
-				break;
+
             default:
                 final[option] = storage[option];
         }
@@ -2174,12 +1869,9 @@ let fallback = false;
 
 
 function saveCurrentTheme() {
-    const allOptions = syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "custom_font", "gpa_calc_bounds", "card_colors", "custom_styles"]);
-    chrome.storage.local.get(["saved_themes", "custom_styles"], local => {
+    const allOptions = syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "gpa_calc_bounds", "card_colors"]);
+    chrome.storage.local.get(["saved_themes"], local => {
         chrome.storage.sync.get(allOptions, async sync => {
-            // custom_styles is stored in storage.local (sync's 8KB per-item
-            // quota drops long stylesheets); merge it over the legacy sync one.
-            if (local["custom_styles"] !== undefined) sync["custom_styles"] = local["custom_styles"];
             let current = await getExport(sync, allOptions);
             let trimmed = { 
                 "disable_color_overlay": current["disable_color_overlay"], 
@@ -2188,8 +1880,6 @@ function saveCurrentTheme() {
                 "dark_preset": current["dark_preset"],
                 "custom_cards": current["custom_cards"],
                 "card_colors": current["card_colors"] === null ? [current["dark_preset"]["links"]] : current["card_colors"],
-                "custom_font": current["custom_font"],
-                "custom_font_skip_p": current["custom_font_skip_p"],
                 "better_todo": current["better_todo"],
                 "todo_hide_feedback": current["todo_hide_feedback"],
                 "todo_hide_read": current["todo_hide_read"] !== false,
@@ -2220,17 +1910,6 @@ function saveCurrentTheme() {
 				"card_grid_column_gap": current["card_grid_column_gap"],
 				"card_grid_row_gap": current["card_grid_row_gap"],
 				"card_grid_center_rows": current["card_grid_center_rows"],
-				"custom_styles": current["custom_styles"],
-				"customCardStyles": current["customCardStyles"],
-				"customBackgroundLink": current["customBackgroundLink"],
-				"customBackgroundScale": current["customBackgroundScale"],
-				"customBackgroundDaily": current["customBackgroundDaily"],
-				"customBackgroundNasaDaily": current["customBackgroundNasaDaily"],
-				"fitImageToScreen": current["fitImageToScreen"],
-				"bg_opacity": current["bg_opacity"],
-				"sidebar_opacity": current["sidebar_opacity"],
-				"bg_blur": current["bg_blur"],
-				"sidebar_blur": current["sidebar_blur"],
             }
             const now = new Date();
             local["saved_themes"][now.getTime()] = trimmed;
@@ -2270,13 +1949,10 @@ function displayThemeSearchList(themesToShow, pageDir = 0) {
             makeElement("p", themeBtn, {"className": "theme-button-title", "textContent":  split[0] });
             makeElement("p", themeBtn, {"className": "theme-button-creator", "textContent": split[1] });
             themeBtn.addEventListener("click", () => {
-                const allOptions = syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "custom_font", "gpa_calc_bounds", "card_colors", "custom_styles"]);
+                const allOptions = syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "gpa_calc_bounds", "card_colors"]);
                 chrome.storage.sync.get(allOptions, sync => {
-                    chrome.storage.local.get(["previous_theme", "custom_styles"], async local => {
+                    chrome.storage.local.get(["previous_theme"], async local => {
                         if (local["previous_theme"] === null) {
-                            // custom_styles is stored in storage.local; merge it
-                            // in so saved themes keep the user's CSS.
-                            if (local["custom_styles"] !== undefined) sync["custom_styles"] = local["custom_styles"];
                             let previous = await getExport(sync, allOptions);
                             chrome.storage.local.set({ "previous_theme": previous });
                         }
@@ -2348,7 +2024,7 @@ function getTheme(name) {
 
 function importTheme(theme) {
     try {
-        let keys = Object.keys(theme);
+        let keys = Object.keys(theme).filter(key => !removedStyleOptions.has(key));
         let final = {};
         let localFinal = null;
         chrome.storage.sync.get("custom_cards", sync => {
@@ -2382,14 +2058,7 @@ function importTheme(theme) {
                         break;
                 }
             });
-            // custom_styles must go to storage.local — sync's 8KB per-item
-            // quota rejects (or truncates) large stylesheets from themes.
-            if (Object.prototype.hasOwnProperty.call(final, "custom_styles")) {
-                localFinal = { "custom_styles": final["custom_styles"] };
-                delete final["custom_styles"];
-            }
             chrome.storage.sync.set(final);
-            if (localFinal) chrome.storage.local.set(localFinal);
         });
     } catch (e) {
         console.log(e);
@@ -2406,41 +2075,6 @@ function updateCards(key, value) {
     });
 }
 
-function displayCustomFont() {
-    chrome.storage.sync.get(["custom_font"], storage => {
-        let el = document.querySelector(".custom-font");
-        let linkContainer = document.querySelector(".custom-font-flex") || makeElement("div", el, {"className": "custom-font-flex" });
-        linkContainer.innerHTML = '<span>https://fonts.googleapis.com/css2?family=</span><input class="card-input" id="custom-font-link"></input>';
-        let link = linkContainer.querySelector("#custom-font-link");
-        link.value = storage.custom_font.link;
-
-        link.addEventListener("change", function (e) {
-            let linkVal = e.target.value.split(":")[0];
-            let familyVal = linkVal.replace("+", " ");
-            linkVal += linkVal === "" ? "" : ":wght@400;700";
-            familyVal = linkVal === "" ? "" : "'" + familyVal + "'";
-            chrome.storage.sync.set({ "custom_font": { "link": linkVal, "family": familyVal } });
-            link.value = linkVal;
-        });
-
-        const popularFonts = ["Arimo", "Barriecito", "Barlow", "Caveat", "Cinzel", "Comfortaa", "Corben", "DM Sans", "Expletus Sans", "Gluten", "Happy Monkey", "Inconsolata", "Inria Sans", "Jost", "Kanit", "Karla", "Kode Mono", "Lobster", "Lora", "Madimi One", "Mali", "Montserrat", "Nanum Myeongjo", "Open Sans", "Oswald", "Permanent Marker", "Playfair Display", "Poetsen One", "Poppins", "Quicksand", "Rakkas", "Redacted Script", "Roboto Mono", "Rubik", "Silkscreen", "Sixtyfour", "Syne Mono", "Tektur", "Texturina", "Ysabeau Infant", "Yuji Syuku"];
-        let quickFonts = document.querySelector("#quick-fonts");
-        quickFonts.textContent = "";
-        let noFont = makeElement("button", quickFonts, { "className": "customization-button", "textContent": "None" });
-        noFont.addEventListener("click", () => {
-            chrome.storage.sync.set({ "custom_font": { "link": "", "family": "" } });
-            link.value = "";
-        })
-        popularFonts.forEach(font => {
-            let btn = makeElement("button", quickFonts, { "className":"customization-button", "textContent": font });
-            btn.addEventListener("click", () => {
-                let linkVal = font.replace(" ", "+") + ":wght@400;700";
-                chrome.storage.sync.set({ "custom_font": { "link": linkVal, "family": "'" + font + "'" } });
-                link.value = linkVal;
-            });
-        });
-    });
-}
 
 function displayGPABounds() {
     chrome.storage.sync.get(["gpa_calc_bounds"], storage => {

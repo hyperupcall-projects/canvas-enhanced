@@ -48,10 +48,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 21v-4a4 4 0 1 1 4 4h-4"></path><path d="M21 3a16 16 0 0 0 -12.8 10.2"></path><path d="M21 3a16 16 0 0 1 -10.2 12.8"></path><path d="M10.6 9a9 9 0 0 1 4.4 4.4"></path></svg>
                     <span data-i18n="themes">Themes</span>
                 </button>
-                <button id="custom-font-btn" class="big-button tab-btn">
-                    <svg width="15px" height="15px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M15.5 8.5H15.51M10.5 7.5H10.51M7.5 11.5H7.51M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 13.6569 19.6569 15 18 15H17.4C17.0284 15 16.8426 15 16.6871 15.0246C15.8313 15.1602 15.1602 15.8313 15.0246 16.6871C15 16.8426 15 17.0284 15 17.4V18C15 19.6569 13.6569 21 12 21ZM16 8.5C16 8.77614 15.7761 9 15.5 9C15.2239 9 15 8.77614 15 8.5C15 8.22386 15.2239 8 15.5 8C15.7761 8 16 8.22386 16 8.5ZM11 7.5C11 7.77614 10.7761 8 10.5 8C10.2239 8 10 7.77614 10 7.5C10 7.22386 10.2239 7 10.5 7C10.7761 7 11 7.22386 11 7.5ZM8 11.5C8 11.7761 7.77614 12 7.5 12C7.22386 12 7 11.7761 7 11.5C7 11.2239 7.22386 11 7.5 11C7.77614 11 8 11.2239 8 11.5Z" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-                    <span data-i18n="styles">Styles</span>
-                </button>
+
                 <button id="gpa-bounds-btn" class="big-button tab-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6"></path><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4"></path></svg>
                     <span data-i18n="gpa_settings">GPA Settings</span>
@@ -633,10 +630,6 @@
                         <span>Card styles</span>
                     </div>
                     <div class="sub-option">
-                        <input type="checkbox" id="export-font" />
-                        <span>Custom font</span>
-                    </div>
-                    <div class="sub-option">
                         <input type="checkbox" id="export-toggles" />
                         <span>On/off toggles</span>
                     </div>
@@ -647,14 +640,6 @@
                     <div class="sub-option">
                         <input type="checkbox" id="export-gpa" />
                         <span>GPA settings</span>
-                    </div>
-					<div class="sub-option">
-                        <input type="checkbox" id="export-customStyles" />
-                        <span>Custom CSS</span>
-                    </div>
-					<div class="sub-option">
-                        <input type="checkbox" id="export-background" />
-                        <span>Background &amp; opacity</span>
                     </div>
                 </div>
                 <div style="flex: 1">
@@ -819,11 +804,6 @@
                 </div>
             </div>
             <div class="option-container">
-                <h3 class="header-small">Custom styles</h3>
-                <p style="color:#a4a4a4">You can use this area to write custom CSS styles. You may need to add an !important rule to force them to take effect.</p>
-                <textarea id="custom-styles" class="card-input"></textarea>
-            </div>
-            <div class="option-container">
                 <h3 class="header-small" data-i18n="dark_mode_fixer">Dark mode fixer (beta)</h3>
                 <div style="display: flex; gap: 10px;align-items: center">
                     <button id="fix-dm-btn" class="big-button" data-i18n="fix_dm_btn">Go</button>
@@ -911,13 +891,6 @@
 
         <div class="option-container">
             <h3 class="header-small">More Card Styles</h3>
-
-            <div class="sub-options">
-                <div class="sub-option" style="margin-top:5px">
-                    <input type="checkbox" id="customCardStyles" name="customCardStyles">
-                    <label for="customCardStyles" class="sub-text">Custom Card Styles</label>
-                </div>
-            </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="sub-option">
@@ -1120,130 +1093,6 @@
         </div>
     </div>
 
-    <div class="custom-font-container tab" style="display:none">
-        <!-- TODO: make this a dropdown -->
-        <div class="tab-header">
-            <div>
-                <h2 style="margin-top: 0" data-i18n="styles">Styles</h2>
-            </div>
-            <button class="big-button back-btn" data-i18n="back">Back</button>
-        </div>
-        <div class="option-container">
-            <h3 class="header-small" id="fontsDropdown" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
-                Dashboard Font
-                <img id="fontsDropdownArrow" style="transform:rotate(180deg);" src="../icon/dropdownArrow.svg" width="16px" height="16px">
-                <span style="margin-left:auto; display:flex; align-items:center; gap:6px; cursor:pointer;">
-                    <input type="checkbox" id="custom_font_skip_p" name="custom_font_skip_p">
-                    <label for="custom_font_skip_p" class="sub-text" style="cursor:pointer;">Keep original assignment font</label>
-                </span>
-            </h3>
-            
-            <div id="quick-fonts"></div>
-
-            <div style="margin-top:10px;" class="custom-font">
-                <h3 class="header-small">Custom Fonts</h3>
-                <p>You can use a custom font from Google fonts here. Make sure to enter only the bold part after "?family="
-                </p>
-            </div>
-        </div>
-        <div class="custom-font option-container">
-            <h3 class="header-small">Custom Background</h3>
-            <p>Pick a preset or use your own image url.</p>
-            <div id="customBackgroundManualControls">
-                <div class="background-preset-grid" id="background-presets"></div>
-                <div class="background-scale-row">
-                    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;">
-                        <span class="sub-text" style="font-weight:600; color:#e2e2e2;">Image scale</span>
-                        <span class="sub-text" id="customBackgroundScaleValue">100%</span>
-                    </div>
-                    <input type="range" min="50" max="200" step="1" id="customBackgroundScale">
-                </div>
-                <input style="width:85%;" class="card-input" id="customBackgroundLink" placeholder="https://...">
-                <button id="clearCustomBackground" class="big-button" style="margin-top: 8px;">Clear Background</button>
-            </div>
-            <div class="sub-option" style="margin-top:10px;">
-                <input type="checkbox" id="customBackgroundDaily" name="customBackgroundDaily">
-                <label for="customBackgroundDaily" class="sub-text">Daily Random Image</label>
-            </div>
-            <div class="sub-option" style="margin-top:6px;">
-                <input type="checkbox" id="customBackgroundNasaDaily" name="customBackgroundNasaDaily">
-                <label for="customBackgroundNasaDaily" class="sub-text">NASA Astronomy Picture of the Day</label>
-            </div>
-            <div class="sub-option" style="margin-top:8px;">
-                <input type="checkbox" id="fitImageToScreen" name="fitImageToScreen">
-                <label for="fitImageToScreen" class="sub-text">Fit image to screen</label>
-            </div>
-            <div class="sub-option" style="margin-top:8px;">
-                <input type="checkbox" id="card_transparency" name="card_transparency">
-                <label for="card_transparency" class="sub-text" data-i18n="card_transparency">Card transparency</label>
-            </div>
-        </div>
-        <div class="option-container" id="opacity-options" style="display:none;">
-            <h3 class="header-small" data-i18n="opacity_options">Opacity &amp; Blur</h3>
-            <p class="sub-text" style="color:#a4a4a4;margin:4px 0 8px;" data-i18n="opacity_only_background">Only available with a custom background.</p>
-            <div class="opacity-slider-row">
-                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:6px;">
-                    <span class="sub-text" style="font-weight:600;color:#e2e2e2;" data-i18n="background_opacity">Background opacity</span>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <button class="opacity-reset-btn" id="bgOpacityReset" type="button" title="Reset to default" data-i18n-title="reset_default"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
-                        <span class="sub-text" id="bgOpacityValue">65%</span>
-                    </div>
-                </div>
-                <input type="range" min="0" max="100" step="1" id="bgOpacitySlider">
-            </div>
-            <div class="opacity-slider-row">
-                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;">
-                    <span class="sub-text" style="font-weight:600;color:#e2e2e2;" data-i18n="bg_blur">Background blur</span>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <button class="opacity-reset-btn" id="bgBlurReset" type="button" title="Reset to default" data-i18n-title="reset_default"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
-                        <span class="sub-text" id="bgBlurValue">8px</span>
-                    </div>
-                </div>
-                <input type="range" min="0" max="30" step="1" id="bgBlurSlider">
-            </div>
-            <div class="opacity-slider-row">
-                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;">
-                    <span class="sub-text" style="font-weight:600;color:#e2e2e2;" data-i18n="sidebar_opacity">Sidebar opacity</span>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <button class="opacity-reset-btn" id="sidebarOpacityReset" type="button" title="Reset to default" data-i18n-title="reset_default"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
-                        <span class="sub-text" id="sidebarOpacityValue">100%</span>
-                    </div>
-                </div>
-                <input type="range" min="0" max="100" step="1" id="sidebarOpacitySlider">
-            </div>
-            <div class="opacity-slider-row">
-                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;">
-                    <span class="sub-text" style="font-weight:600;color:#e2e2e2;" data-i18n="sidebar_blur">Sidebar blur</span>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <button class="opacity-reset-btn" id="sidebarBlurReset" type="button" title="Reset to default" data-i18n-title="reset_default"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
-                        <span class="sub-text" id="sidebarBlurValue">0px</span>
-                    </div>
-                </div>
-                <input type="range" min="0" max="30" step="1" id="sidebarBlurSlider">
-            </div>
-            <div class="opacity-slider-row" id="card-transparency-options" style="display:none;">
-                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;">
-                    <span class="sub-text" style="font-weight:600;color:#e2e2e2;" data-i18n="card_opacity">Card opacity</span>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <button class="opacity-reset-btn" id="cardOpacityReset" type="button" title="Reset to default" data-i18n-title="reset_default"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
-                        <span class="sub-text" id="cardOpacityValue">80%</span>
-                    </div>
-                </div>
-                <input type="range" min="0" max="100" step="1" id="cardOpacitySlider">
-            </div>
-            <div class="opacity-slider-row" id="card-transparency-blur-row" style="display:none;">
-                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;">
-                    <span class="sub-text" style="font-weight:600;color:#e2e2e2;" data-i18n="card_blur">Card blur</span>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <button class="opacity-reset-btn" id="cardBlurReset" type="button" title="Reset to default" data-i18n-title="reset_default"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
-                        <span class="sub-text" id="cardBlurValue">8px</span>
-                    </div>
-                </div>
-                <input type="range" min="0" max="30" step="1" id="cardBlurSlider">
-            </div>
-        </div>
-
-    </div>
 
     <div class="report-issue-container tab">
         <div class="tab-header">
@@ -1350,7 +1199,6 @@
     </div>
 
     <script type="text/javascript" src="../js/themes.js"></script>
-    <script type="text/javascript" src="../js/backgrounds.js"></script>
     <script type="text/javascript" src="../js/popup.js"></script>
 
 </body>

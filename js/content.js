@@ -415,158 +415,8 @@ function watchNewCanvasButton() {
     newCanvasButtonObserver.observe(document.documentElement, { childList: true, subtree: true });
 }
 
-async function getActiveCustomBackground() {
-    const syncOpts = await chrome.storage.sync.get([
-        "customBackgroundDaily",
-        "customBackgroundNasaDaily",
-        "customBackgroundLink",
-        "customBackgroundScale",
-    ]);
-
-    if (syncOpts.customBackgroundNasaDaily === true) {
-        return await getNasaDailyBackground();
-    }
-
-    if (syncOpts.customBackgroundDaily === true) {
-        const dailyPreset = await getDailyBackgroundPreset();
-        if (dailyPreset) {
-            return {
-                url: dailyPreset.url,
-                scale: dailyPreset.scale,
-            };
-        }
-    }
-
-    if (syncOpts.customBackgroundLink && syncOpts.customBackgroundLink !== "") {
-        return {
-            url: syncOpts.customBackgroundLink,
-            scale: syncOpts.customBackgroundScale || 100,
-        };
-    }
-
-    return null;
-}
-
-async function getDailyBackgroundPreset() {
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const cacheKey = `picsum_daily_${dateStr}`;
-    const cached = await chrome.storage.local.get(cacheKey);
-    if (cached[cacheKey]) return cached[cacheKey];
-
-    const url = `https://picsum.photos/seed/${dateStr}/1920/1080`;
-    const result = { url, scale: 100 };
-    await chrome.storage.local.set({ [cacheKey]: result });
-    return result;
-}
-
-async function getNasaDailyBackground() {
-    try {
-        return await chrome.runtime.sendMessage({ type: "getNasaBackground" });
-    } catch (error) {
-        console.error("[CanvasRefined] Failed to fetch NASA APOD:", error);
-        return null;
-    }
-}
-
-let nasaInfoOverlayEl = null;
-
 function isDashboardPage() {
     return !!document.querySelector("#DashboardCard_Container");
-}
-
-function createNasaInfoOverlay() {
-    if (options.customBackgroundNasaDaily !== true) return;
-    if (nasaInfoOverlayEl || !isDashboardPage()) return;
-    
-    const contentMain = document.querySelector("#content.ic-Layout-contentMain, .ic-Layout-contentMain");
-    if (!contentMain) return;
-    if (getComputedStyle(contentMain).position === "static") {
-        contentMain.style.position = "relative";
-    }
-
-    nasaInfoOverlayEl = document.createElement("div");
-    nasaInfoOverlayEl.id = "canvasrefined-nasa-info-overlay";
-    nasaInfoOverlayEl.style.cssText = "position:absolute;right:24px;bottom:24px;z-index:9999;";
-    nasaInfoOverlayEl.innerHTML = `
-        <div id="nasa-info-icon" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:rgba(30,30,30,0.85);border:1px solid rgba(255,255,255,0.15);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e2e2e2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-        </div>
-        <div id="nasa-info-panel" style="display:none;position:absolute;bottom:calc(100% + 10px);right:0;background:#1e1e1e;border:1px solid #3c3c3c;border-radius:8px;padding:14px 18px;width:340px;max-width:calc(100vw - 40px);box-shadow:0 4px 16px rgba(0,0,0,0.4);">
-            <div id="nasa-info-title" style="font-weight:600;font-size:14px;margin-bottom:4px;color:#f5f5f5;"></div>
-            <div id="nasa-info-date" style="font-size:12px;color:#ababab;margin-bottom:4px;"></div>
-            <div id="nasa-info-credit" style="font-size:12px;color:#dfa581;margin-bottom:8px;"></div>
-            <div id="nasa-info-explanation" style="font-size:12px;color:#e2e2e2;line-height:1.5;max-height:200px;overflow-y:auto;white-space:pre-wrap;"></div>
-        </div>
-    `;
-    
-    const icon = nasaInfoOverlayEl.querySelector("#nasa-info-icon");
-    const panel = nasaInfoOverlayEl.querySelector("#nasa-info-panel");
-    
-    const populatePanel = async () => {
-        // Search backward up to 7 days for the APOD actually cached, since today's may not be ready.
-        const date = new Date();
-        for (let i = 0; i < 7; i++) {
-            const dateStr = date.toISOString().slice(0, 10);
-            const cacheKey = `nasa_apod_${dateStr}`;
-            const cached = await chrome.storage.local.get(cacheKey);
-            if (!cached[cacheKey]) {
-                date.setDate(date.getDate() - 1);
-                continue;
-            }
-            const metadataKey = `nasa_apod_meta_${dateStr}`;
-            const metadata = await chrome.storage.local.get(metadataKey);
-            const meta = metadata[metadataKey];
-            if (!meta) return false;
-            document.getElementById("nasa-info-title").textContent = meta.title || "";
-            document.getElementById("nasa-info-date").textContent = `Date: ${meta.date}`;
-            document.getElementById("nasa-info-credit").textContent = meta.copyright ? `Credit: ${meta.copyright}` : "";
-            document.getElementById("nasa-info-explanation").textContent = meta.explanation || "No description available.";
-            return true;
-        }
-        return false;
-    };
-
-    let pinned = false;
-
-    const showPanel = async () => {
-        if (pinned) return;
-        if (await populatePanel()) panel.style.display = "block";
-    };
-
-    const hidePanel = () => {
-        if (pinned) return;
-        panel.style.display = "none";
-    };
-
-    const togglePanel = async () => {
-        if (pinned) {
-            pinned = false;
-            panel.style.display = "none";
-        } else {
-            pinned = true;
-            if (await populatePanel()) panel.style.display = "block";
-        }
-    };
-
-    icon.addEventListener("mouseenter", showPanel);
-    icon.addEventListener("mouseleave", hidePanel);
-    panel.addEventListener("mouseenter", showPanel);
-    panel.addEventListener("mouseleave", hidePanel);
-    icon.addEventListener("click", togglePanel);
-    
-    contentMain.appendChild(nasaInfoOverlayEl);
-}
-
-function removeNasaInfoOverlay() {
-    if (nasaInfoOverlayEl) {
-        nasaInfoOverlayEl.remove();
-        nasaInfoOverlayEl = null;
-    }
 }
 
 function getSidebarStateMode(mode = getSidebarLayoutMode()) {
@@ -906,10 +756,7 @@ function startExtension() {
 
     toggleDarkMode();
 
-    // Include bg_opacity/bg_blur so setupBetterSidebar (called below) tints the
-    // course-content panel with the user's slider values on first load, instead
-    // of falling back to the defaults until a slider is touched.
-    chrome.storage.sync.get(["better_sidebar", "sidebar_scale", "bg_opacity", "bg_blur"], result => {
+    chrome.storage.sync.get(["better_sidebar", "sidebar_scale"], result => {
         options = { ...options, ...result };
         ensureBetterSidebar();
     });
@@ -921,12 +768,10 @@ function startExtension() {
         // toggleScheduledReminders();
         getApiData();
         checkDashboardReady();
-        loadCustomFont();
         applyAestheticChanges();
         watchNewCanvasButton();
         changeFavicon();
         updateReminders();
-        applyCustomBackground();
         setupMobileNavStyle();
         ensureBetterSidebar();
         watchSequenceFooter();
@@ -941,27 +786,6 @@ function startExtension() {
         
         setTimeout(() => runDarkModeFixer(false), 800);
         setTimeout(() => runDarkModeFixer(false), 4500);
-    });
-
-    // Custom CSS lives in storage.local (unlimitedStorage) because
-    // storage.sync's 8KB per-item quota silently dropped long stylesheets.
-    // Merge it into options once sync data is in, re-applying styles. If the
-    // user has CSS only in the legacy sync key (pre-migration), copy it over
-    // to local so it keeps working — sync keeps its copy as a rollback-safe
-    // backup until the next popup save.
-    chrome.storage.local.get("custom_styles", local => {
-        if (local && local["custom_styles"] !== undefined) {
-            options = { ...options, custom_styles: local["custom_styles"] };
-            applyAestheticChanges();
-        } else {
-            chrome.storage.sync.get("custom_styles", sync => {
-                if (sync && sync["custom_styles"]) {
-                    chrome.storage.local.set({ custom_styles: sync["custom_styles"] });
-                    options = { ...options, custom_styles: sync["custom_styles"] };
-                    applyAestheticChanges();
-                }
-            });
-        }
     });
 
     chrome.runtime.onMessage.addListener(recieveMessage);
@@ -1117,16 +941,11 @@ function applyOptionsChanges(changes) {
 			case "gpa_calc_bounds":
 				calculateGPA2();
 				break;
-			case "custom_font":
-			case "custom_font_skip_p":
-				loadCustomFont();
-				break;
 			case "remlogo":
 			case "disable_color_overlay":
 			case "condensed_cards":
 			case "full_width":
 			case "center_cards":
-			case "custom_styles":
 			case "hide_navbar":
 				applyAestheticChanges();
 				// Better Sidebar also hides the nav-toggle + breadcrumbs bar with
@@ -1160,24 +979,6 @@ function applyOptionsChanges(changes) {
 					removeGlobalSearch();
 				}
 				break;
-            case "customBackgroundScale":
-                applyCustomBackground();
-                break;
-            case "customBackgroundDaily":
-                applyCustomBackground();
-                removeNasaInfoOverlay();
-                break;
-            case "customBackgroundNasaDaily":
-                applyCustomBackground();
-                if (options.customBackgroundNasaDaily === true) {
-                    createNasaInfoOverlay();
-                } else {
-                    removeNasaInfoOverlay();
-                }
-                break;
-            case "fitImageToScreen":
-                applyCustomBackground();
-                break;
 			case "remind":
 				showExampleReminder();
 				break;
@@ -1195,7 +996,6 @@ function applyOptionsChanges(changes) {
 			case "card_grid_row_gap":
 			case "card_grid_center_rows":
 			case "card_grid_flex":
-			case "customCardStyles":
 				// Coalesce rapid card-style edits (e.g. holding the arrow keys on a
 			// number input) into a single applyAestheticChanges() call. Each
 			// storage onChanged event would otherwise re-run the dashboard style
@@ -1203,27 +1003,6 @@ function applyOptionsChanges(changes) {
 			// the page from thrashing while the user is still adjusting values.
 				debouncedApplyAestheticChanges();
 				break;
-			case "customBackgroundLink":
-				applyCustomBackground();
-				break;
-            case "bg_opacity":
-                applyCustomBackground();
-                applyBetterSidebarContentPanel();
-                break;
-            case "bg_blur":
-                applyCustomBackground();
-                applyBetterSidebarContentPanel();
-                break;
-            case "sidebar_opacity":
-            case "sidebar_blur":
-                applyCustomBackground();
-                setupMobileNavStyle();
-                break;
-            case "card_transparency":
-            case "card_opacity":
-            case "card_blur":
-                applyCustomBackground();
-                break;
 			case "better_todo":
 				if (options.better_todo) {
 					setupBetterTodo();
@@ -1330,443 +1109,6 @@ function ensureBetterSidebar() {
     setupBetterSidebar(getSidebarLayoutMode());
 }
 
-async function applyCustomBackground() {
-    // Quiz safe mode: leave the quiz page background untouched.
-    if (quizSafeModeActive()) return;
-    // let style = document.querySelector("#DashboardCard_Container")
-    let style = document.querySelector("#canvasrefined-background") || document.createElement('style');
-    style.id = "canvasrefined-background";
-
-    const activeBackground = await getActiveCustomBackground();
-    if (!activeBackground) {
-        if (style.isConnected) style.remove();
-        return;
-    }
-
-    const backgroundScale = Number(activeBackground.scale) || 100;
-    const backgroundUrl = JSON.stringify(activeBackground.url);
-    const fitToScreen = options.fitImageToScreen === true;
-    // Opacity sliders (0-100). 100 = fully opaque surface, 0 = fully transparent
-    // so the background image shows through. Only emitted while a background is
-    // active, since transparency without an image just exposes the dark body.
-    const bgOpacity = Math.max(0, Math.min(100, Number(options.bg_opacity ?? 65)));
-    const sidebarOpacity = Math.max(0, Math.min(100, Number(options.sidebar_opacity ?? 100)));
-    const bgTransparent = 100 - bgOpacity;
-    const sidebarTransparent = 100 - sidebarOpacity;
-    // Blur sliders (px). Pairs with opacity: blur only has a visible effect when
-    // the surface is semi-transparent (opacity < 100) so the background behind
-    // shows through and gets blurred. Default 8px on content surfaces preserves
-    // the previous dashboard-header glass look; sidebar defaults to none.
-    const bgBlur = Math.max(0, Math.min(30, Number(options.bg_blur ?? 8)));
-    const sidebarBlur = Math.max(0, Math.min(30, Number(options.sidebar_blur ?? 0)));
-    // Card transparency mirrors the content-panel glass effect (bg_opacity/
-    // bg_blur) but applies it to dashboard course cards (.ic-DashboardCard).
-    // Only active when the user explicitly enables it, since transparent cards
-    // over a busy background can hurt legibility.
-    const cardTransparency = options.card_transparency === true;
-    const cardOpacity = Math.max(0, Math.min(100, Number(options.card_opacity ?? 80)));
-    const cardBlur = Math.max(0, Math.min(30, Number(options.card_blur ?? 8)));
-    const cardTransparent = 100 - cardOpacity;
-    style.textContent = `
-        #wrapper {
-            background-image: url(${backgroundUrl}) !important;
-            background-repeat: no-repeat !important;
-            background-position: center center !important;
-            background-attachment: fixed !important;
-        }
-        @media (orientation: landscape) {
-            #wrapper { background-size: ${fitToScreen ? 'cover' : backgroundScale + '% auto'} !important; }
-        }
-        @media (orientation: portrait) {
-            #wrapper { background-size: cover !important; }
-        }
-        .ic-Dashboard-header__layout {
-            background: none !important;
-            /* backdrop-filter: blur(10px) !important; */
-            border-radius: 5px;
-            padding-left: 20px !important;
-        }
-        #dashboard_header_container {
-            margin-left: -35px !important;
-            margin-right: -35px !important;
-            box-sizing: border-box !important;
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-            border: 1px solid color-mix(in srgb, var(--bcborders) 60%, transparent) !important;
-            border-radius: 10px !important;
-            position: sticky !important;
-            top: 0 !important;
-            z-index: 1000 !important;
-            backdrop-filter: blur(${bgBlur}px) saturate(120%) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) saturate(120%) !important;
-        }
-        /* Dashboard list view (planner). Canvas paints each day block an
-           opaque theme color, so with a background image the whole list reads
-           as one solid slab that hides the image — unlike card view, where
-           the glass header and (optionally) translucent cards let it show
-           through. Give each day group the same glass treatment as the module
-           panels (color-mix tint + slider blur + rounded border) so the
-           background peeks through between the day cards. */
-        #dashboard-planner .planner-day,
-        #dashboard-planner .planner-empty-days {
-            background: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            border-radius: 12px !important;
-            border: 1px solid color-mix(in srgb, var(--bcborders) 75%, transparent) !important;
-            padding: 8px 12px !important;
-            box-sizing: border-box !important;
-        }
-        /* Inner surfaces Canvas keeps opaque (the "Show N completed
-           item" facade, "Nothing Planned" filler, and the Today/Add To Do
-           header cluster that sits on the glass dashboard header bar):
-           flatten them so the glass behind shows through. The course-
-           grouping label instead gets a subtle chip behind the course name —
-           it sits over the course hero image, so without a backdrop the
-           text can be hard to read on busy images. */
-        #dashboard-planner .CompletedItemsFacade-styles__root,
-        #dashboard-planner .EmptyDays-styles__nothingPlanned,
-        #dashboard-planner-header .PlannerHeader-styles__root {
-            background: transparent !important;
-        }
-        #dashboard-planner .Grouping-styles__title {
-            background: var(--bcbackground-1) !important;
-            border-radius: 6px !important;
-        }
-        /* Item-row hover: subtle tint on the glass instead of Canvas's flat
-           gray, so rows feel alive on the translucent day cards. */
-        #dashboard-planner .planner-item:hover,
-        #dashboard-planner .Grouping-styles__heroHover:hover {
-            background: color-mix(in srgb, var(--bctext-0) 5%, transparent) !important;
-            border-radius: 8px !important;
-        }
-        #right-side-wrapper {
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%);
-            border-radius: 5px;
-        }
-        /* Native left nav column: #left-side > #sticky-container.ic-sticky-frame
-           (the course/account/group menu links). Tint the whole #left-side column
-           rather than the inner .ic-sticky-frame, whose height only wraps its
-           links — the column spans the full viewport height like the other
-           sidebars, at the same bg_opacity/bg_blur as the Better Todo List
-           panel. Without this, a custom background (most visible in light mode)
-           shows through untinted behind the nav links. */
-        #left-side {
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-        }
-        /* Recent feedback lives in #right-side. The dark-mode CSS
-           (darkmodecss.js) recolors its text, but those rules are dark-mode-
-           only — so in light mode + custom background the sub-text (context,
-           grade, quote) keeps Canvas's default gray on the now-translucent
-           panel and becomes hard to read. Recolor to the theme text color so
-           it stays readable in both modes whenever a background is active.
-           Mirrors the dark-mode selectors; redundant (same value) in dark mode. */
-        .recent_feedback .event-details {
-            background: none !important;
-        }
-        #right-side .event-details .event-details__context,
-        #right-side .event-details .event-details__context *,
-        #right-side .recent_feedback .event-details p,
-        #right-side .recent_feedback .event-details span {
-            color: var(--bctext-0) !important;
-        }
-        .event-details strong {
-            color: var(--bctext-0) !important;
-        }
-        /* Native global nav sidebar. color-mix only accepts a solid color, so
-           gradient/image sidebars keep their existing look (rule is invalid and
-           ignored). At 100% opacity this is equivalent to var(--bcsidebar).
-           Sidebar blur only shows when sidebar opacity < 100.
-           The icon/text colors are recolored to var(--bcsidebar-text) to match
-           the background we just set — without this, light mode (where
-           --bcsidebar is the light default #e3e3e3) would leave institution-
-           themed light icons on a now-light background = white-on-white.
-           Mirrors the dark-mode rules in css/darkmodecss.js. */
-        .ic-app-header {
-            background: color-mix(in srgb, var(--bcsidebar), transparent ${sidebarTransparent}%) !important;
-            backdrop-filter: blur(${sidebarBlur}px) !important;
-            -webkit-backdrop-filter: blur(${sidebarBlur}px) !important;
-        }
-        .ic-app-header__menu-list-link svg,
-        .ic-app-header__menu-list-item.ic-app-header__menu-list-item--active svg {
-            fill: var(--bcsidebar-text) !important;
-        }
-        .menu-item-icon-container,
-        .ic-app-header__menu-list-link .menu-item__text,
-        .ic-app-header__menu-list-item.ic-app-header__menu-list-item--active .menu-item__text {
-            color: var(--bcsidebar-text) !important;
-        }
-        .ic-app-header__menu-list-item.ic-app-header__menu-list-item--active .ic-app-header__menu-list-link,
-        .ic-app-header__menu-list-link:hover {
-            background: #0000004f !important;
-        }
-        /* Better sidebar. The inline background-color is var(--bcsidebar), so the
-           !important here is required to override it. The same sidebar_opacity /
-           sidebar_blur sliders drive both surfaces, so whichever sidebar is
-           active (Better Sidebar when enabled, otherwise the native nav) picks
-           up the value. */
-        #better-sidebar-container {
-            background-color: color-mix(in srgb, var(--bcsidebar), transparent ${sidebarTransparent}%) !important;
-            backdrop-filter: blur(${sidebarBlur}px) !important;
-            -webkit-backdrop-filter: blur(${sidebarBlur}px) !important;
-        }
-        .header-bar {
-            background: none !important;
-            padding: 0 !important;
-            border: none !important;
-        }
-        /* Page show (/courses/:id/pages/:slug): Canvas paints h1.page-title and
-           the Previous/Next module-sequence footer as opaque slabs, so with a
-           custom background they sit as solid blocks on the glass content
-           panel (dark mode also paints both var(--bcbackground-0) via
-           darkmodecss.js). Flatten the title to match assignment/quiz titles
-           (plain text on the glass panel) and give the sequence footer the
-           same glass treatment as the other content surfaces. Selectors match
-           darkmodecss.js exactly and this style element is appended after it,
-           so these rules win the !important cascade tie. */
-        .pages.show .page-title,
-        .page-title {
-            background: none !important;
-        }
-        .module-sequence-footer .module-sequence-footer-content {
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            border-radius: 5px !important;
-        }
-        .item-group-condensed,
-        .item-group-container {
-            background: transparent !important;
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            border-radius: 12px !important;
-            border: 1px solid color-mix(in srgb, var(--bcborders) 75%, transparent) !important;
-            /* box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important; */
-        }
-        #context_modules_sortable_container {
-            border: none !important;
-            background: none !important;
-            padding: 0 !important;
-            /* backdrop-filter: blur(0) !important; */
-        }
-        .item-group-condensed .ig-header,
-        .item-group-condensed .ig-row,
-        .item-group-container .ig-header,
-        .item-group-container .ig-row,
-        .item-group-condensed .header,
-        .item-group-container .header {
-            background: transparent !important;
-        }
-        .item-group-condensed .ig-header.header,
-        .item-group-container .ig-header.header {
-            background: none !important;
-            border: none !important;
-            border-radius: 0 !important;
-        }
-        #assignments.ui-tabs-panel {
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            border-radius: 5px !important;
-        }
-        /* InstUI flex View panel (emotion hash css-fiozi7-view--flex-flex)
-           ships a hardcoded opaque surface that sits untinted on top of the
-           background image. Give it the same glass treatment as the other
-           content panels: theme tint at the bg_opacity slider value plus the
-           bg_blur backdrop. */
-        .css-fiozi7-view--flex-flex {
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            border-radius: 5px !important;
-        }
-        /* Inner InstUI Views of that panel (author row, title row, message
-           container...) keep their own opaque backgrounds, which read as
-           dark/light slabs covering the glass. Flatten them so the panel
-           reads as one glass surface — with exceptions:
-           - avatar circles (their backdrop is part of the picture),
-           - the whole role-pill subtree (Canvas pairs its white uppercase
-             text with a chip painted on the list items; flattening it left
-             white text on glass),
-           - base buttons: flattened to bare glass buttons instead. The
-             button root, its content span and its icon wrapper all go
-             transparent so the white label/icon read on the glass — this
-             also overrides the dark-mode baseButton__content chip, which
-             would otherwise double-stack inside the flattened panel. */
-        .css-fiozi7-view--flex-flex [class*="-view"]:not([class*="-avatar"]):not([data-testid="pill-container"]):not([data-testid="pill-container"] *):not([class*="-baseButton"]) {
-            background: none !important;
-        }
-        .css-fiozi7-view--flex-flex [class*="-baseButton"],
-        .css-fiozi7-view--flex-flex [class*="-baseButton"] [class*="-baseButton__content"],
-        .css-fiozi7-view--flex-flex [class*="-baseButton"] [class*="-baseButton__iconWrapper"] {
-            background: none !important;
-            border: none !important;
-            box-shadow: none !important;
-        }
-        /* De-dupe stacked surfaces: a nested copy of the panel (the header
-           renders one View inside another) must not add a second backdrop
-           blur over the outer glass. */
-        .css-fiozi7-view--flex-flex .css-fiozi7-view--flex-flex {
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-        }
-        /* The discussion threads toolbar (emotion hash css-1n94jrf-view,
-           themed opaque in dark mode) sits directly under the glass header
-           panel; with a custom background the two read as a double opaque
-           surface. Give the toolbar the same glass treatment so the area is
-           one continuous surface. */
-        .css-1n94jrf-view {
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            border-radius: 5px !important;
-            padding: 5px !important;
-        }
-        #assignments {
-            padding-top: 0px !important;
-            padding-bottom: 0px !important;
-            padding-left: 10px !important;
-            padding-right: 10px !important;
-        }
-        ${isCoursesIndexPage() ? `
-        #content {
-            margin: 36px 48px 48px !important;
-            padding: 10px !important;
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            border-radius: 5px !important;
-            box-sizing: border-box !important;
-        }
-        ` : ""}
-        ${isGroupsIndexPage() ? `
-        #content {
-            margin: 36px 48px 48px !important;
-            padding: 10px !important;
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            border-radius: 5px !important;
-            box-sizing: border-box !important;
-        }
-        ` : ""}
-        /* Course content pages (sidebar layout "course": /courses/:id/* and
-           /profile): tint the #content.ic-Layout-contentMain panel so the
-           bg_opacity/bg_blur sliders have a surface to control even without Better
-           Sidebar. setupBetterSidebar only adds this panel when Better Sidebar is
-           on; this mirrors its inline values so the panel shows regardless. When
-           Better Sidebar is on, its inline !important overrides these (same values),
-           so this rule is inert in that case. */
-        ${getSidebarLayoutMode() === "course" ? `
-        .ic-Layout-contentMain {
-            margin: 26px 38px 38px !important;
-            padding: 10px !important;
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            border-radius: 10px !important;
-        }
-        ` : ""}
-        ${isConversationsPage() ? `
-        .css-1nh4pc4-view-flexItem {
-            background-color: color-mix(in srgb, var(--bcbackground-0), transparent ${bgTransparent}%) !important;
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-            border-radius: 5px !important;
-            box-sizing: border-box !important;
-        }
-        .css-1nh4pc4-view-flexItem svg,
-        .css-1nh4pc4-view-flexItem svg * {
-            fill: currentColor !important;
-            stroke: currentColor !important;
-            color: var(--bctext-0) !important;
-        }
-        ` : ""}
-        .item-group-condensed .ig-row.ig-published.no-estimated-duration {
-            color: var(--bctext-1) !important;
-            border: 1px solid color-mix(in srgb, var(--bcborders) 60%, transparent) !important;
-            border-radius: 0 !important;
-            padding: 10px 12px !important;
-        }
-        .item-group-condensed .context_module_item,
-        .item-group-container .context_module_item {
-            background: transparent !important;
-            /* backdrop-filter: blur(10px) saturate(115%) !important;
-               -webkit-backdrop-filter: blur(10px) saturate(115%) !important; */
-        }
-        .item-group-condensed .context_module_item:hover,
-        .item-group-container .context_module_item:hover,
-        .item-group-condensed .context_module_item.context_module_item_hover,
-        .item-group-container .context_module_item.context_module_item_hover {
-            background: transparent !important;
-            border-radius: 10px !important;
-        }
-        .item-group-container {
-            background: transparent !important;
-            border-radius: 12px !important;
-            border: 1px solid color-mix(in srgb, var(--bcborders) 75%, transparent) !important;
-        }
-        .ig-header {
-            /* backdrop-filter: blur(10px) !important; */
-        }
-        .item-group-condensed.context_module,
-        .item-group-condensed.context_module_item,
-        .item-group-condensed[class~="context_module"] {
-            margin-bottom: 10px !important;
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
-        }
-
-        .item-group-condensed .ig-header.header,
-        .item-group-container .ig-header.header {
-            padding-top: 0 !important;
-        }
-
-        /* Module panels keep the slider blur on hover (previously a fixed 5px). */
-        .item-group-condensed.context_module,
-        .item-group-condensed.context_module_item,
-        .item-group-condensed[class~="context_module"],
-        .item-group-condensed.context_module:hover,
-        .item-group-condensed.context_module_item:hover,
-        .item-group-condensed.context_module.context_module_item_hover,
-        .item-group-condensed.context_module_item.context_module_item_hover {
-            backdrop-filter: blur(${bgBlur}px) !important;
-            -webkit-backdrop-filter: blur(${bgBlur}px) !important;
-        }
-        .canvasrefined-gpa-card,
-        .canvasrefined-gpa,
-        .ic-DashboardCard {
-            ${cardTransparency
-                ? `background: color-mix(in srgb, var(--bcbackground-0), transparent ${cardTransparent}%) !important;
-            backdrop-filter: blur(${cardBlur}px) saturate(120%) !important;
-            -webkit-backdrop-filter: blur(${cardBlur}px) saturate(120%) !important;`
-                : `background: var(--bcbackground-0) !important;`}
-        }
-        /* Card header strip (the course-nickname bar under the hero). Canvas
-           paints it a solid light color ($ic-color-light) and nothing overrides
-           that in light mode, so with card transparency on it reads as a solid
-           band across an otherwise translucent card. Mirror the card surface:
-           transparent cards drop the strip's background so the card's glass
-           (tint + blur already applied to .ic-DashboardCard) shows through;
-           opaque cards paint it the same solid theme color as the card body.
-           Dark mode already flattens this strip via darkmodecss.js, so this
-           is inert there (same value). */
-        .ic-DashboardCard__header_content {
-            ${cardTransparency
-                ? `background: none !important;`
-                : `background: var(--bcbackground-0) !important;`}
-        }
-        tr.student_assignment.assignment_graded.editable > * {
-            border:none!important
-        }`; 
-    // TODO: liquid glass?
-    
-    document.documentElement.appendChild(style);
-}
-
 function applyBetterSidebarLayoutFix() {
     let style = document.querySelector("#canvasrefined-sidebar-layout-fix") || document.createElement("style");
     style.id = "canvasrefined-sidebar-layout-fix";
@@ -1856,7 +1198,6 @@ function checkDashboardReady() {
                         loadDashboardNotes();
                         setupGPACalc();
                         showUpdateMsg();
-                        createNasaInfoOverlay();
                     }
                 }
 
@@ -1914,7 +1255,6 @@ function recieveMessage(request, sender, sendResponse) {
         }
         case ("inspect"): sendResponse(inspectDarkMode(true)); break;
         case ("fixdm"): sendResponse(runDarkModeFixer(true)); break;
-		case ("updateBackground"): applyCustomBackground(); sendResponse(true); break;
         case ("clearPlannerCache"):
             // "Clear planner cache" (Report issue tab in the popup): drop
             // the cache, re-fetch fresh planner data, and re-render every
@@ -4729,11 +4069,11 @@ function applySidebarScaleStyles(sidebarList) {
 // tray dialog ([role="dialog"][aria-label="Global Navigation"]) instead of the
 // .ic-app-header rail, so none of the rail's theming reaches it. When Better
 // Sidebar is enabled, give that dialog the same look as the rail: --bcsidebar
-// surface at the sidebar opacity/blur slider values, --bcsidebar-text ink, and
-// rounded sidebar-style rows. The dialog's behavior, item list and a11y
-// attributes are left untouched — styling only. Selectors use stable
-// attributes ([role], [aria-label], [data-cid]) instead of emotion hashes,
-// which shift between Canvas releases; an unmatched rule is simply inert.
+// surface, --bcsidebar-text ink, and rounded sidebar-style rows. The dialog's
+// behavior, item list and a11y attributes are left untouched — styling only.
+// Selectors use stable attributes ([role], [aria-label], [data-cid]) instead of
+// emotion hashes, which shift between Canvas releases; an unmatched rule is
+// simply inert.
 function setupMobileNavStyle() {
     let style = document.getElementById("canvasrefined-mobile-nav") || document.createElement("style");
     style.id = "canvasrefined-mobile-nav";
@@ -4741,9 +4081,6 @@ function setupMobileNavStyle() {
         style.remove();
         return;
     }
-    const sidebarOpacity = Math.max(0, Math.min(100, Number(options.sidebar_opacity ?? 100)));
-    const sidebarBlur = Math.max(0, Math.min(30, Number(options.sidebar_blur ?? 0)));
-    const sidebarTransparent = 100 - sidebarOpacity;
     const dialog = '[role="dialog"][aria-label="Global Navigation"]';
     style.textContent = `
         /* Tray wrapper: consistent drawer width instead of InstUI's inline
@@ -4752,11 +4089,9 @@ function setupMobileNavStyle() {
             width: min(320px, 90vw) !important;
             max-width: 90vw !important;
         }
-        /* Panel: the same glass surface as the Better Sidebar rail */
+        /* Panel: the same surface as the Better Sidebar rail */
         ${dialog} {
-            background: color-mix(in srgb, var(--bcsidebar), transparent ${sidebarTransparent}%) !important;
-            backdrop-filter: blur(${sidebarBlur}px) !important;
-            -webkit-backdrop-filter: blur(${sidebarBlur}px) !important;
+            background: var(--bcsidebar) !important;
             border-right: 1px solid color-mix(in srgb, var(--bcsidebar-text) 10%, transparent) !important;
             border-radius: 0 16px 16px 0 !important;
             box-shadow: 8px 0 40px rgba(0, 0, 0, .28) !important;
@@ -4848,22 +4183,6 @@ function setupMobileNavStyle() {
     if (!style.isConnected) document.documentElement.append(style);
 }
 
-// Re-apply the tinted course-content panel when the background opacity slider
-// changes. Only the better sidebar (course mode) gives .ic-Layout-contentMain a
-// tinted panel in the first place (see setupBetterSidebar). Re-applies both the
-// opacity and blur sliders so changing either updates the panel live.
-function applyBetterSidebarContentPanel() {
-    if (!options.better_sidebar) return;
-    if (getSidebarLayoutMode() !== "course") return;
-    const contentMain = document.querySelector(".ic-Layout-contentMain");
-    if (!contentMain) return;
-    const bgOpacity = Math.max(0, Math.min(100, Number(options.bg_opacity ?? 65)));
-    const bgBlur = Math.max(0, Math.min(30, Number(options.bg_blur ?? 8)));
-    contentMain.style.setProperty("background", `color-mix(in srgb, var(--bcbackground-0) ${bgOpacity}%, transparent)`, "important");
-    contentMain.style.setProperty("backdrop-filter", `blur(${bgBlur}px)`, "important");
-    contentMain.style.setProperty("-webkit-backdrop-filter", `blur(${bgBlur}px)`, "important");
-}
-
 async function setupBetterSidebar(mode = getSidebarLayoutMode()) {
     if (!options.better_sidebar) return;
     if (document.querySelector('#better-sidebar-container')) return;
@@ -4922,9 +4241,7 @@ async function setupBetterSidebar(mode = getSidebarLayoutMode()) {
             contentMain?.style.setProperty("margin", "26px 38px 38px", "important");
             contentMain?.style.setProperty("padding", "10px", "important");
             contentMain?.style.setProperty("border-radius", "10px", "important");
-            contentMain?.style.setProperty("background", `color-mix(in srgb, var(--bcbackground-0) ${Math.max(0, Math.min(100, Number(options.bg_opacity ?? 65)))}%, transparent)`, "important");
-            contentMain?.style.setProperty("backdrop-filter", `blur(${Math.max(0, Math.min(30, Number(options.bg_blur ?? 8)))}px)`, "important");
-            contentMain?.style.setProperty("-webkit-backdrop-filter", `blur(${Math.max(0, Math.min(30, Number(options.bg_blur ?? 8)))}px)`, "important");
+            contentMain?.style.setProperty("background", "var(--bcbackground-0)", "important");
         }
         // The rail must always render leftmost. Course-layout pages already
         // prepend it into #left-side; dash-layout pages that still have a
@@ -7100,93 +6417,6 @@ function loadDashboardNotes() {
 
 
 /*
-Custom font
-*/
-
-// "Keep original assignment font": Canvas sets its font (Lato) on <body>
-// via author CSS, and the custom-font rule's `*` selector overrides it. To
-// keep <p> original we (a) carve p + its descendants out of the custom rule
-// and (b) pin them back to the font body had BEFORE the custom rule landed —
-// plain `inherit` wouldn't work because p's ancestors still carry the custom
-// font via `*`. The pre-custom font is captured once from body's computed
-// style (before our <style> is first injected), with Canvas's default Lato
-// stack as fallback.
-let originalPageFontFamily = null;
-const CANVAS_DEFAULT_FONT_STACK = '"Lato Extended", Lato, "Helvetica Neue", Helvetica, Arial, sans-serif';
-
-function captureOriginalPageFont() {
-    if (originalPageFontFamily) return;
-    // Too late to capture once our rule is live: body's computed style would
-    // already be the custom font.
-    if (document.querySelector("#custom_font")) return;
-    try {
-        const family = getComputedStyle(document.body || document.documentElement).fontFamily;
-        if (family) originalPageFontFamily = family;
-    } catch (_) { /* keep fallback */ }
-}
-
-function originalPageFontOrFallback() {
-    return originalPageFontFamily || CANVAS_DEFAULT_FONT_STACK;
-}
-
-function customFontRules() {
-    if (options.custom_font_skip_p !== true) {
-        return `${customFontSelector()} {font-family: ${options.custom_font.family}!important}`;
-    }
-    return `${customFontSelector()} {font-family: ${options.custom_font.family}!important}\n`
-        + `p, p * {font-family: ${originalPageFontOrFallback()}!important}`;
-}
-
-// Selector for the custom font rule. With "Keep original assignment font"
-// on, <p> (and everything inside one) is carved out with :not() so the
-// paragraph override rule below is the only thing styling them.
-function customFontSelector() {
-    return options.custom_font_skip_p === true
-        ? "*:not(p):not(p *), input, a, button, h1, h2, h3, h4, h5, h6, span"
-        : "*, input, a, button, h1, h2, h3, h4, h5, h6, p, span";
-}
-
-function loadCustomFont() {
-    // Quiz safe mode: don't override fonts on quiz pages.
-    if (quizSafeModeActive()) return;
-    let link = document.querySelector("#custom_font_link");
-    let style = document.querySelector("#custom_font");
-
-    let load = () => {
-        if (options.custom_font.link !== "") {
-            // Capture the original font before the custom rule is injected.
-            captureOriginalPageFont();
-            document.head.appendChild(style);
-            link.href = `https://fonts.googleapis.com/css2?family=${options.custom_font.link}&display=swap`;
-            link.rel = "stylesheet";
-            document.head.appendChild(link);
-        }
-
-        style.textContent = options.custom_font.link === "" ? "" : customFontRules();
-    }
-
-    let createEls = () => {
-        link = document.createElement("link");
-        link.id = "custom_font_link";
-        style = document.createElement("style");
-        style.id = "custom_font";
-        load();
-    }
-
-    if (link && style) {
-        load();
-    } else if (options.custom_font.link !== "") {
-        if (document.readyState !== 'loading') {
-            createEls();
-        } else {
-            document.addEventListener("DOMContentLoaded", () => {
-                createEls();
-            });
-        }
-    }
-}
-
-/*
 Smaller features
 */
 
@@ -7268,7 +6498,7 @@ function applyAestheticChanges() {
             // precisely when the next column would no longer fit. Tracks are
             // always a full card wide, so cards can't overlap; extra cards
             // wrap into auto-height rows instead of being clipped.
-            const cardW = options.customCardStyles === true && parseInt(options.cardWidth, 10) > 0
+            const cardW = parseInt(options.cardWidth, 10) > 0
                 ? parseInt(options.cardWidth, 10)
                 : 262;
             // Container queries need an ancestor size container; the card
@@ -7278,8 +6508,8 @@ function applyAestheticChanges() {
             // Full fit (m = gridCols columns): applies whenever no narrower
             // breakpoint matches, i.e. only when all columns truly fit.
             style.textContent += `.ic-DashboardCard__box__container{display:grid!important;grid-template-columns:repeat(${gridCols},${cardW}px)!important;grid-auto-rows:auto!important;column-gap:${gridColGap}px!important;row-gap:${gridRowGap}px!important;align-items:start!important${centerGrid ? ";justify-content:center!important" : ""}}`;
-            // Grid gaps alone control spacing (beats the customCardStyles
-            // margin rules emitted later via higher specificity).
+            // Grid gaps alone control spacing (beats the card margin rules
+            // emitted later via higher specificity).
             style.textContent += `.ic-DashboardCard__box__container > .ic-DashboardCard,.ic-DashboardCard__box__container > .canvasrefined-gpa-card{margin-right:0!important;margin-bottom:0!important}`;
             if (gpaOn) {
                 if (gpaTop) {
@@ -7333,41 +6563,39 @@ function applyAestheticChanges() {
             }
         }
     }
-    if (options.customCardStyles === true) {
-        if (options.imageSize !== undefined && options.imageSize !== 100) style.textContent += `.ic-DashboardCard__header_image {transform: scale(${options.imageSize / 100})!important; }`;
-        if (options.cardRoundness !== undefined && options.cardRoundness !== 5) style.textContent += `.ic-DashboardCard {border-radius: ${options.cardRoundness}px!important;}`;
-        // Rounds the header image band. The photo is the background of
-        // .ic-DashboardCard__header_image, and .ic-DashboardCard__header_hero (a
-        // child that covers the full photo with its colored overlay + 1px
-        // border) sits on top of it. border-radius only clips the element it's
-        // on — rounding the parent alone leaves the hero's square overlay
-        // covering the corners, and rounding the hero alone leaves the photo's
-        // square corners behind it — so both elements need the same radius.
-        // Default 0; guard skips the default so stock cards keep square corners.
-        if (options.imageRoundness !== undefined && options.imageRoundness !== 0) style.textContent += `.ic-DashboardCard__header_image, .ic-DashboardCard__header_hero {border-radius: ${options.imageRoundness}px!important;}`;
-        if (options.cardSpacing !== undefined && options.cardSpacing !== 0) style.textContent += `.ic-DashboardCard {margin-right: ${options.cardSpacing / 2}px!important; margin-bottom: ${options.cardSpacing / 2}px!important;}`;
-        if (options.cardWidth !== undefined && options.cardWidth !== 262) style.textContent += `.ic-DashboardCard {width: ${options.cardWidth}px!important;}`;
-        // Card height sizes the image band via .ic-DashboardCard__header_hero —
-        // the element Canvas pins at 146px that actually drives the header image
-        // height (both .ic-DashboardCard and .ic-DashboardCard__header are
-        // content-sized, so a height on either just clips or adds dead space).
-        // Everything else — title, actions, and the appended
-        // .canvasrefined-card-assignment rows — flows below the hero, so the card
-        // grows with the assignment list and nothing gets clipped. Skipped when
-        // condensed cards is on, since that mode pins the hero at 60px.
-        if (options.condensed_cards !== true && options.cardHeight !== undefined && options.cardHeight !== null && options.cardHeight !== "") {
-            style.textContent += `.ic-DashboardCard__header_hero {height: ${options.cardHeight}px!important;}`;
-        }
-        // Inner card padding. Applied to the whole .ic-DashboardCard box so the
-        // hero header, title, and action buttons all get breathing room from the
-        // card's edges. Canvas sizes the card with border-box + a fixed width,
-        // so padding alone squishes the content area (narrower image/rows)
-        // instead of expanding the card — switch to content-box so the padding
-        // grows the card outward and the content keeps its full width.
-        // Guarded by > 0 (default).
-        if (options.cardPadding !== undefined && Number(options.cardPadding) > 0) {
-            style.textContent += `.ic-DashboardCard {padding: ${options.cardPadding}px!important; box-sizing: content-box!important;}`;
-        }
+    if (options.imageSize !== undefined && options.imageSize !== 100) style.textContent += `.ic-DashboardCard__header_image {transform: scale(${options.imageSize / 100})!important; }`;
+    if (options.cardRoundness !== undefined && options.cardRoundness !== 5) style.textContent += `.ic-DashboardCard {border-radius: ${options.cardRoundness}px!important;}`;
+    // Rounds the header image band. The photo is the background of
+    // .ic-DashboardCard__header_image, and .ic-DashboardCard__header_hero (a
+    // child that covers the full photo with its colored overlay + 1px
+    // border) sits on top of it. border-radius only clips the element it's
+    // on — rounding the parent alone leaves the hero's square overlay
+    // covering the corners, and rounding the hero alone leaves the photo's
+    // square corners behind it — so both elements need the same radius.
+    // Default 0; guard skips the default so stock cards keep square corners.
+    if (options.imageRoundness !== undefined && options.imageRoundness !== 0) style.textContent += `.ic-DashboardCard__header_image, .ic-DashboardCard__header_hero {border-radius: ${options.imageRoundness}px!important;}`;
+    if (options.cardSpacing !== undefined && options.cardSpacing !== 0) style.textContent += `.ic-DashboardCard {margin-right: ${options.cardSpacing / 2}px!important; margin-bottom: ${options.cardSpacing / 2}px!important;}`;
+    if (options.cardWidth !== undefined && options.cardWidth !== 262) style.textContent += `.ic-DashboardCard {width: ${options.cardWidth}px!important;}`;
+    // Card height sizes the image band via .ic-DashboardCard__header_hero —
+    // the element Canvas pins at 146px that actually drives the header image
+    // height (both .ic-DashboardCard and .ic-DashboardCard__header are
+    // content-sized, so a height on either just clips or adds dead space).
+    // Everything else — title, actions, and the appended
+    // .canvasrefined-card-assignment rows — flows below the hero, so the card
+    // grows with the assignment list and nothing gets clipped. Skipped when
+    // condensed cards is on, since that mode pins the hero at 60px.
+    if (options.condensed_cards !== true && options.cardHeight !== undefined && options.cardHeight !== null && options.cardHeight !== "") {
+        style.textContent += `.ic-DashboardCard__header_hero {height: ${options.cardHeight}px!important;}`;
+    }
+    // Inner card padding. Applied to the whole .ic-DashboardCard box so the
+    // hero header, title, and action buttons all get breathing room from the
+    // card's edges. Canvas sizes the card with border-box + a fixed width,
+    // so padding alone squishes the content area (narrower image/rows)
+    // instead of expanding the card — switch to content-box so the padding
+    // grows the card outward and the content keeps its full width.
+    // Guarded by > 0 (default).
+    if (options.cardPadding !== undefined && Number(options.cardPadding) > 0) {
+        style.textContent += `.ic-DashboardCard {padding: ${options.cardPadding}px!important; box-sizing: content-box!important;}`;
     }
 
     // Hiding the nav-toggle + breadcrumbs bar used to be hardcoded always-on;
@@ -7376,7 +6604,6 @@ function applyAestheticChanges() {
     // edges (cosmetic, light and dark mode).
     style.textContent += ".ic-app-nav-toggle-and-crumbs{margin-left:0!important;margin-right:0!important}";
     if (options.hide_navbar === true) style.textContent += ".ic-app-nav-toggle-and-crumbs{display:none!important}";
-    if (options.custom_styles !== "") style.textContent += options.custom_styles;
     document.documentElement.appendChild(style);
     // Uneven-row centering needs the real cards (it offsets the first card of
     // the last partial row), so schedule it just after the style lands. Run

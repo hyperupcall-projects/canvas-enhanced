@@ -56,9 +56,6 @@
     "card_customization": {
         "message": "Cards"
     },
-    "styles": {
-        "message": "Styles"
-    },
     "useddmm": {
         "message": "Use dd/mm"
     },
@@ -73,39 +70,6 @@
     },
     "quiz_safe_mode_desc": {
         "message": "Turns off most Canvas Refined features on quiz pages so you get the default Canvas quiz experience"
-    },
-    "opacity_options": {
-        "message": "Opacity & Blur"
-    },
-    "opacity_only_background": {
-        "message": "Only available with a custom background"
-    },
-    "card_transparency": {
-        "message": "Card transparency"
-    },
-    "background_opacity": {
-        "message": "Background opacity"
-    },
-    "bg_blur": {
-        "message": "Background blur"
-    },
-    "sidebar_opacity": {
-        "message": "Sidebar opacity"
-    },
-    "sidebar_blur": {
-        "message": "Sidebar blur"
-    },
-    "card_opacity": {
-        "message": "Card opacity"
-    },
-    "card_blur": {
-        "message": "Card blur"
-    },
-    "sidebar_opacity_auto": {
-        "message": "Applies to the Better Sidebar when it's on, otherwise the normal sidebar."
-    },
-    "reset_default": {
-        "message": "Reset to default"
     },
     "max_items": {
         "message": "Max Items: "

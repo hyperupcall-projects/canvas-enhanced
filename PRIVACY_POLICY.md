@@ -15,7 +15,7 @@ The Extension stores user preferences and customization settings locally on your
 - Dark mode preferences and color themes
 - Dashboard customization options
 - Feature toggles (assignments due list, GPA calculator, etc.)
-- Custom fonts and UI preferences
+- UI preferences
 
 These settings are stored locally using Chrome's `chrome.storage` API and synced across your Chrome profile if you enable sync.
 

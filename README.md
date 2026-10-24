@@ -36,7 +36,6 @@ The original introduces improvements to the Canvas user interface:
 - Themes created by users (broken due to fork)
 - Assignments due list
 - Dashboard notes
-- Custom fonts
 - Condensed cards
 - Dashboard grades
 - Remove sidebar logo
@@ -56,10 +55,6 @@ Canvas Refined adds more with more to come!
 	- Searching themes (the original didn't actually implement that)
 	- made the dark mode into a css file instead of a reallllllly long string
 - Card Styles (image size, card roundness, card spacing, width, height, theme compatible)
-- Custom Background
-  - Use presets or add your own by URL
-  - Theme compatible
-  - Daily backgrounds
 - Popup UI revamp
 - NEW Better todo list
 - Better sidebar
@@ -86,11 +81,9 @@ Canvas Refined adds more with more to come!
 - card grade position, card outline
 - streaks
 - maybe find a way for faster loading
-- rotating background, time/weather background overlay
 - custom side logo
 - goals
 - Scheduled Reminder Popups
-- preview font
 - button to remove all card images and undo
 - auto dark mode based on background
 

@@ -22,8 +22,8 @@ h2 {font-size:24px;}
 .header {font-size: 16px;display: flex;align-items: center;gap:12px; margin-bottom:14px;}
 .header h1 { font-weight: 600; font-size:24px; }
 #bclogo {height: 30px;width:30px;filter: none}
-#numAssignmentsSlider, #numTodoItemsSlider, #sidebarScaleSlider, #customBackgroundScale, #bgOpacitySlider, #sidebarOpacitySlider, #bgBlurSlider, #sidebarBlurSlider, #cardOpacitySlider, #cardBlurSlider {display: block;margin-top: 14px;width: 100%;-webkit-appearance: none; appearance: none;background:var(--inputbg);outline: none;height:6px;border-radius:20px;}
-#numAssignmentsSlider::-webkit-slider-thumb,  #numTodoItemsSlider::-webkit-slider-thumb, #sidebarScaleSlider::-webkit-slider-thumb, #customBackgroundScale::-webkit-slider-thumb, #bgOpacitySlider::-webkit-slider-thumb, #sidebarOpacitySlider::-webkit-slider-thumb, #bgBlurSlider::-webkit-slider-thumb, #sidebarBlurSlider::-webkit-slider-thumb, #cardOpacitySlider::-webkit-slider-thumb, #cardBlurSlider::-webkit-slider-thumb {-webkit-appearance: none; appearance: none;height: 18px; width: 18px;background: #727272;cursor: pointer;border-radius:30px;}
+#numAssignmentsSlider, #numTodoItemsSlider, #sidebarScaleSlider {display: block;margin-top: 14px;width: 100%;-webkit-appearance: none; appearance: none;background:var(--inputbg);outline: none;height:6px;border-radius:20px;}
+#numAssignmentsSlider::-webkit-slider-thumb,  #numTodoItemsSlider::-webkit-slider-thumb, #sidebarScaleSlider::-webkit-slider-thumb {-webkit-appearance: none; appearance: none;height: 18px; width: 18px;background: #727272;cursor: pointer;border-radius:30px;}
 .option-container {font-size: 14px; margin-top: 8px;background: var(--containerbg);padding: 18px;border-radius: 14px;box-sizing:border-box}
 .options .option-container {padding: 14px;}
 .options .option-container > .option + .option {margin-top: 10px;}
@@ -94,7 +94,7 @@ h2 {margin-top: 20px;font-weight:600}
 .todo-more-options.expanded .todo-expanded-label {display:inline;}
 .todo-more-items {display:none;flex-direction:column;}
 .todo-more-options.expanded .todo-more-items {display:flex;padding-left:2px;}
-#advanced-settings, #gpa-bounds-btn, #custom-font-btn, #customize-dark-btn, #card-colors-btn {width: 100%;}
+#advanced-settings, #gpa-bounds-btn, #customize-dark-btn, #card-colors-btn {width: 100%;}
 .back-btn {width: 120px;height:100%;margin-top:0}
 .big-button {border: none;border-radius: 7px;background: var(--containerbg);color: #fff;font-family: inherit;padding: 12px 10px;font-weight:600}
 .social-buttons {display: flex;gap: 8px;margin-top: 8px;}
@@ -114,12 +114,8 @@ h2 {margin-top: 20px;font-weight:600}
 .gpa-bounds span {font-size: 16px; width: 25px;display: inline-block}
 .gpa-bounds-explanation {width:200px;height:100%;flex: 1;}
 .tab-header {display: flex;justify-content: space-between;gap:20px;align-items:center}
-.custom-font-flex {display: flex; align-items: center;font-size: 11px;}
-#custom-font-family, #custom-font-link {width:150px}
 .custom-links-container, .custom-card-left {flex: 1;}
 .custom-card-inputs {display: flex; gap: 10px;margin-top: 10px;}
-#quick-fonts {display: flex; flex-wrap: wrap;gap: 5px;margin-top:10px;}
-#quick-fonts .customization-button {padding: 13px 20px;}
 .changer-container {display: flex; align-items: center;gap: 10px;}
 .changer-container .card-input[type="color"] {height: 35px; max-width: 35px;background: none; border: none; padding: 0; margin: 0;cursor: pointer}
 .changer-container .card-input[type="color"]::-webkit-color-swatch {border-radius:6px;width:40px;margin:0;padding:0;}
@@ -151,12 +147,6 @@ h2 {margin-top: 20px;font-weight:600}
 .theme-button:hover {background-size: 120%; background-position:center;}
 .theme-button-creator {font-size:10px;white-space:nowrap}
 .theme-button-title {font-weight: 600;font-size:12px;white-space:nowrap;}
-.background-preset-grid {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px;}
-.background-preset-card {min-height: 96px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; border-radius: 8px;}
-.background-preset-card.selected {outline: 2px solid #56Caf0; outline-offset: 2px;}
-.background-preset-scale {font-size:10px;white-space:nowrap;opacity:0.9;}
-.opacity-reset-btn {display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border:none;border-radius:50%;background:var(--inputbg);color:#cfcfcf;cursor:pointer;font-size:13px;line-height:1;padding:0;transition:background .15s ease,color .15s ease;}
-.opacity-reset-btn:hover {background:#3a3a3a;color:#fff;}
 .theme-sort-btn {padding:10px 30px 10px 20px;border-radius:7px;background:none;border:none;color: #9d9d9d;font-size:12px;font-weight:600;text-align: left;cursor: pointer;transition:.18s color}
 .theme-sort-btn:hover {color: #fff;}
 .theme-header {display:flex;justify-content: space-between;margin-bottom:10px;align-items:center}
@@ -247,7 +237,6 @@ input[type="checkbox"]:checked {background: #8dd28d;}
 .submitted-theme-details { flex: 1; display: flex; flex-direction: column; gap: 5px; font-size: 12px;}
 .submitted-theme-details p {font-weight:500;}
 .submitted-theme-tag {border-radius: 4px;padding: 3px 4px;max-width:min-content;font-weight: 600;}
-#custom-styles {min-height: 100px;}
 
 .card-file-input {background: #2a2a2a;border: 1px solid #4a4a4a;border-radius: 4px;color: #fff;padding: 8px 12px;font-size: 14px;font-family: inherit;margin-top: 8px;transition: border-color 0.2s ease;}
 .card-file-input:hover {border-color: #6a6a6a;}
