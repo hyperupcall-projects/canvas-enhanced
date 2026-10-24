@@ -32,10 +32,6 @@
             </div>
         </div>
             <div class="more-options-container">
-                <button id="customize-dark-btn" class="big-button tab-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" /></svg>
-                    <span data-i18n="edit_dark_mode">Edit Dark Mode</span>
-                </button>
                 <button id="advanced-settings" class="big-button tab-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path></svg>
                     <span data-i18n="card_customization">Card Customization</span>
@@ -64,42 +60,6 @@
             </div>
         <div class="options">
             <div class="options-left">
-                <div class="option-container">
-                    <div class="option" id="dark_mode">
-                        <input type="radio" id="off" name="dark_mode">
-                        <input type="radio" id="on" name="dark_mode">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div>
-                        <span class="option-name" data-i18n="dark_mode">Dark mode</span>
-                    </div>
-                    <div class="option" id="auto_dark">
-                        <input type="radio" id="off" name="auto_dark">
-                        <input type="radio" id="on" name="auto_dark">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div>
-                        <span class="option-name" data-i18n="automatic_dark_mode">Automatic dark mode</span>
-                    </div>
-                    <div class="sub-options">
-                        <div class="timesets">
-                            <div class="timeset">
-                                <input type="time" id="auto_dark_start" step="60"></input>
-                                <span class="sub-text" data-i18n="auto_start_time">Start time</span>
-                            </div>
-                            <div class="timeset">
-                                <input type="time" id="auto_dark_end" step="60"></input>
-                                <span class="sub-text" data-i18n="auto_end_time">End time</span>
-                            </div>
-                        </div>
-                        <div class="sub-option" style="margin-top:5px">
-                            <input type="checkbox" id="device_dark" name="device_dark">
-                            <label for="device_dark" class="sub-text" data-i18n="device_dark">Use device dark mode settings</label>
-                        </div>
-                    </div>
-                </div>
                 <div class="option-container">
                     <div class="option" id="assignments_due">
                         <input type="radio" id="off" name="assignments_due">
@@ -487,181 +447,15 @@
             <h2 style="margin-top: 0" data-i18n="themes">Themes</h2>
             <button class="big-button back-btn" data-i18n="back">Back</button>
         </div>
-        <div class="option-container" style="display:none;">
-            <div class="theme-header small-option">
-                <h3 class="header-small" style="margin:0">Submit your theme</h3>
-                <div class="big-button" id="show-submit-form">Show</div>
-            </div>
-            <p style="color:#a7a7a7">Do you want to submit your theme for others to use?</p>
-
-            <div id="submit-drawer" style="display: none;">
-                <div>
-                    <div id="submit-tab">
-                        <button class="submit-tab-btn active" id="submit-form-btn">Submit</button>
-                        <button class="submit-tab-btn" id="view-submissions-btn">My submissions</button>
-                    </div>
-                </div>
-                <div id="submit-form" style="margin-top:10px;">
-                    <div style="display: flex;gap:40px;">
-                        <div>
-                            <div>
-                                <p style="font-weight:600;">Title</p>
-                                <input type="text" class="card-input" id="submit-title">
-                                <p style="color:#a7a7a7;font-size:12px;margin-top:4px;">Try to keep this short and relevant so people can search for it.</p>
-                            </div>
-                            <div style="margin-top:14px;">
-                                <p style="font-weight:600;">Created by</p>
-                                <input type="text" class="card-input" id="submit-credits">
-                                <p style="color:#a7a7a7;font-size:12px;margin-top:4px;">This can be anything including your name, social media handle, anonymous etc.</p>
-                            </div>
-                                            </div>
-                        <div style="min-width: 25%;">
-                            <p style="color:#a7a7a7;font-size:12px;margin-bottom:5px;">Preview</p>
-                            <button id="theme-button-img" class="theme-button customization-button"
-                            style="width: 100%;background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));">
-                                <p class="theme-button-title" id="theme-button-title-preview">Title</p>
-                                <p class="theme-button-creator" id="theme-button-creator-preview">Credits</p>
-                            </button>
-                        </div>
-                    </div>
-                    <div style="display: flex;gap:6px;margin-top: 10px;">
-                        <button id="submit-theme-btn-1" class="big-button">Submit</button>
-                    </div>
-                </div>
-                <div id="view-submissions" style="display: none;">
-                    <div id="latest-submissions"></div>
-                    <p style="font-size:12px;color:#a4a4a4;margin:6px 0">Showing your latest 3 submissions</p>
-                </div>
-            </div>
-        </div>
         <div class="option-container">
-            <div class="theme-header">
-                <div style="display:flex;gap:6px;align-items:center">
-                    <h3 class="header-small" style="margin:0">User made themes</h3>
-                    <svg id="browser-settings-btn" xmlns="http://www.w3.org/2000/svg"  width="16"  height="16"  viewBox="0 0 24 24"  fill="currentColor"  class="icon icon-tabler icons-tabler-filled icon-tabler-settings"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14.647 4.081a.724 .724 0 0 0 1.08 .448c2.439 -1.485 5.23 1.305 3.745 3.744a.724 .724 0 0 0 .447 1.08c2.775 .673 2.775 4.62 0 5.294a.724 .724 0 0 0 -.448 1.08c1.485 2.439 -1.305 5.23 -3.744 3.745a.724 .724 0 0 0 -1.08 .447c-.673 2.775 -4.62 2.775 -5.294 0a.724 .724 0 0 0 -1.08 -.448c-2.439 1.485 -5.23 -1.305 -3.745 -3.744a.724 .724 0 0 0 -.447 -1.08c-2.775 -.673 -2.775 -4.62 0 -5.294a.724 .724 0 0 0 .448 -1.08c-1.485 -2.439 1.305 -5.23 3.744 -3.745a.722 .722 0 0 0 1.08 -.447c.673 -2.775 4.62 -2.775 5.294 0zm-2.647 4.919a3 3 0 1 0 0 6a3 3 0 0 0 0 -6z" /></svg>
-                </div>
-                <span id="premade-themes-pagenum"></span>
-            </div>
-            <div class="theme-controls">
-                <div id="theme-sorts-container">
-                    <button id="theme-sorts">
-                        <div>
-                            <svg style="display: block" xmlns="http://www.w3.org/2000/svg"  width="14"  height="14"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-arrows-up-down"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 3l0 18" /><path d="M10 6l-3 -3l-3 3" /><path d="M20 18l-3 3l-3 -3" /><path d="M17 21l0 -18" /></svg>
-                        </div>
-                        <span id="theme-current-sort"></span>
-                    </button>
-                    <div id="theme-sort-selector">
-                        <div id="theme-sort-score" class="theme-sort-btn">Popular</div>
-                        <div id="theme-sort-trending" class="theme-sort-btn">Trending</div>
-                        <div id="theme-sort-liked" class="theme-sort-btn">Liked</div>
-                        <div id="theme-sort-new" class="theme-sort-btn">New</div>
-                        <div id="theme-sort-old" class="theme-sort-btn">Old</div>
-                        <div id="theme-sort-abc" class="theme-sort-btn">ABC</div>
-                    </div>
-                </div>
-                <div class="card-input" id="theme-search-container">
-                    <svg  xmlns="http://www.w3.org/2000/svg"  width="14"  height="14"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
-                    <input type="text" id="theme-search" placeholder="Search">
-                </div>
-                <div style="display:flex;gap:4px;align-items:center">
-                    <button id="premade-themes-left">Back</button>
-                    <button id="premade-themes-right">Next</button>
-                </div>
-            </div>
-            <div style="position:relative">
-                <div id="premade-themes"></div>
-            </div>
+            <h3 class="header-small"><label for="appearance-mode" data-i18n="appearance">Appearance</label></h3>
+            <select id="appearance-mode" class="card-input">
+                <option value="light" data-i18n="appearance_light">Light</option>
+                <option value="dark" data-i18n="appearance_dark">Dark</option>
+                <option value="system" data-i18n="appearance_system">System</option>
+            </select>
         </div>
-        <div class="option-container">
-            <div>
-                <h3 class="header-small">Revert theme changes</h3>
-            </div>
-            <div style="display:flex;gap: 12px;">
-                <button id="theme-revert" class="customization-button">Revert</button>
-                <p>This will revert customizations back to when you first installed the extension.</p>
-            </div>
-        </div>
-        <div class="option-container">
-            <div class="theme-header">
-                <h3 class="header-small" style="margin:0;flex:100">My saved themes</h3>
-                <button id="save-theme" class="customization-button">+ Save current</button>
-            </div>
-            <div id="saved-themes"></div>
-        </div>
-        <div class="export-details option-container">
-            <h3 class="header-small" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                <span>Export Settings</span>
-                <span style="display:flex;gap:6px;">
-                    <button type="button" id="export-check-all" class="customization-button" style="padding:4px 10px;font-size:11px;">Check all</button>
-                    <button type="button" id="export-check-none" class="customization-button" style="padding:4px 10px;font-size:11px;">Check none</button>
-                </span>
-            </h3>
-            <div style="display:flex;gap:30px;">
-                <div class="export-inputs">
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-dark" />
-                        <span>Dark mode</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-dark-schedule" />
-                        <span>Dark mode schedule</span>
-                    </div>
-                    <div  class="sub-option">
-                        <input type="checkbox" id="export-cards" />
-                        <span>Card images</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-colors" />
-                        <span>Card colors</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-card-styles" />
-                        <span>Card styles</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-toggles" />
-                        <span>On/off toggles</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-todo" />
-                        <span>Todo list</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-gpa" />
-                        <span>GPA settings</span>
-                    </div>
-                </div>
-                <div style="flex: 1">
-                    <textarea class="card-input" id="export-output" placeholder="Output"></textarea>
-                    <button type="button" id="export-copy" class="customization-button" style="display:block;margin-top:8px;width:100%;">Copy</button>
-                </div>
-            </div>
-        </div>
-        <div class="import-export-details">
-            <div class="import-details option-container">
-                <h3 class="header-small">Import</h3>
-                <p>Copy and paste exported themes here:</p>
-                <div>
-                    <textarea class="card-input" id="import-input"></textarea>
-                </div>
-            </div>
-        </div>
-        <!-- <div class="option-container">
-            <div class="theme-header">
-                <h3 class="header-small" style="margin:0;flex:100">Theme browser opt-in reset</h3>
-            </div>
-            <div style="display:flex;gap:12px;">
-                <button id="reset-optin" class="customization-button">Reset opt-in status</button>
-                <p style="color:#a7a7a7">This will bring back the opt-in message so you can select a different option.</p>
-            </div>
-        </div> -->
-    </div>
-
-    <div class="customize-dark tab" style="display: none">
-        <div class="tab-header">
-            <h2 style="margin-top: 0" data-i18n="edit_dark_mode">Edit dark mode</h2>
-            <button class="big-button back-btn" data-i18n="back">Back</button>
-        </div>
+        <div class="customize-dark">
         <div class="customization">
             <div class="container">
                 <div class="option-container">
@@ -796,7 +590,7 @@
                 <h3 class="header-small" data-i18n="dark_mode_fixer">Dark mode fixer (beta)</h3>
                 <div style="display: flex; gap: 10px;align-items: center">
                     <button id="fix-dm-btn" class="big-button" data-i18n="fix_dm_btn">Go</button>
-                    <span data-i18n="dark_mode_fixer_text">This will try to fix any dark mode gaps on the current page.</span> 
+                    <span data-i18n="dark_mode_fixer_text">This will try to fix any dark mode gaps on the current page.</span>
                 </div>
                 <p id="fix-dm-output" style="margin-top: 10px;color:#ffee00;"></p>
                 <p style="margin: 15px 0 5px;" data-i18n="fix_dm_text">The fixer is automatically running on these pages:</p>
@@ -806,6 +600,171 @@
         </div>
     </div>
 
+        <div class="option-container" style="display:none;">
+            <div class="theme-header small-option">
+                <h3 class="header-small" style="margin:0">Submit your theme</h3>
+                <div class="big-button" id="show-submit-form">Show</div>
+            </div>
+            <p style="color:#a7a7a7">Do you want to submit your theme for others to use?</p>
+
+            <div id="submit-drawer" style="display: none;">
+                <div>
+                    <div id="submit-tab">
+                        <button class="submit-tab-btn active" id="submit-form-btn">Submit</button>
+                        <button class="submit-tab-btn" id="view-submissions-btn">My submissions</button>
+                    </div>
+                </div>
+                <div id="submit-form" style="margin-top:10px;">
+                    <div style="display: flex;gap:40px;">
+                        <div>
+                            <div>
+                                <p style="font-weight:600;">Title</p>
+                                <input type="text" class="card-input" id="submit-title">
+                                <p style="color:#a7a7a7;font-size:12px;margin-top:4px;">Try to keep this short and relevant so people can search for it.</p>
+                            </div>
+                            <div style="margin-top:14px;">
+                                <p style="font-weight:600;">Created by</p>
+                                <input type="text" class="card-input" id="submit-credits">
+                                <p style="color:#a7a7a7;font-size:12px;margin-top:4px;">This can be anything including your name, social media handle, anonymous etc.</p>
+                            </div>
+                                            </div>
+                        <div style="min-width: 25%;">
+                            <p style="color:#a7a7a7;font-size:12px;margin-bottom:5px;">Preview</p>
+                            <button id="theme-button-img" class="theme-button customization-button"
+                            style="width: 100%;background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));">
+                                <p class="theme-button-title" id="theme-button-title-preview">Title</p>
+                                <p class="theme-button-creator" id="theme-button-creator-preview">Credits</p>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="display: flex;gap:6px;margin-top: 10px;">
+                        <button id="submit-theme-btn-1" class="big-button">Submit</button>
+                    </div>
+                </div>
+                <div id="view-submissions" style="display: none;">
+                    <div id="latest-submissions"></div>
+                    <p style="font-size:12px;color:#a4a4a4;margin:6px 0">Showing your latest 3 submissions</p>
+                </div>
+            </div>
+        </div>
+        <div class="option-container">
+            <div class="theme-header">
+                <div style="display:flex;gap:6px;align-items:center">
+                    <h3 class="header-small" style="margin:0">User made themes</h3>
+                    <svg id="browser-settings-btn" xmlns="http://www.w3.org/2000/svg"  width="16"  height="16"  viewBox="0 0 24 24"  fill="currentColor"  class="icon icon-tabler icons-tabler-filled icon-tabler-settings"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14.647 4.081a.724 .724 0 0 0 1.08 .448c2.439 -1.485 5.23 1.305 3.745 3.744a.724 .724 0 0 0 .447 1.08c2.775 .673 2.775 4.62 0 5.294a.724 .724 0 0 0 -.448 1.08c1.485 2.439 -1.305 5.23 -3.744 3.745a.724 .724 0 0 0 -1.08 .447c-.673 2.775 -4.62 2.775 -5.294 0a.724 .724 0 0 0 -1.08 -.448c-2.439 1.485 -5.23 -1.305 -3.745 -3.744a.724 .724 0 0 0 -.447 -1.08c-2.775 -.673 -2.775 -4.62 0 -5.294a.724 .724 0 0 0 .448 -1.08c-1.485 -2.439 1.305 -5.23 3.744 -3.745a.722 .722 0 0 0 1.08 -.447c.673 -2.775 4.62 -2.775 5.294 0zm-2.647 4.919a3 3 0 1 0 0 6a3 3 0 0 0 0 -6z" /></svg>
+                </div>
+                <span id="premade-themes-pagenum"></span>
+            </div>
+            <div class="theme-controls">
+                <div id="theme-sorts-container">
+                    <button id="theme-sorts">
+                        <div>
+                            <svg style="display: block" xmlns="http://www.w3.org/2000/svg"  width="14"  height="14"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-arrows-up-down"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 3l0 18" /><path d="M10 6l-3 -3l-3 3" /><path d="M20 18l-3 3l-3 -3" /><path d="M17 21l0 -18" /></svg>
+                        </div>
+                        <span id="theme-current-sort"></span>
+                    </button>
+                    <div id="theme-sort-selector">
+                        <div id="theme-sort-score" class="theme-sort-btn">Popular</div>
+                        <div id="theme-sort-trending" class="theme-sort-btn">Trending</div>
+                        <div id="theme-sort-liked" class="theme-sort-btn">Liked</div>
+                        <div id="theme-sort-new" class="theme-sort-btn">New</div>
+                        <div id="theme-sort-old" class="theme-sort-btn">Old</div>
+                        <div id="theme-sort-abc" class="theme-sort-btn">ABC</div>
+                    </div>
+                </div>
+                <div class="card-input" id="theme-search-container">
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="14"  height="14"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+                    <input type="text" id="theme-search" placeholder="Search">
+                </div>
+                <div style="display:flex;gap:4px;align-items:center">
+                    <button id="premade-themes-left">Back</button>
+                    <button id="premade-themes-right">Next</button>
+                </div>
+            </div>
+            <div style="position:relative">
+                <div id="premade-themes"></div>
+            </div>
+        </div>
+        <div class="option-container">
+            <div>
+                <h3 class="header-small">Revert theme changes</h3>
+            </div>
+            <div style="display:flex;gap: 12px;">
+                <button id="theme-revert" class="customization-button">Revert</button>
+                <p>This will revert customizations back to when you first installed the extension.</p>
+            </div>
+        </div>
+        <div class="option-container">
+            <div class="theme-header">
+                <h3 class="header-small" style="margin:0;flex:100">My saved themes</h3>
+                <button id="save-theme" class="customization-button">+ Save current</button>
+            </div>
+            <div id="saved-themes"></div>
+        </div>
+        <div class="export-details option-container">
+            <h3 class="header-small" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                <span>Export Settings</span>
+                <span style="display:flex;gap:6px;">
+                    <button type="button" id="export-check-all" class="customization-button" style="padding:4px 10px;font-size:11px;">Check all</button>
+                    <button type="button" id="export-check-none" class="customization-button" style="padding:4px 10px;font-size:11px;">Check none</button>
+                </span>
+            </h3>
+            <div style="display:flex;gap:30px;">
+                <div class="export-inputs">
+                    <div class="sub-option">
+                        <input type="checkbox" id="export-dark" />
+                        <span>Dark mode</span>
+                    </div>
+                    <div  class="sub-option">
+                        <input type="checkbox" id="export-cards" />
+                        <span>Card images</span>
+                    </div>
+                    <div class="sub-option">
+                        <input type="checkbox" id="export-colors" />
+                        <span>Card colors</span>
+                    </div>
+                    <div class="sub-option">
+                        <input type="checkbox" id="export-card-styles" />
+                        <span>Card styles</span>
+                    </div>
+                    <div class="sub-option">
+                        <input type="checkbox" id="export-toggles" />
+                        <span>On/off toggles</span>
+                    </div>
+                    <div class="sub-option">
+                        <input type="checkbox" id="export-todo" />
+                        <span>Todo list</span>
+                    </div>
+                    <div class="sub-option">
+                        <input type="checkbox" id="export-gpa" />
+                        <span>GPA settings</span>
+                    </div>
+                </div>
+                <div style="flex: 1">
+                    <textarea class="card-input" id="export-output" placeholder="Output"></textarea>
+                    <button type="button" id="export-copy" class="customization-button" style="display:block;margin-top:8px;width:100%;">Copy</button>
+                </div>
+            </div>
+        </div>
+        <div class="import-export-details">
+            <div class="import-details option-container">
+                <h3 class="header-small">Import</h3>
+                <p>Copy and paste exported themes here:</p>
+                <div>
+                    <textarea class="card-input" id="import-input"></textarea>
+                </div>
+            </div>
+        </div>
+        <!-- <div class="option-container">
+            <div class="theme-header">
+                <h3 class="header-small" style="margin:0;flex:100">Theme browser opt-in reset</h3>
+            </div>
+            <div style="display:flex;gap:12px;">
+                <button id="reset-optin" class="customization-button">Reset opt-in status</button>
+                <p style="color:#a7a7a7">This will bring back the opt-in message so you can select a different option.</p>
+            </div>
+        </div> -->
+    </div>
 
     <div class="advanced tab" style="display:none">
         <div class="tab-header">

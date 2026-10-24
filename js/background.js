@@ -27,9 +27,7 @@ chrome.runtime.onInstalled.addListener(function () {
             "dark_mode": true,
             "gradent_cards": false,
             "disable_color_overlay": false,
-            "auto_dark": false,
-            "auto_dark_start": { "hour": "20", "minute": "00" },
-            "auto_dark_end": { "hour": "08", "minute": "00" },
+
             "num_assignments": 4,
             "custom_domain": [""],
             "custom_domain_denied": [],
@@ -174,7 +172,6 @@ chrome.runtime.onInstalled.addListener(function () {
                 if (local[option] !== undefined) return;
                 newLocalOptions[option] = default_options["local"][option];
             })
-
 
             if (Object.keys(newLocalOptions).length > 0) {
                 chrome.storage.local.set(newLocalOptions);

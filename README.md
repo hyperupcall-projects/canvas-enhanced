@@ -31,7 +31,7 @@ To contact me, please email sandlerguy5@gmail.com, or you can open an issue with
 The original introduces improvements to the Canvas user interface:
 
 - Fully customizable dark mode (choose from premade options or manually edit dark mode)
-- Automatic scheduling for dark mode
+- Light, dark, or system appearance
 - Dashboard card color palletes
 - Themes created by users (broken due to fork)
 - Assignments due list

@@ -1,4 +1,4 @@
-const syncedSwitches = ['remind', 'tab_icons', 'dark_mode', 'remlogo', 'full_width', 'auto_dark', 'assignments_due', 'gpa_calc', 'gradient_cards', 'disable_color_overlay', 'dashboard_grades', 'dashboard_notes', 'better_todo', 'better_sidebar', 'condensed_cards', 'hide_new_canvas', 'hide_sequence_footer', 'center_cards', 'quiz_safe_mode', 'global_search', 'grade_analytics', 'hide_personal_details'];
+const syncedSwitches = ['remind', 'tab_icons', 'remlogo', 'full_width', 'assignments_due', 'gpa_calc', 'gradient_cards', 'disable_color_overlay', 'dashboard_grades', 'dashboard_notes', 'better_todo', 'better_sidebar', 'condensed_cards', 'hide_new_canvas', 'hide_sequence_footer', 'center_cards', 'quiz_safe_mode', 'global_search', 'grade_analytics', 'hide_personal_details'];
 const syncedSubOptions = [
 	"grade_analytics_zones",
 	"hide_course_images",
@@ -8,7 +8,7 @@ const syncedSubOptions = [
     "todo_confetti",
     "todo_progress_rings",
     "todo_timeframe",
-	"device_dark",
+
 	"relative_dues",
 	"card_overdues",
 	"hide_completed_cards",
@@ -17,9 +17,7 @@ const syncedSubOptions = [
 	"gpa_calc_prepend",
 	"gpa_calc_cumulative",
 	"gpa_calc_weighted",
-	"auto_dark",
-	"auto_dark_start",
-	"auto_dark_end",
+
 	"num_assignments",
 	"assignment_date_format",
 	"todo_hr24",
@@ -44,8 +42,9 @@ const syncedSubOptions = [
 ];
 const localSwitches = [];
 
-// Ignore obsolete Styles settings in older exports and saved themes.
+// Ignore obsolete settings in older exports and saved themes.
 const removedStyleOptions = new Set([
+    "auto_dark", "auto_dark_start", "auto_dark_end",
     "custom_font", "custom_font_skip_p", "custom_styles", "customCardStyles",
     "customBackgroundLink", "customBackgroundScale", "customBackgroundDaily",
     "customBackgroundNasaDaily", "nasaInfoOverlay", "fitImageToScreen",
@@ -55,17 +54,16 @@ const removedStyleOptions = new Set([
 ]);
 
 // Theme export only carries visual settings, never personal productivity data.
-const exportDarkSchedule = ["auto_dark", "auto_dark_start", "auto_dark_end", "device_dark"];
 const exportCardColorToggles = ["gradient_cards", "disable_color_overlay"];
 const exportCardStyles = ["imageSize", "cardRoundness", "cardSpacing", "cardWidth", "cardHeight", "cardPadding"];
 const exportLayout = ["full_width", "center_cards", "condensed_cards", "equal_height_cards", "remlogo", "hide_new_canvas", "hide_navbar", "tab_icons"];
 const exportSidebar = ["better_sidebar", "sidebar_scale"];
 const exportTodo = ["better_todo", "todo_hide_feedback", "todo_hide_read", "todo_full_height", "todo_confetti", "todo_progress_rings", "todo_timeframe", "todo_hr24", "todo_separate_scrollbar", "todo_alternate_colors", "todo_ignore_card_colors", "todo_remove_icons", "todo_show_scores", "hover_preview"];
 const exportGpa = ["gpa_calc", "gpa_calc_prepend", "gpa_calc_cumulative", "gpa_calc_weighted", "gpa_threshold_mode", "gpa_course_bounds"];
-// Master "On/off toggles" = every visual toggle (no GPA, no dark-mode schedule,
+// Master "On/off toggles" = every visual toggle (no GPA,
 // no personal productivity features). Includes the former separate Layout and
 // Sidebar groups, plus Grade Analytics and its colored-zones sub-toggle.
-const exportToggles = ["dark_mode", "quiz_safe_mode", "grade_analytics", "grade_analytics_zones"].concat(exportCardColorToggles, exportLayout, exportSidebar, exportTodo);
+const exportToggles = ["dark_mode", "device_dark", "quiz_safe_mode", "grade_analytics", "grade_analytics_zones"].concat(exportCardColorToggles, exportLayout, exportSidebar, exportTodo);
 
 const apiurl = "none";
 
@@ -96,9 +94,7 @@ const defaultOptions = {
         "dark_mode": true,
         "gradent_cards": false,
         "disable_color_overlay": false,
-        "auto_dark": false,
-        "auto_dark_start": { "hour": "20", "minute": "00" },
-        "auto_dark_end": { "hour": "08", "minute": "00" },
+
         "num_assignments": 4,
         "custom_domain": [""],
         "custom_domain_denied": [],
@@ -184,7 +180,6 @@ const defaultOptions = {
     }
 };
 
-
 sendFromPopup("getCards");
 
 // refresh the cards if new ones were just recieved
@@ -260,7 +255,6 @@ function setupSidebarScaleSlider(initial) {
     });
 }
 
-
 // Progress display dropdown. Normalizes legacy boolean values:
 // true -> rings, false/undefined -> none.
 function setupProgressRingsSelect(initial) {
@@ -315,15 +309,28 @@ function setupTimeframeSelect(initial) {
     });
 }
 
-function setupAutoDarkInput(initial, time) {
-    let el = document.querySelector('#' + time);
-    el.value = initial.hour + ":" + initial.minute;
-    el.addEventListener('change', function () {
-        let timeinput = { "hour": this.value.split(':')[0], "minute": this.value.split(':')[1] };
-        time === "auto_dark_start" ? chrome.storage.sync.set({ auto_dark_start: timeinput }) : chrome.storage.sync.set({ auto_dark_end: timeinput });
+// Keep the existing storage keys compatible with saved themes.
+function setupAppearanceMode() {
+    const select = document.getElementById("appearance-mode");
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    function refresh() {
+        chrome.storage.sync.get(["dark_mode", "device_dark"], sync => {
+            select.value = sync.device_dark === true ? "system" : sync.dark_mode === false ? "light" : "dark";
+            toggleAlternateColorsVisibility(select.value === "system" ? media.matches : select.value === "dark");
+        });
+    }
+    select.addEventListener("change", () => {
+        chrome.storage.sync.set({
+            dark_mode: select.value === "dark",
+            device_dark: select.value === "system",
+        });
     });
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === "sync" && (changes.dark_mode || changes.device_dark)) refresh();
+    });
+    media.addEventListener("change", refresh);
+    refresh();
 }
-
 
 function setupCardLimitSlider(initial) {
     let el = document.querySelector("#card_limit");
@@ -420,7 +427,6 @@ function toggleBetterSidebarSubOptions(betterSidebarOn) {
     }
 }
 
-
 // "Alternate colors" (Better Todo List sub-option) only makes sense in light
 // mode, so hide its checkbox whenever dark mode is on.
 function toggleAlternateColorsVisibility(darkModeOn) {
@@ -428,20 +434,15 @@ function toggleAlternateColorsVisibility(darkModeOn) {
     if (wrap) wrap.style.display = darkModeOn ? "none" : "";
 }
 
-// Hide a toggle's sub-options when it's off; auto_dark only hides its time clocks.
+// Hide a toggle's sub-options when it's off.
 function toggleSubOptionsVisibility(option, isOn) {
-    const togglesWithSubOptions = ["gpa_calc", "assignments_due", "better_todo", "auto_dark", "grade_analytics", "hide_personal_details"];
+    const togglesWithSubOptions = ["gpa_calc", "assignments_due", "better_todo", "grade_analytics", "hide_personal_details"];
     if (!togglesWithSubOptions.includes(option)) return;
     const optionEl = document.getElementById(option);
     if (!optionEl) return;
     const subOptions = optionEl.parentElement.querySelector(":scope > .sub-options");
     if (!subOptions) return;
-    if (option === "auto_dark") {
-        const timesets = subOptions.querySelector(".timesets");
-        if (timesets) timesets.style.display = isOn ? "" : "none";
-    } else {
-        subOptions.style.display = isOn ? "" : "none";
-    }
+    subOptions.style.display = isOn ? "" : "none";
 }
 
 function setupFeatureSearch(menu) {
@@ -574,7 +575,7 @@ function setupFeatureSearch(menu) {
             index.push(entry);
         }
 
-        // Big section buttons (Edit Dark Mode, Cards, Themes, GPA Settings, Debug)
+        // Big section buttons (Cards, Themes, GPA Settings, Debug)
         document.querySelectorAll(".more-options-container .tab-btn").forEach(btn => {
             const span = btn.querySelector("span");
             add({ key: "tab:" + btn.id, text: span ? span.textContent.trim() : "", el: btn, action: () => openTab(btn.id) });
@@ -633,7 +634,6 @@ function setupFeatureSearch(menu) {
             const btnId = tabElToBtnId.get(h.closest(".tab"));
             add({ key: "color:" + (btnId || "?") + ":" + text, text, el: h, action: () => goToTabElement(h) });
         });
-
 
         // Tab: preset buttons (dark mode presets + popular color palettes).
         document.querySelectorAll(".tab .preset-button").forEach(btn => {
@@ -788,14 +788,14 @@ function setup() {
             "todo_hide_read",
             "todo_confetti",
 			"todo_full_height",
-			"device_dark",
+
 			"relative_dues",
 			"card_overdues",
 			"hide_completed_cards",
 			"equal_height_cards",
 			// "todo_overdues",
 			"gpa_calc_prepend",
-			"auto_dark",
+
 			"assignment_date_format",
 			"todo_hr24",
 			"todo_separate_scrollbar",
@@ -821,12 +821,8 @@ function setup() {
 				tab: ".gpa-bounds-container",
 			},
 			"card-colors-btn": { setup: null, tab: ".card-colors-container" },
-			"customize-dark-btn": {
-				setup: displayDarkModeFixUrls,
-				tab: ".customize-dark",
-			},
 			"import-export-btn": {
-				setup: displayThemeList,
+				setup: () => { displayThemeList(); displayDarkModeFixUrls(); },
 				tab: ".import-export",
 			},
 			"debug-btn": {
@@ -836,16 +832,6 @@ function setup() {
 			"updates-btn": { setup: null, tab: ".updates-container" },
 		},
 		special: [
-			{
-				identifier: "auto_dark_start",
-				setup: (initial) =>
-					setupAutoDarkInput(initial, "auto_dark_start"),
-			},
-			{
-				identifier: "auto_dark_end",
-				setup: (initial) =>
-					setupAutoDarkInput(initial, "auto_dark_end"),
-			},
 			{
 				identifier: "num_assignments",
 				setup: (initial) => setupAssignmentsSlider(initial),
@@ -921,14 +907,8 @@ function setup() {
                 optionSwitch.querySelector("#on").classList.toggle("checked");
                 optionSwitch.querySelector("#off").classList.toggle("checked");
                 chrome.storage.sync.set({ [option]: status });
-                if (option === "auto_dark") {
-                    toggleDarkModeDisable(status);
-                }
                 if (option === "better_sidebar") {
                     toggleBetterSidebarSubOptions(status);
-                }
-                if (option === "dark_mode") {
-                    toggleAlternateColorsVisibility(status);
                 }
                 if (option === "hide_personal_details" && status === false) {
                     // "Temporarily remove all course images" is a sub-option of
@@ -943,10 +923,10 @@ function setup() {
             });
         });
         toggleBetterSidebarSubOptions(sync["better_sidebar"] === true);
-        ["gpa_calc", "assignments_due", "better_todo", "auto_dark", "grade_analytics", "hide_personal_details"].forEach(opt => {
+        ["gpa_calc", "assignments_due", "better_todo", "grade_analytics", "hide_personal_details"].forEach(opt => {
             toggleSubOptionsVisibility(opt, sync[opt] === true);
         });
-        toggleAlternateColorsVisibility(sync["dark_mode"] === true);
+
     });
 
     chrome.storage.sync.get(menu.checkboxes, sync => {
@@ -960,7 +940,7 @@ function setup() {
             const value = sync[option] !== undefined ? sync[option] : defaultOptions.sync[option];
             document.querySelector("#" + option).checked = value;
         });
-        toggleDarkModeDisable(sync.auto_dark);
+
     });
 
     const specialOptions = menu.special.map(obj => obj.identifier);
@@ -974,6 +954,7 @@ function setup() {
         });
     })
 
+    setupAppearanceMode();
 
     // activate tab buttons
     document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -1261,10 +1242,7 @@ function setup() {
                                 final = { ...final, ...(await getExport(storage, exportToggles)) };
                                 break;
                             case "export-dark":
-                                final = { ...final, ...(await getExport(storage, ["dark_preset", "dark_mode"])) };
-                                break;
-                            case "export-dark-schedule":
-                                final = { ...final, ...(await getExport(storage, exportDarkSchedule)) };
+                                final = { ...final, ...(await getExport(storage, ["dark_preset", "dark_mode", "device_dark"])) };
                                 break;
                             case "export-cards":
                                 final = { ...final, ...(await getExport(storage, ["custom_cards"])) };
@@ -1370,7 +1348,6 @@ function setup() {
         })
     });
 
-
     // activate sidebar tool radio
     ["#radio-sidebar-image", "#radio-sidebar-gradient", "#radio-sidebar-solid"].forEach(radio => {
         document.querySelector(radio).addEventListener("click", () => {
@@ -1464,7 +1441,6 @@ function setup() {
         document.getElementById("browser-settings-popup").classList.remove("open");
     });
 
-
     document.getElementById("submit-form-btn").addEventListener("click", displayThemeSubmissionForm);
 
     document.getElementById("gpa-plus-minus").addEventListener("click", () => {
@@ -1524,14 +1500,12 @@ function applyGPAPreset(bounds) {
     });
 }
 
-
 function displayThemeSubmissionForm() {
     document.getElementById("submit-form").style.display = "block";
     document.getElementById("view-submissions").style.display = "none";
     document.getElementById("submit-form-btn").classList.add("active");
     document.getElementById("view-submissions-btn").classList.remove("active");
 }
-
 
 async function getExport(storage, options) {
     let final = {};
@@ -1655,7 +1629,6 @@ let allThemes = themeSortFn(current_sort);
 
 let fallback = false;
 
-
 function saveCurrentTheme() {
     const allOptions = syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "gpa_calc_bounds", "card_colors"]);
     chrome.storage.local.get(["saved_themes"], local => {
@@ -1699,7 +1672,6 @@ function saveCurrentTheme() {
     });
 }
 
-
 function displayThemeList(direction = 0) {
     // Render the sorted theme list, filtered by any active search.
     let themesToShow = allThemes;
@@ -1708,7 +1680,6 @@ function displayThemeList(direction = 0) {
     }
     displayThemeSearchList(themesToShow, direction);
 }
-
 
 function displayThemeSearchList(themesToShow, pageDir = 0) {
     document.getElementById("theme-current-sort").textContent = current_sort;
@@ -1805,6 +1776,10 @@ function importTheme(theme) {
     try {
         let keys = Object.keys(theme).filter(key => !removedStyleOptions.has(key));
         let final = {};
+        // Older themes only store dark_mode, so applying one selects its explicit mode.
+        if (typeof theme.dark_mode === "boolean" && theme.device_dark === undefined) {
+            final.device_dark = false;
+        }
         let localFinal = null;
         chrome.storage.sync.get("custom_cards", sync => {
             keys.forEach(key => {
@@ -1853,7 +1828,6 @@ function updateCards(key, value) {
         })
     });
 }
-
 
 function displayGPABounds(selectedCourse) {
     chrome.storage.sync.get(["gpa_calc_bounds", "gpa_threshold_mode", "gpa_course_bounds", "custom_cards"], storage => {
@@ -1948,7 +1922,6 @@ async function displayAdvancedCards() {
     });
     if (needsSync) await sendFromPopup("getCards");
     chrome.storage.sync.get(["custom_cards", "custom_cards_2"], storage => {
-
 
 		const cardGrid = document.getElementById("card-grid");
         if (!cardGrid) {
@@ -2111,7 +2084,6 @@ function saveCardChanges(courseId) {
 	}, 500);
 }
 
-
 function resetCardToDefault(courseId) {
 	updateCards(courseId, { name: "", code: "", hidden: false, hide: false, hide_todo: false });
 	displayAlert(false, "Card reset to default settings!");
@@ -2131,17 +2103,6 @@ function hideCardEditMenu() {
 	document
 		.querySelectorAll(".course-card-button")
 		.forEach((btn) => btn.classList.remove("active"));
-}
-
-function toggleDarkModeDisable(disabled) {
-    let darkSwitch = document.querySelector('#dark_mode');
-    if (disabled === true) {
-        darkSwitch.classList.add('switch_disabled');
-        darkSwitch.style.pointerEvents = "none";
-    } else {
-        darkSwitch.classList.remove('switch_disabled');
-        darkSwitch.style.pointerEvents = "auto";
-    }
 }
 
 // customization tab

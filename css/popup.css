@@ -17,8 +17,6 @@ h2 {font-size:24px;}
 .slider:hover {cursor:pointer}
 .slider{height:22px;min-width:40px;position:relative;}
 .switch_disabled {opacity: .3}
-.timeset {display: block;margin-top: 5px}
-.timeset span {margin-left: 8px;}
 .header {font-size: 16px;display: flex;align-items: center;gap:12px; margin-bottom:14px;}
 .header h1 { font-weight: 600; font-size:24px; }
 #bclogo {height: 30px;width:30px;filter: none}
@@ -59,6 +57,7 @@ button:active {filter:brightness(85%)}
 .option-background .color-changer {color:#e2e2e2;}
 .option-color .color-changer {color:#000;}
 .customization {margin-top: 12px}
+#appearance-mode {width: 100%; color-scheme: dark;}
 .customization-header {font-size: 20px;margin-top: 10px}
 .colors-button, .customization-button {flex: auto; font-size:12px;color:#e2e2e2;background:var(--inputbg);border: none;padding: 10px 20px; font-family: inherit;border-radius:7px;transition:.1s background;font-weight:400}
 .colors-button {min-width:90px}
@@ -94,7 +93,7 @@ h2 {margin-top: 20px;font-weight:600}
 .todo-more-options.expanded .todo-expanded-label {display:inline;}
 .todo-more-items {display:none;flex-direction:column;}
 .todo-more-options.expanded .todo-more-items {display:flex;padding-left:2px;}
-#advanced-settings, #gpa-bounds-btn, #customize-dark-btn, #card-colors-btn {width: 100%;}
+#advanced-settings, #gpa-bounds-btn, #card-colors-btn {width: 100%;}
 .back-btn {width: 120px;height:100%;margin-top:0}
 .big-button {border: none;border-radius: 7px;background: var(--containerbg);color: #fff;font-family: inherit;padding: 12px 10px;font-weight:600}
 #setSingleColor, #setGradientColor {padding: 8px 20px;margin-top:5px;}

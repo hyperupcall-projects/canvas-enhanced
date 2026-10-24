@@ -453,7 +453,6 @@ let assignmentsDue = [];
 let todoRenderGen = 0;
 let cardRenderGen = 0;
 let options = {};
-let timeCheck = null;
 let reminderCheck = null;
 // Set while a background planner-cache refresh is in flight so overlapping
 // schedules (multiple loads, multiple tabs) can't run concurrently.
@@ -755,6 +754,11 @@ function startExtension() {
     watchSubmissionPageButton();
 
     toggleDarkMode();
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        if (options.device_dark === true) {
+            applyOptionsChanges({ device_dark: { newValue: true } });
+        }
+    });
 
     chrome.storage.sync.get(["better_sidebar", "sidebar_scale"], result => {
         options = { ...options, ...result };
@@ -764,7 +768,6 @@ function startExtension() {
     chrome.storage.sync.get(null, result => {
         options = { ...options, ...result };
         applyTodoAlternateColors();
-        toggleAutoDarkMode();
         // toggleScheduledReminders();
         getApiData();
         checkDashboardReady();
@@ -821,11 +824,6 @@ function applyOptionsChanges(changes) {
 				break;
 			case "todo_alternate_colors":
 				applyTodoAlternateColors();
-				break;
-			case "auto_dark":
-			case "auto_dark_start":
-			case "auto_dark_end":
-				toggleAutoDarkMode();
 				break;
 			case "gradient_cards":
 				changeGradientCards();
@@ -3195,7 +3193,7 @@ function clearTodoList() {
 const TODO_ALT_ICON_COLOR = "#ffffff";
 let todoAltStyleEl = null;
 function applyTodoAlternateColors() {
-    const altOn = options.todo_alternate_colors === true && options.dark_mode !== true;
+    const altOn = options.todo_alternate_colors === true && !isDarkModeActive();
     const color = altOn ? TODO_ALT_ICON_COLOR : "var(--bctext-0)";
     if (!todoAltStyleEl) {
         todoAltStyleEl = document.createElement("style");
@@ -3525,7 +3523,7 @@ function populateAssignments(iscompleted = false) {
         // rendered black in light mode or the theme text color in dark mode
         // instead of the course's card color.
         const classNameColor = options.todo_ignore_card_colors
-            ? (options.dark_mode === true ? "var(--bctext-0)" : "#000000")
+            ? (isDarkModeActive() ? "var(--bctext-0)" : "#000000")
             : courseColor;
         // "Remove icons" (Better Todo List): when on, the task-type icon is
         // omitted from the colored strip on the left of each task.
@@ -3658,7 +3656,7 @@ function populateAnnouncements() {
 
 		// "Ignore card colors": black in light mode, theme text color in dark.
 		const classNameColor = options.todo_ignore_card_colors
-			? (options.dark_mode === true ? "var(--bctext-0)" : "#000000")
+			? (isDarkModeActive() ? "var(--bctext-0)" : "#000000")
 			: courseColor;
 		// "Remove icons": drop the announcement icon from the colored strip.
 		const removeIcons = options.todo_remove_icons === true;
@@ -4930,6 +4928,12 @@ const BC_LIGHT_DEFAULTS = {
     "text-2": "#4f4f4f"
 };
 
+function isDarkModeActive() {
+    return options.device_dark === true
+        ? window.matchMedia("(prefers-color-scheme: dark)").matches
+        : options.dark_mode === true;
+}
+
 function generateDarkModeCSS() {
     // Always-on light-mode defaults so var(--bc*) resolves in light mode too.
     let css = ":root{\n";
@@ -5014,7 +5018,7 @@ function setupSubmissionTrayWatcher() {
     if (submissionTrayObserver) return;
     const run = () => {
         submissionTrayFixScheduled = false;
-        if (options.dark_mode !== true && options.device_dark !== true) return;
+        if (!isDarkModeActive()) return;
         const tray = document.querySelector('[data-testid="submission-tray"]');
         if (tray) fixSubmissionTrayColors(tray);
     };
@@ -5043,7 +5047,7 @@ function teardownSubmissionTrayFixes() {
 
 function toggleDarkMode() {
     const css = generateDarkModeCSS();
-    const darkOn = options.dark_mode === true || options.device_dark === true;
+    const darkOn = isDarkModeActive();
     // Reuse the existing #darkcss style if present (never create a duplicate), so a
     // document_start dark-mode bootstrap and later updates stay on one element.
     let style = document.querySelector("#darkcss");
@@ -5069,56 +5073,17 @@ function toggleDarkMode() {
 function runDarkModeFixer(override = false) {
     // Quiz safe mode: never auto-run the dark mode fixer on quiz pages.
     if (quizSafeModeActive()) return { "path": "canvasrefined-none", "time": "" };
-    if (options.dark_mode !== true) return { "path": "canvasrefined-darkmode_off", "time": "" };
+    if (!isDarkModeActive()) return { "path": "canvasrefined-darkmode_off", "time": "" };
     if (override === false && !options["dark_mode_fix"].includes(window.location.pathname)) return { "path": "canvasrefined-none", "time": "" };
     let output = inspectDarkMode();
     return { "path": window.location.pathname, "time": output.time };
 }
 
-function autoDarkModeCheck() {
-    let date = new Date();
-    let currentHour = date.getHours();
-    let currentMinute = date.getMinutes();
-    let status = false;
-    if (options.auto_dark === false) return;
-    let startHour = parseInt(options.auto_dark_start["hour"]);
-    let startMinute = parseInt(options.auto_dark_start["minute"]);
-    let endHour = parseInt(options.auto_dark_end["hour"]);
-    let endMinute = parseInt(options.auto_dark_end["minute"]);
-    if (currentHour === startHour) {
-        status = currentMinute >= startMinute;
-    } else if (currentHour === endHour) {
-        status = currentMinute <= endMinute;
-    } else if (startHour > endHour) {
-        status = currentHour > startHour || currentHour < endHour;
-    } else if (startHour < endHour) {
-        status = currentHour > startHour && currentHour < endHour;
-    }
-    if (options.auto_dark === true) {
-        // Skip the write (and the storage.onChanged cascade it would trigger) when the
-        // computed state already matches dark_mode, so the 60s timer is a cheap no-op.
-        if (status === options.dark_mode) return;
-        options.dark_mode = status;
-        chrome.storage.sync.set({ "dark_mode": status }, toggleDarkMode);
-    }
-}
-
-
-// }
-
-function toggleAutoDarkMode() {
-    clearInterval(timeCheck);
-    if (options.auto_dark && options.auto_dark === false) return;
-    autoDarkModeCheck();
-    timeCheck = setInterval(autoDarkModeCheck, 60000);
-}
-
-
 let iframeObserver;
 function runiframeChecker() {
     if (current_page === "/" || current_page === "") return;
 
-    if (options.dark_mode !== true) {
+    if (!isDarkModeActive()) {
         if (iframeObserver) iframeObserver.disconnect();
         document.querySelectorAll('iframe').forEach((frame) => {
             if (frame.contentDocument && frame.contentDocument.documentElement && frame.contentDocument.documentElement.querySelector('#darkcss')) {

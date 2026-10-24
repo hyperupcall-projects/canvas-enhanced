@@ -1,4 +1,16 @@
 {
+    "appearance": {
+        "message": "Appearance"
+    },
+    "appearance_light": {
+        "message": "Light"
+    },
+    "appearance_dark": {
+        "message": "Dark"
+    },
+    "appearance_system": {
+        "message": "System"
+    },
     "Canvas_Refined": {
         "message": "Canvas Refined"
     },
