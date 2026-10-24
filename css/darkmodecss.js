@@ -1,4 +1,26 @@
 const DARKMODE_CSS = `
+/* Canvas layout wrappers have their own white surfaces in several views.
+   Theme them explicitly in both appearances, without touching image layers. */
+html,
+#wrapper,
+#main,
+#not_right_side,
+#content-wrapper,
+#content,
+.ic-Layout-wrapper,
+.ic-Layout-contentWrapper,
+.ic-Layout-contentMain {
+    background-color: var(--bcbackground-0) !important;
+}
+#right-side-wrapper,
+#right-side,
+#better-todo-main,
+.ic-DashboardCard,
+.ic-DashboardCard__box,
+.ic-DashboardCard__header_content {
+    background-color: var(--bcbackground-1) !important;
+}
+
 #announcementWrapper>div>div,
 #breadcrumbs,
 .ic-app-nav-toggle-and-crumbs,
@@ -1202,11 +1224,13 @@ hr {
     color:var(--bcsidebar-text)!important
 }
 
-.ic-DashboardCard,
-.ic-DashboardCard__header_content,
 .canvasrefined-assignment-container,
 .recent_feedback .event-details {
-    background:none!important
+    background-color:var(--bcbackground-1)!important
+}
+.ic-DashboardCard,
+.ic-DashboardCard__header_content {
+    background-color:var(--bcbackground-1)!important
 }
 #right-side .event-details .event-details__context,
 #right-side .event-details .event-details__context *,
@@ -1375,7 +1399,7 @@ body > span > span[class*="-tray"] {
 }
 button[aria-selected="true"] > [class*="-calendarDay__day"] {
     background: var(--bclinks) !important;
-    color: #ffffff !important;
+    color: var(--bclink-text, #ffffff) !important;
 }
 /* InstUI Select dropdowns (Time / Course) open body-level popover portals
    with white View wrappers and white option rows around the options list.
@@ -1543,5 +1567,18 @@ td.status [class*="-pill"]:hover,
 /* Modal overlay */
 [class*="-mask"] {
   background: rgba(0, 0, 0, 0.60) !important;
+}
+
+/* Native controls and the page's inherited ink must follow the selected
+   appearance too, rather than retaining Canvas/browser white and black. */
+body {
+    color: var(--bctext-0) !important;
+}
+input:not([type="color"]):not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
+select,
+textarea {
+    background-color: var(--bcbackground-1) !important;
+    color: var(--bctext-0) !important;
+    border-color: var(--bcborders) !important;
 }
 `;

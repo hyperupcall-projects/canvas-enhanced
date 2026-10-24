@@ -3,7 +3,6 @@ chrome.runtime.onInstalled.addListener(function () {
     let default_options = {
         "local": {
             "previous_colors": null,
-            "previous_theme": null,
             "errors": [],
             "saved_themes": {},
             "liked_themes": [],
@@ -81,7 +80,6 @@ chrome.runtime.onInstalled.addListener(function () {
             "hide_sequence_footer": false,
             "hide_navbar": false,
             "quiz_safe_mode": false,
-            "dark_mode_fix": [],
             "assignment_states": {},
             "tab_icons": false,
             "todo_hide_feedback": false,
@@ -103,7 +101,6 @@ chrome.runtime.onInstalled.addListener(function () {
             "new_browser": null,
             "gpa_calc_cumulative": false,
             "gpa_calc_weighted": true,
-            "browser_show_likes": false,
             "imageSize": 100,
             "cardRoundness": 5,
             'cardSpacing': 0,

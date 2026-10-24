@@ -70,7 +70,6 @@ const apiurl = "none";
 const defaultOptions = {
     "local": {
         "previous_colors": null,
-        "previous_theme": null,
         "errors": [],
     },
     "sync": {
@@ -156,7 +155,6 @@ const defaultOptions = {
         "hide_navbar": false,
         "grade_analytics_zones": false,
         "quiz_safe_mode": false,
-        "dark_mode_fix": [],
         "assignment_states": {},
         "tab_icons": false,
         "todo_hide_feedback": false,
@@ -197,29 +195,6 @@ function displayErrors() {
             document.querySelector("#error_log_output").value += (e + "\n\n");
         })
     });
-}
-
-function displayDarkModeFixUrls() {
-    let output = document.getElementById("dark-mode-fix-urls");
-    output.textContent = "";
-    chrome.storage.sync.get("dark_mode_fix", sync => {
-        sync["dark_mode_fix"].forEach(url => {
-            //let div = makeElement("div", "customization-button", output, url);
-            let div = makeElement("div", output, { "className": "customization-button", "textContent": url });
-            div.classList.add("fixed-url");
-            let btn = makeElement("button", div, { "className": "dd", "textContent": "x" });
-            btn.addEventListener("click", () => {
-                chrome.storage.sync.get("dark_mode_fix", sync => {
-                    for (let i = 0; i < sync["dark_mode_fix"].length; i++) {
-                        if (sync["dark_mode_fix"][i] === url) {
-                            sync["dark_mode_fix"].splice(i);
-                            chrome.storage.sync.set({ "dark_mode_fix": sync["dark_mode_fix"] }).then(() => div.remove());
-                        }
-                    }
-                });
-            })
-        })
-    })
 }
 
 document.addEventListener("DOMContentLoaded", setup);
@@ -461,7 +436,7 @@ function setupFeatureSearch(menu) {
 
     function shouldSkip(el) {
         // Skip overlays / scrapped containers that aren't real features
-        if (el.closest('#submit-popup, #browser-settings-popup, #opt-in, #card-edit-menu')) return true;
+        if (el.closest('#submit-popup, #opt-in, #card-edit-menu')) return true;
         // Skip statically-hidden containers but keep dynamically-hidden sub-options.
         let node = el;
         while (node && node !== document.body) {
@@ -645,7 +620,7 @@ function setupFeatureSearch(menu) {
         });
 
         // Tab: standalone action buttons with distinct labels (GPA scale presets, revert colors).
-        ["gpa-plus-minus", "gpa-by-letter", "revert-colors"].forEach(id => {
+        ["gpa-plus-minus", "gpa-by-letter", "revert-colors", "save-theme", "import-theme"].forEach(id => {
             const btn = document.getElementById(id);
             if (!btn || shouldSkip(btn)) return;
             const text = btn.textContent.trim();
@@ -780,7 +755,6 @@ function setup() {
 		switches: syncedSwitches,
 		checkboxes: [
 			"hide_navbar",
-			"browser_show_likes",
 			"gpa_calc_weighted",
 			"gpa_calc_cumulative",
 			// /*'card_method_date',*/ "show_updates",
@@ -820,9 +794,8 @@ function setup() {
 				setup: displayGPABounds,
 				tab: ".gpa-bounds-container",
 			},
-			"card-colors-btn": { setup: null, tab: ".card-colors-container" },
 			"import-export-btn": {
-				setup: () => { displayThemeList(); displayDarkModeFixUrls(); },
+				setup: () => { displayThemeList(); checkHighContrastWarning(); },
 				tab: ".import-export",
 			},
 			"debug-btn": {
@@ -997,24 +970,6 @@ function setup() {
     // activate dark mode inspector button
     document.querySelector("#inspector-btn").addEventListener("click", async function () {
         document.querySelector("#inspector-output").textContent = (await sendFromPopup("inspect"))["selectors"];
-    });
-
-    // activate dark mode fixer button
-    document.querySelector("#fix-dm-btn").addEventListener("click", async function () {
-        let output = await sendFromPopup("fixdm");
-        if (output.path === "canvasrefined-none" || output.path === "canvasrefined-darkmode_off") return;
-        let rating = "bad";
-        if (output.time < 100) {
-            rating = "good";
-        } else if (output.time < 250) {
-            rating = "ok";
-        }
-        document.getElementById("fix-dm-output").textContent = "Fix took " + Math.round(output.time) + "ms (rating: " + rating + ")";
-        chrome.storage.sync.get("dark_mode_fix", sync => {
-            if (sync["dark_mode_fix"].includes(output.path)) return;
-            sync["dark_mode_fix"].push(output.path);
-            chrome.storage.sync.set({ "dark_mode_fix": sync["dark_mode_fix"] }).then(() => displayDarkModeFixUrls());
-        })
     });
 
     // activate storage dump button
@@ -1207,10 +1162,34 @@ function setup() {
         rows[rows.length - 1].focus();
     });
 
-    // activate import input box
-    document.querySelector("#import-input").addEventListener("input", (e) => {
-        const obj = JSON.parse(e.target.value);
-        importTheme(obj);
+    const importDialog = document.getElementById("import-theme-dialog");
+    const importInput = document.getElementById("import-input");
+    const importError = document.getElementById("import-theme-error");
+    document.getElementById("import-theme").addEventListener("click", () => {
+        importInput.value = "";
+        importError.textContent = "";
+        importDialog.showModal();
+        importInput.focus();
+    });
+    document.getElementById("cancel-import-theme").addEventListener("click", () => importDialog.close());
+    document.getElementById("import-theme-form").addEventListener("submit", e => {
+        e.preventDefault();
+        try {
+            const theme = JSON.parse(importInput.value);
+            if (!theme || typeof theme !== "object" || Array.isArray(theme) || !Object.keys(theme).length) {
+                throw new Error("Paste a theme object.");
+            }
+            if (theme.dark_preset !== undefined && theme.dark_preset !== null && theme.dark_preset !== "" && (typeof theme.dark_preset !== "object" || Array.isArray(theme.dark_preset))) {
+                throw new Error("Invalid theme colors.");
+            }
+            if (theme.custom_cards !== undefined && (!Array.isArray(theme.custom_cards) || theme.custom_cards.some(image => typeof image !== "string"))) {
+                throw new Error("Invalid theme images.");
+            }
+            importTheme(theme);
+            importDialog.close();
+        } catch (error) {
+            importError.textContent = "Unable to import. Paste valid exported theme JSON.";
+        }
     });
 
     // copy export output to clipboard
@@ -1283,43 +1262,40 @@ function setup() {
         refreshExport();
     });
 
-    // activate revert to original button
-    document.querySelector("#theme-revert").addEventListener("click", () => {
-        chrome.storage.local.get("previous_theme", local => {
-            if (local["previous_theme"] !== null) {
-                importTheme(local["previous_theme"]);
-            }
-        });
-    });
-
     document.querySelector("#alert").addEventListener("click", clearAlert);
     // TODO: maybe fix this at some point, idk what is causing the error here
     document.querySelectorAll(".preset-button.customization-button").forEach(btn => btn.addEventListener("click", changeToPresetCSS));
 
-    // activate card color inputs
-    document.querySelector("#singleColorInput").addEventListener("change", e => document.querySelector("#singleColorText").value = e.target.value);
-    document.querySelector("#singleColorText").addEventListener("change", e => document.querySelector("#singleColorInput").value = e.target.value);
-    document.querySelector("#gradientColorFrom").addEventListener("change", e => document.querySelector("#gradientColorFromText").value = e.target.value);
-    document.querySelector("#gradientColorFromText").addEventListener("change", e => document.querySelector("#gradientColorFrom").value = e.target.value);
-    document.querySelector("#gradientColorTo").addEventListener("change", e => document.querySelector("#gradientColorToText").value = e.target.value);
-    document.querySelector("#gradientColorToText").addEventListener("change", e => document.querySelector("#gradientColorTo").value = e.target.value);
-    document.querySelector("#setSingleColor").addEventListener("click", () => {
-        let colors = [document.querySelector("#singleColorInput").value];;
-        sendFromPopup("setcolors", colors);
-    });
-    document.querySelector("#setGradientColor").addEventListener("click", () => {
-        chrome.storage.sync.get("custom_cards", sync => {
-            length = 0;
-            Object.keys(sync["custom_cards"]).forEach(key => {
-                if (sync["custom_cards"][key].hidden !== true) length++;
+    // Preview while dragging/typing; persist to Canvas when the edit completes.
+    const applyCardColors = async (gradient, preview) => {
+        let colors = [document.querySelector("#singleColorInput").value];
+        if (gradient) {
+            const sync = await chrome.storage.sync.get("custom_cards");
+            const count = Math.max(2, Object.values(sync.custom_cards || {}).filter(card => !card.hidden).length);
+            const from = document.querySelector("#gradientColorFrom").value;
+            const to = document.querySelector("#gradientColorTo").value;
+            colors = Array.from({ length: count }, (_, i) => getColorInGradient(i / (count - 1), from, to));
+        }
+        noteThemeEdit({ card_colors: colors });
+        if (!preview) chrome.storage.sync.set({ card_colors: colors });
+        sendFromPopup(preview ? "preview-card-colors" : "setcolors", colors);
+    };
+    [
+        ["singleColorInput", "singleColorText", false],
+        ["gradientColorFrom", "gradientColorFromText", true],
+        ["gradientColorTo", "gradientColorToText", true],
+    ].forEach(([pickerId, textId, gradient]) => {
+        const picker = document.getElementById(pickerId);
+        const text = document.getElementById(textId);
+        [picker, text].forEach(input => {
+            input.addEventListener("input", () => {
+                if (!/^#[a-f\d]{6}$/i.test(input.value)) return;
+                picker.value = text.value = input.value;
+                applyCardColors(gradient, true);
             });
-            let colors = [];
-            let from = document.querySelector("#gradientColorFrom").value;
-            let to = document.querySelector("#gradientColorTo").value;
-            for (let i = 1; i <= length; i++) {
-                colors.push(getColorInGradient(i / length, from, to));
-            }
-            sendFromPopup("setcolors", colors);
+            input.addEventListener("change", () => {
+                if (/^#[a-f\d]{6}$/i.test(input.value)) applyCardColors(gradient, false);
+            });
         });
     });
 
@@ -1330,6 +1306,8 @@ function setup() {
             // Guard against unset/expired-shape entries and the empty lists
             // old list-mode runs stored — sending [] would be a silent no-op.
             if (prev && Array.isArray(prev.colors) && prev.colors.length > 0) {
+                noteThemeEdit({ card_colors: prev.colors });
+                chrome.storage.sync.set({ card_colors: prev.colors });
                 sendFromPopup("setcolors", prev.colors);
             }
         })
@@ -1344,46 +1322,10 @@ function setup() {
             div.style.background = color;
         });
         btn.addEventListener("click", () => {
+            noteThemeEdit({ card_colors: colors });
+            chrome.storage.sync.set({ card_colors: colors });
             sendFromPopup("setcolors", colors);
         })
-    });
-
-    // activate sidebar tool radio
-    ["#radio-sidebar-image", "#radio-sidebar-gradient", "#radio-sidebar-solid"].forEach(radio => {
-        document.querySelector(radio).addEventListener("click", () => {
-            chrome.storage.sync.get(["dark_preset"], storage => {
-                let mode = radio === "#radio-sidebar-image" ? "image" : radio === "#radio-sidebar-gradient" ? "gradient" : "solid";
-                displaySidebarMode(mode, storage["dark_preset"]["sidebar"]);
-            });
-        })
-    });
-
-    // theme browser controls
-    document.getElementById("premade-themes-left").addEventListener("click", () => changePage(-1));
-    document.getElementById("premade-themes-right").addEventListener("click", () => changePage(1));
-    document.getElementById("theme-sorts").addEventListener("click", () => {
-        const el = document.getElementById("theme-sort-selector");
-        if (el.classList.contains("open")) {
-            clickout();
-        } else {
-            el.classList.add("open");
-            setTimeout(() => {
-                document.addEventListener("click", clickout);
-        }, 10);
-        }
-    });
-    document.getElementById("theme-search").addEventListener("change", async (e) => {
-        searchFor = e.target.value;
-        console.log(searchFor);
-        // linear search
-        let themesToShow = [];
-        for (let i = 0; i < themes.length; i++) {
-            if (themes[i].title.toLowerCase().includes(searchFor.toLowerCase())) {
-                themesToShow.push(themes[i]);
-            }
-        }
-        console.log(themesToShow);
-        displayThemeSearchList(themesToShow);
     });
 
     // activate theme save button
@@ -1419,26 +1361,6 @@ function setup() {
             drawer.style.display = "none";
             e.target.textContent = "Show";
         }
-    });
-
-    // activate theme browser opt out
-
-    // activate theme browser opt in
-
-    document.querySelectorAll(".theme-sort-btn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            themeSort(e.target.textContent);
-        });
-    });
-
-    // browser settings buttons
-    document.getElementById("browser-settings-btn").addEventListener("click", () => {
-        document.getElementById("browser-settings-popup").classList.add("open");
-    });
-
-    document.getElementById("close-settings-btn").addEventListener("click", () => {
-        displayThemeList(0);
-        document.getElementById("browser-settings-popup").classList.remove("open");
     });
 
     document.getElementById("submit-form-btn").addEventListener("click", displayThemeSubmissionForm);
@@ -1535,183 +1457,225 @@ async function getExport(storage, options) {
     return final;
 }
 
-let pageTimeout = false;
+const UNSAVED_THEME_KEY = "unsaved";
+const trackedThemeOptions = ["dark_mode", "device_dark", "dark_preset", "custom_cards", "card_colors"]
+    .concat(exportCardColorToggles, exportCardStyles, exportSidebar, exportTodo);
+let activeThemeSource = null;
+let themeImportInProgress = false;
+let expectedThemeChanges = {};
+let workingThemeOverrides = {};
+let unsavedThemeTimer = null;
+let savedThemeWrites = Promise.resolve();
+let unsavedThemeWrite = Promise.resolve();
+const themeSourceReady = chrome.storage.local.get("active_theme").then(local => {
+    activeThemeSource = local.active_theme || null;
+});
 
-function changePage(direction) {
-    if (pageTimeout) return;
-    pageTimeout = true;
-    displayThemeList(direction);
-    setTimeout(() => {
-        pageTimeout = false;
-    }, 500);
-}
-
-const colorValues = {
-    "red": 1,
-    "pink": 2,
-    "orange": 3,
-    "yellow": 4,
-    "lightgreen": 5,
-    "green": 6,
-    "lightblue": 7,
-    "blue": 8,
-    "lightpurple": 9,
-    "purple": 10,
-    "lightpurple": 11,
-    "beige": 12,
-    "brown": 13,
-    "gray": 14,
-}
-
-function themeSortFn(method) {
-    let themes = getTheme("all");
-    switch (method) {
-        case "New":
-            return themes.reverse();
-        case "Old":
-            return themes;
-        case "Color":
-            return themes.sort((a, b) => {
-                return (colorValues[a.color] || (a.color !== "whiteblack" && a.color.includes("white") ? 15 : 16)) - (colorValues[b.color] || (b.color !== "whiteblack" && b.color.includes("white") ? 15 : 16))
-            })
-            return themes.sort((a, b) => {
-                return a.color < b.color ? 1 : -1;
-            })
-        case "ABC":
-            return themes.sort((a, b) => {
-                return a.title.toLowerCase() > b.title.toLowerCase() ? 1 : -1;
-            })
-        default:
-            return shuffle(themes).sort((a, b) => {
-                a = a.score + "";
-                b = b.score + "";
-                a = parseInt(a.charAt(0)) + parseInt(a.charAt(1)) + parseInt(a.charAt(2)) + parseInt(a.charAt(3));
-                b = parseInt(b.charAt(0)) + parseInt(b.charAt(1)) + parseInt(b.charAt(2)) + parseInt(b.charAt(3));
-                return b - a;
-            });
-    }
-}
-
-let cache = {};
-
-// new theme sort button
-function themeSort(sort) {
-    current_sort = sort;
-    current_page_num = 1;
-    allThemes = themeSortFn(current_sort);
-    displayThemeList(0);
-}
-
-function clickout() {
-    setTimeout(() => {
-        document.getElementById("theme-sort-selector").classList.remove("open");
-        document.removeEventListener("click", clickout);
-    }, 10);
-}
-
-// shuffle function for the score sorting so theres no order bias
-function shuffle (arr) {
-    var j, x, index;
-    for (index = arr.length - 1; index > 0; index--) {
-        j = Math.floor(Math.random() * (index + 1));
-        x = arr[index];
-        arr[index] = arr[j];
-        arr[j] = x;
-    }
-    return arr;
-}
-
-let current_page_num = 1;
-let maxPage = 0;
-let searchFor = "";
-let current_sort = "Popular";
-let allThemes = themeSortFn(current_sort);
-
-let fallback = false;
-
-function saveCurrentTheme() {
-    const allOptions = syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "gpa_calc_bounds", "card_colors"]);
-    chrome.storage.local.get(["saved_themes"], local => {
-        chrome.storage.sync.get(allOptions, async sync => {
-            let current = await getExport(sync, allOptions);
-            let trimmed = { 
-                "disable_color_overlay": current["disable_color_overlay"], 
-                "gradient_cards": current["gradient_cards"],
-                "dark_mode": current["dark_mode"],
-                "dark_preset": current["dark_preset"],
-                "custom_cards": current["custom_cards"],
-                "card_colors": current["card_colors"] === null ? [current["dark_preset"]["links"]] : current["card_colors"],
-                "better_todo": current["better_todo"],
-                "todo_hide_feedback": current["todo_hide_feedback"],
-                "todo_hide_read": current["todo_hide_read"] !== false,
-                "todo_full_height": current["todo_full_height"],
-                "todo_confetti": current["todo_confetti"],
-                "todo_progress_rings": current["todo_progress_rings"],
-                "todo_timeframe": current["todo_timeframe"],
-                "todo_hr24": current["todo_hr24"],
-                "todo_separate_scrollbar": current["todo_separate_scrollbar"],
-                "todo_alternate_colors": current["todo_alternate_colors"],
-                "todo_ignore_card_colors": current["todo_ignore_card_colors"],
-                "todo_remove_icons": current["todo_remove_icons"],
-                "todo_show_scores": current["todo_show_scores"],
-                "better_sidebar": current["better_sidebar"],
-                "sidebar_scale": current["sidebar_scale"],
-				"imageSize": current["imageSize"],
-				"cardRoundness": current["cardRoundness"],
-				"cardSpacing": current["cardSpacing"],
-				"cardWidth": current["cardWidth"],
-				"cardHeight": current["cardHeight"],
-				"cardPadding": current["cardPadding"],
-            }
-            const now = new Date();
-            local["saved_themes"][now.getTime()] = trimmed;
-            chrome.storage.local.set({ "saved_themes": local["saved_themes"] }).then(() => {
-                displaySavedThemes();
-            });
-        });        
+// Serialize read/modify/write operations so a draft cannot erase a rename,
+// deletion, or newly saved theme while local storage is being read.
+function updateSavedThemes(update) {
+    const operation = savedThemeWrites.then(async () => {
+        const local = await chrome.storage.local.get(["saved_themes", "saved_theme_names", "saved_theme_updated_at"]);
+        const state = {
+            saved_themes: local.saved_themes || {},
+            saved_theme_names: local.saved_theme_names || {},
+            saved_theme_updated_at: local.saved_theme_updated_at || {},
+        };
+        await update(state);
+        await chrome.storage.local.set(state);
     });
+    savedThemeWrites = operation.catch(error => console.warn("Canvas Refined: unable to save theme", error));
+    return operation;
 }
 
-function displayThemeList(direction = 0) {
-    // Render the sorted theme list, filtered by any active search.
-    let themesToShow = allThemes;
-    if (searchFor) {
-        themesToShow = allThemes.filter(theme => theme.title.toLowerCase().includes(searchFor.toLowerCase()));
-    }
-    displayThemeSearchList(themesToShow, direction);
+async function captureCurrentTheme() {
+    const sync = await chrome.storage.sync.get(trackedThemeOptions);
+    const current = { ...defaultOptions.sync, custom_cards: {}, ...sync, ...workingThemeOverrides };
+    const theme = await getExport(current, trackedThemeOptions.filter(key => key !== "card_colors"));
+    theme.card_colors = current.card_colors;
+    if (!Array.isArray(theme.card_colors)) theme.card_colors = await sendFromPopup("getcolors") || [];
+    return JSON.parse(JSON.stringify(theme));
 }
 
-function displayThemeSearchList(themesToShow, pageDir = 0) {
-    document.getElementById("theme-current-sort").textContent = current_sort;
-    const perPage = 24;
-    const maxPage = Math.ceil(themesToShow.length / perPage);
-    if (pageDir == -1 && current_page_num > 1) current_page_num--;
-    if (pageDir == 1 && current_page_num < maxPage) current_page_num++;
-    let container = document.getElementById("premade-themes");
-    container.textContent = "";
-    let start = (current_page_num - 1) * perPage, end = start + perPage;
-    themesToShow.forEach((theme, index) => {
-            if (index < start || index >= end) return;
-            let themeBtn = makeElement("button", container, { "className": "theme-button" });
-            themeBtn.classList.add("customization-button");
-            if (!themeBtn.style.background) themeBtn.style.backgroundImage = "linear-gradient(#00000070, #00000070), url(" + theme.preview + ")";
-            let split = theme.title.split(" by ");
-            makeElement("p", themeBtn, {"className": "theme-button-title", "textContent":  split[0] });
-            makeElement("p", themeBtn, {"className": "theme-button-creator", "textContent": split[1] });
-            themeBtn.addEventListener("click", () => {
-                const allOptions = syncedSwitches.concat(syncedSubOptions).concat(["dark_preset", "custom_cards", "gpa_calc_bounds", "card_colors"]);
-                chrome.storage.sync.get(allOptions, sync => {
-                    chrome.storage.local.get(["previous_theme"], async local => {
-                        if (local["previous_theme"] === null) {
-                            let previous = await getExport(sync, allOptions);
-                            chrome.storage.local.set({ "previous_theme": previous });
-                        }
-                        importTheme(theme.exports);
-                    });
-                });
-            });
+function noteThemeEdit(values = {}) {
+    if (themeImportInProgress) return;
+    Object.assign(workingThemeOverrides, JSON.parse(JSON.stringify(values)));
+    clearTimeout(unsavedThemeTimer);
+    unsavedThemeTimer = setTimeout(() => {
+        persistUnsavedTheme().catch(() => displayAlert(true, "Unable to save the Unsaved Theme. Please try again."));
+    }, 200);
+}
+
+function persistUnsavedTheme() {
+    if (!unsavedThemeTimer) return unsavedThemeWrite;
+    clearTimeout(unsavedThemeTimer);
+    unsavedThemeTimer = null;
+    const operation = unsavedThemeWrite.then(async () => {
+        await themeSourceReady;
+        if (!activeThemeSource) return;
+        const current = await captureCurrentTheme();
+        await updateSavedThemes(state => {
+            state.saved_themes[UNSAVED_THEME_KEY] = current;
+            state.saved_theme_names[UNSAVED_THEME_KEY] = "Unsaved Theme";
+            state.saved_theme_updated_at[UNSAVED_THEME_KEY] = Date.now();
+        });
+        activeThemeSource = { type: "unsaved", key: UNSAVED_THEME_KEY };
+        await chrome.storage.local.set({ active_theme: activeThemeSource });
+        displaySavedThemes();
+    });
+    unsavedThemeWrite = operation.catch(error => console.warn("Canvas Refined: unable to save draft", error));
+    return operation;
+}
+
+function themeSettingValue(key, value) {
+    // Course discovery, grades, and course names are not theme edits.
+    return key === "custom_cards"
+        ? Object.values(value || {}).map(card => card.img || "").filter(Boolean)
+        : value;
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "sync") return;
+    const edits = {};
+    Object.entries(changes).forEach(([key, change]) => {
+        if (!trackedThemeOptions.includes(key)) return;
+        if (Object.hasOwn(expectedThemeChanges, key)) {
+            const expected = expectedThemeChanges[key];
+            delete expectedThemeChanges[key];
+            if (JSON.stringify(change.newValue) === JSON.stringify(expected)) return;
         }
-    )
+        if (JSON.stringify(themeSettingValue(key, change.oldValue)) !== JSON.stringify(themeSettingValue(key, change.newValue))) edits[key] = change.newValue;
+    });
+    if (Object.keys(edits).length) noteThemeEdit(edits);
+});
+
+window.addEventListener("pagehide", () => {
+    persistUnsavedTheme().catch(error => console.warn("Canvas Refined: unable to save draft", error));
+});
+
+function nextSavedThemeKey(saved) {
+    let key = Date.now();
+    while (saved[key]) key++;
+    return String(key);
+}
+
+async function flushThemeValueSave() {
+    if (!presetChangeTimeout) return;
+    expectedThemeChanges.dark_preset = { ...themeValues };
+    await saveThemeValues();
+}
+
+async function saveCurrentTheme() {
+    const button = document.getElementById("save-theme");
+    button.disabled = true;
+    try {
+        await flushThemeValueSave();
+        await persistUnsavedTheme();
+        await themeSourceReady;
+        const current = await captureCurrentTheme();
+        let key;
+        await updateSavedThemes(state => {
+            key = nextSavedThemeKey(state.saved_themes);
+            state.saved_themes[key] = current;
+            state.saved_theme_names[key] = `Theme ${Object.keys(state.saved_themes).filter(id => id !== UNSAVED_THEME_KEY).length}`;
+            if (activeThemeSource?.type === "unsaved") {
+                delete state.saved_themes[UNSAVED_THEME_KEY];
+                delete state.saved_theme_names[UNSAVED_THEME_KEY];
+                delete state.saved_theme_updated_at[UNSAVED_THEME_KEY];
+            }
+        });
+        activeThemeSource = { type: "saved", key };
+        workingThemeOverrides = {};
+        await chrome.storage.local.set({ active_theme: activeThemeSource });
+        displaySavedThemes();
+    } catch (error) {
+        displayAlert(true, "Unable to add the theme. Please try again.");
+    } finally {
+        button.disabled = false;
+    }
+}
+
+async function renameSavedTheme(key, name) {
+    name = name.trim();
+    if (!name) return;
+    await flushThemeValueSave();
+    await persistUnsavedTheme();
+    let newKey = key;
+    await updateSavedThemes(state => {
+        if (!state.saved_themes[key]) return;
+        if (key === UNSAVED_THEME_KEY) {
+            newKey = nextSavedThemeKey(state.saved_themes);
+            state.saved_themes[newKey] = state.saved_themes[key];
+            delete state.saved_themes[key];
+            delete state.saved_theme_names[key];
+            delete state.saved_theme_updated_at[key];
+        }
+        state.saved_theme_names[newKey] = name;
+    });
+    if (activeThemeSource?.key === key) {
+        activeThemeSource = { type: "saved", key: newKey };
+        await chrome.storage.local.set({ active_theme: activeThemeSource });
+    }
+    displaySavedThemes(true);
+}
+
+// Empty values mean Canvas keeps control of that part of the page.
+function emptyThemeValues() {
+    return Object.fromEntries(Object.keys(defaultOptions.sync.dark_preset).map(key => [key, null]));
+}
+
+function readThemeValues(preset) {
+    return { ...emptyThemeValues(), ...preset };
+}
+
+let highContrastWarningRequest = 0;
+async function checkHighContrastWarning() {
+    const warning = document.getElementById("theme-high-contrast-warning");
+    const request = ++highContrastWarningRequest;
+    warning.hidden = true;
+    try {
+        const tabs = await chrome.tabs.query({ currentWindow: true });
+        tabs.sort((a, b) => Number(b.active) - Number(a.active));
+        for (const tab of tabs) {
+            if (request !== highContrastWarningRequest) return;
+            try {
+                const result = await chrome.tabs.sendMessage(tab.id, { message: "canvasrefined:check-high-contrast" });
+                if (result?.canvasRefined !== true) continue;
+                if (request === highContrastWarningRequest) warning.hidden = result.highContrast !== true;
+                return; // Use the active Canvas page, not another school's setting.
+            } catch (_) { /* This tab is not running the Canvas content script. */ }
+        }
+    } catch (_) { /* Leave the warning hidden when no Canvas page is available. */ }
+}
+
+function displayThemeList() {
+    const container = document.getElementById("premade-themes");
+    container.textContent = "";
+    // Retain palette definitions for previously saved themes, but omit these
+    // retired presets from the picker.
+    const listedThemes = themes.filter(theme => !["McDonalds by cmoon3611", "Purple by otulpp"].includes(theme.title));
+    const presets = [...listedThemes, {
+        title: "_No Theme",
+        exports: { dark_preset: emptyThemeValues(), custom_cards: [], card_colors: [], gradient_cards: false, disable_color_overlay: false, better_sidebar: false }
+    }]
+        .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+    presets.forEach(theme => {
+        const button = makeElement("button", container, { className: "theme-button customization-button" });
+        if (theme.preview) button.style.backgroundImage = "linear-gradient(#00000070, #00000070), url(" + theme.preview + ")";
+        const [title, creator] = theme.title.split(" by ");
+        makeElement("p", button, { className: "theme-button-title", textContent: title });
+        if (creator) makeElement("p", button, { className: "theme-button-creator", textContent: creator });
+        button.addEventListener("click", async () => {
+            button.disabled = true;
+            try {
+                await importTheme(theme.exports, { type: "builtin", key: theme.title });
+            } catch (error) {
+                displayAlert(true, error.message || "Unable to load this theme.");
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
 }
 
 function getRelativeDate(date, short = false) {
@@ -1736,86 +1700,115 @@ function getRelativeDate(date, short = false) {
     return { time: relative, ms: now.getTime() - date.getTime() };
 }
 
-function displaySavedThemes() {
-    chrome.storage.local.get("saved_themes", local => {
+function displaySavedThemes(force = false) {
+    chrome.storage.local.get(["saved_themes", "saved_theme_names", "saved_theme_updated_at"], local => {
         const target = document.getElementById("saved-themes");
+        if (!force && target.querySelector(".saved-theme-rename:not([hidden])")) return;
         target.textContent = "";
-        Object.keys(local["saved_themes"]).forEach((key, index) => {
-            const created = new Date(parseInt(key));
-            let btn = makeElement("div", target, { "className": "saved-theme" });
-            let title = makeElement("p", btn, { "className": "theme-button-title", "textContent": `Theme ${index + 1}`});
-            let date = makeElement("p", btn, { "className": "theme-button-creator", "textContent": `${getRelativeDate(created).time} ago` });
-            let remove = makeElement("div", btn, { "className": "theme-button-remove", "textContent": "x" });
-            btn.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.44), rgba(0, 0, 0, 0.44)), url(${local["saved_themes"][key]["custom_cards"]?.[0] || ""})`;
-            btn.addEventListener("click", () => {
-                importTheme(local["saved_themes"][key]);
+        Object.entries(local.saved_themes || {}).forEach(([key, theme], index) => {
+            const unsaved = key === UNSAVED_THEME_KEY;
+            const name = unsaved ? "Unsaved Theme" : local.saved_theme_names?.[key] || `Theme ${index + 1}`;
+            const btn = makeElement("div", target, { className: "saved-theme" });
+            const select = makeElement("button", btn, { type: "button", className: "saved-theme-select", title: "Apply " + name });
+            makeElement("p", select, { className: "theme-button-title", textContent: name });
+            const updated = new Date(unsaved ? local.saved_theme_updated_at?.[key] || Date.now() : Number(key));
+            makeElement("p", select, { className: "theme-button-creator", textContent: `${getRelativeDate(updated).time} ago` });
+            const actions = makeElement("div", btn, { className: "saved-theme-actions" });
+            const rename = makeElement("button", actions, { type: "button", className: "saved-theme-action", textContent: unsaved ? "Save as…" : "Rename" });
+            const remove = makeElement("button", actions, { type: "button", className: "saved-theme-action", textContent: "Delete", title: "Delete " + name });
+            const form = makeElement("form", btn, { className: "saved-theme-rename", hidden: true });
+            const input = makeElement("input", form, { type: "text", className: "card-input", value: unsaved ? "" : name, maxLength: 100, required: true });
+            input.setAttribute("aria-label", "Theme name");
+            makeElement("button", form, { type: "submit", className: "saved-theme-action", textContent: "Save" });
+            const cancel = makeElement("button", form, { type: "button", className: "saved-theme-action", textContent: "Cancel" });
+            btn.style.backgroundImage = `linear-gradient(#00000070, #00000070), url(${theme.custom_cards?.[0] || ""})`;
+            select.addEventListener("click", () => importTheme(theme, { type: unsaved ? "unsaved" : "saved", key }));
+            rename.addEventListener("click", () => {
+                form.hidden = false;
+                select.hidden = actions.hidden = true;
+                input.focus();
+                input.select();
             });
-            remove.addEventListener("click", () => {
-                chrome.storage.local.get("saved_themes", local => {
-                    delete local["saved_themes"][key];
-                    chrome.storage.local.set({ "saved_themes": local["saved_themes"] }).then(() => {
-                        btn.remove();
-                    })
-                })
+            const cancelRename = () => {
+                form.hidden = true;
+                select.hidden = actions.hidden = false;
+                rename.focus();
+            };
+            cancel.addEventListener("click", cancelRename);
+            input.addEventListener("keydown", event => {
+                if (event.key === "Escape") { event.preventDefault(); cancelRename(); }
+            });
+            form.addEventListener("submit", async event => {
+                event.preventDefault();
+                if (!input.value.trim()) { input.focus(); return; }
+                try { await renameSavedTheme(key, input.value); }
+                catch (error) { displayAlert(true, "Unable to rename this theme. Please try again."); }
+            });
+            remove.addEventListener("click", async () => {
+                try {
+                    await persistUnsavedTheme();
+                    await updateSavedThemes(state => {
+                        delete state.saved_themes[key];
+                        delete state.saved_theme_names[key];
+                        delete state.saved_theme_updated_at[key];
+                    });
+                    if (activeThemeSource?.key === key) {
+                        activeThemeSource = null;
+                        await chrome.storage.local.set({ active_theme: null });
+                    }
+                    displaySavedThemes();
+                } catch (error) { displayAlert(true, "Unable to delete this theme. Please try again."); }
             });
         });
     });
 }
 
-function getTheme(name) {
-
-    // get localThemes from themes.js
-    console.log(themes);
-
-    if (name === "all") return themes;
-    for (const theme in themes) if (theme.title === name) return theme
-    return {};
-}
-
-function importTheme(theme) {
+async function importTheme(theme, source = { type: "imported" }) {
     try {
-        let keys = Object.keys(theme).filter(key => !removedStyleOptions.has(key));
-        let final = {};
-        // Older themes only store dark_mode, so applying one selects its explicit mode.
-        if (typeof theme.dark_mode === "boolean" && theme.device_dark === undefined) {
-            final.device_dark = false;
+        await persistUnsavedTheme();
+        await themeSourceReady;
+        if (source.type === "unsaved") {
+            const local = await chrome.storage.local.get("saved_themes");
+            theme = local.saved_themes?.[UNSAVED_THEME_KEY] || theme;
         }
-        let localFinal = null;
-        chrome.storage.sync.get("custom_cards", sync => {
-            keys.forEach(key => {
-                switch (key) {
-                    case "dark_preset":
-                        changeToPresetCSS(null, theme["dark_preset"]);
-                        break;
-                    case "card_colors":
-                        sendFromPopup("setcolors", theme["card_colors"]);
-                        break;
-                    case "custom_cards": {
-                        // "none" is a legacy placeholder meaning "this theme has
-                        // no custom card images" — treat it as such instead of
-                        // writing the literal string into every card (which hides
-                        // the card image on the dashboard). Fall back to "" so
-                        // cards keep their default Canvas images.
-                        const themeImgs = (theme["custom_cards"] || []).filter(u => u && u !== "none" && u.trim() !== "");
-                        if (theme["custom_cards"].length > 0) {
-                            let pos = 0;
-                            Object.keys(sync["custom_cards"]).forEach(key => {
-                                sync["custom_cards"][key].img = themeImgs.length ? themeImgs[pos] : "";
-                                pos = (pos === themeImgs.length - 1) ? 0 : pos + 1;
-                            });
-                            final["custom_cards"] = sync["custom_cards"];
-                        }
-                        break;
-                    }
-                    default:
-                        final[key] = theme[key];
-                        break;
-                }
-            });
-            chrome.storage.sync.set(final);
+        themeImportInProgress = true;
+        clearTimeout(presetChangeTimeout);
+        presetChangeTimeout = null;
+        // Built-in palettes support both appearances; selecting one must keep
+        // the user's Light / Dark / System choice instead of forcing Dark.
+        const keepAppearance = source.type === "builtin";
+        const keys = Object.keys(theme).filter(key => !removedStyleOptions.has(key) &&
+            !(keepAppearance && (key === "dark_mode" || key === "device_dark")));
+        const final = {};
+        if (!keepAppearance && typeof theme.dark_mode === "boolean" && theme.device_dark === undefined) final.device_dark = false;
+        const sync = await chrome.storage.sync.get("custom_cards");
+        keys.forEach(key => {
+            if (key === "dark_preset") {
+                themeValues = readThemeValues(theme.dark_preset);
+                final.dark_preset = { ...themeValues };
+                sendFromPopup("preview-theme-values", themeValues);
+            } else if (key === "card_colors") {
+                final.card_colors = theme.card_colors || [];
+                sendFromPopup("setcolors", final.card_colors);
+            } else if (key === "custom_cards") {
+                const images = (theme.custom_cards || []).filter(url => url && url !== "none" && url.trim());
+                const cards = sync.custom_cards || {};
+                Object.values(cards).forEach((card, index) => { card.img = images.length ? images[index % images.length] : ""; });
+                final.custom_cards = cards;
+            } else {
+                final[key] = theme[key];
+            }
         });
-    } catch (e) {
-        console.log(e);
+        expectedThemeChanges = JSON.parse(JSON.stringify(final));
+        await chrome.storage.sync.set(final);
+        workingThemeOverrides = {};
+        activeThemeSource = source;
+        await chrome.storage.local.set({ active_theme: source });
+        if (themeValues) refreshThemeInputs();
+    } catch (error) {
+        displayAlert(true, "Unable to apply this theme. Please try again.");
+    } finally {
+        themeImportInProgress = false;
     }
 }
 
@@ -2151,18 +2144,26 @@ function getColorInGradient(d, from, to) {
     return "#" + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
 }
 
+function setThemeValueInput(input, value) {
+    input.value = value || "";
+    input.title = value || "No override — Canvas controls this value";
+    if (input.type === "text") input.placeholder = "Canvas default";
+    // Native color inputs cannot display an empty swatch; dim unset pickers.
+    if (input.type === "color") input.style.opacity = value ? "" : "0.25";
+}
+
 function displaySidebarMode(mode, style) {
-    style = style.replace(" ", "");
-    let match = style.match(/linear-gradient\((?<color1>\#\w*),(?<color2>\#\w*)\)/);
-    let c1 = c2 = "#000000";
+    style = style || "";
+    const match = style.match(/linear-gradient\(\s*(?<color1>#[a-f\d]{6}(?:[a-f\d]{2})?)\s*,\s*(?<color2>#[a-f\d]{6}(?:[a-f\d]{2})?)\s*\)/i);
+    let c1 = "", c2 = "";
 
     if (mode === "image") {
         document.querySelector("#radio-sidebar-image").checked = true;
         document.querySelector("#sidebar-color2").style.display = "flex";
         document.querySelector("#sidebar-image").style.display = "flex";
         if (style.includes("url") && match) {
-            if (match.groups.color1) c1 = match.groups.color1.replace("c7", "");
-            if (match.groups.color2) c2 = match.groups.color2.replace("c7", "");
+            if (match.groups.color1) c1 = match.groups.color1.slice(0, 7);
+            if (match.groups.color2) c2 = match.groups.color2.slice(0, 7);
         }
         let url = style.match(/url\(\"(?<url>.*)\"\)/);
         document.querySelector('#sidebar-image input[type="text"]').value = url && url.groups.url ? url.groups.url : "";
@@ -2181,78 +2182,114 @@ function displaySidebarMode(mode, style) {
         c1 = match ? "#000000" : style;
     }
 
-    document.querySelector('#sidebar-color1 input[type="text"]').value = c1;
-    document.querySelector('#sidebar-color1 input[type="color"]').value = c1;
-    document.querySelector('#sidebar-color2 input[type="text"]').value = c2;
-    document.querySelector('#sidebar-color2 input[type="color"]').value = c2;
+    ["text", "color"].forEach(type => {
+        setThemeValueInput(document.querySelector(`#sidebar-color1 input[type="${type}"]`), c1);
+        setThemeValueInput(document.querySelector(`#sidebar-color2 input[type="${type}"]`), c2);
+    });
+    if (mode !== "image") document.querySelector('#sidebar-image input[type="text"]').value = "";
 }
 
+// Keep one in-memory preset so rapid edits to different fields cannot overwrite
+// each other. Live messages are independent of the debounced storage write.
+let themeValues = null;
 let presetChangeTimeout = null;
+function saveThemeValues() {
+    clearTimeout(presetChangeTimeout);
+    presetChangeTimeout = null;
+    if (themeValues) return chrome.storage.sync.set({ dark_preset: { ...themeValues } });
+}
+
+window.addEventListener("pagehide", () => {
+    if (presetChangeTimeout) saveThemeValues();
+});
 
 chrome.storage.sync.get(["dark_preset"], storage => {
-    let tab = document.querySelector(".customize-dark");
-    Object.keys(storage["dark_preset"]).forEach(key => {
-        if (key !== "sidebar") {
-            let c = tab.querySelector("#dp_" + key);
-            let color = c.querySelector('input[type="color"]');
-            let text = c.querySelector('input[type="text"]');
-            [color, text].forEach(changer => {
-                changer.value = storage["dark_preset"][key];
-                changer.addEventListener("input", function (e) {
-                    clearTimeout(presetChangeTimeout);
-                    presetChangeTimeout = setTimeout(() => changeCSS(key, e.target.value), 200);
-                });
+    themeValues = readThemeValues(storage.dark_preset);
+    refreshThemeInputs();
+    Object.keys(themeValues).forEach(key => {
+        if (key === "sidebar") return;
+        const group = document.getElementById("dp_" + key);
+        if (!group) return;
+        const color = group.querySelector('input[type="color"]');
+        const text = group.querySelector('input[type="text"]');
+        [color, text].forEach(input => {
+            input.addEventListener("input", () => {
+                if (input.value.trim() && !CSS.supports("color", input.value)) return;
+                const value = input.value;
+                setThemeValueInput(color, value);
+                setThemeValueInput(text, value);
+                changeCSS(key, input.value.trim() || null);
             });
-        } else {
-            let mode = storage["dark_preset"][key].includes("url") ? "image" : storage["dark_preset"][key].includes("gradient") ? "gradient" : "solid";
-            displaySidebarMode(mode, storage["dark_preset"][key]);
-            let changeSidebar = () => {
-                let c1 = tab.querySelector('#sidebar-color1 input[type="text"]').value.replace("c7", "");
-                let c2 = tab.querySelector('#sidebar-color2 input[type="text"]').value.replace("c7", "");
-                let url = tab.querySelector('#sidebar-image input[type="text"]').value;
-                if (tab.querySelector("#radio-sidebar-image").checked) {
-                    changeCSS(key, `linear-gradient(${c1}c7, ${c2}c7), center url("${url}")`);
-                } else if (tab.querySelector("#radio-sidebar-gradient").checked) {
-                    changeCSS(key, `linear-gradient(${c1}, ${c2})`);
-                } else {
-                    changeCSS(key, c1);
-                }
-            }
-            ["#sidebar-color1", "#sidebar-color2"].forEach(group => {
-                ['input[type="text"]', 'input[type="color"]'].forEach(input => {
-                    document.querySelector(group + " " + input).addEventListener("input", e => {
-                        ['input[type="text"]', 'input[type="color"]'].forEach(i => {
-                            document.querySelector(group + " " + i).value = e.target.value;
-                        });
-                        clearTimeout(presetChangeTimeout);
-                        presetChangeTimeout = setTimeout(() => changeSidebar(), 200);
-                    });
-                });
-            });
-            document.querySelector('#sidebar-image input[type="text"').addEventListener("change", () => changeSidebar());
+            input.addEventListener("change", saveThemeValues);
+        });
+    });
+    const changeSidebar = () => {
+        const c1 = document.querySelector('#sidebar-color1 input[type="text"]').value;
+        const c2 = document.querySelector('#sidebar-color2 input[type="text"]').value;
+        const url = document.querySelector('#sidebar-image input').value;
+        const solid = document.getElementById("radio-sidebar-solid").checked;
+        if (!c1.trim() || (!solid && !c2.trim())) {
+            changeCSS("sidebar", null);
+            return;
         }
+        if (!/^#[a-f\d]{6}$/i.test(c1) || (!solid && !/^#[a-f\d]{6}$/i.test(c2))) return;
+        if (document.getElementById("radio-sidebar-image").checked) {
+            changeCSS("sidebar", `linear-gradient(${c1}c7, ${c2}c7), center url("${url.replace(/["\\\n\r]/g, "")}")`);
+        } else if (document.getElementById("radio-sidebar-gradient").checked) {
+            changeCSS("sidebar", `linear-gradient(${c1}, ${c2})`);
+        } else {
+            changeCSS("sidebar", c1);
+        }
+    };
+    ["sidebar-color1", "sidebar-color2"].forEach(id => {
+        const group = document.getElementById(id);
+        group.querySelectorAll("input").forEach(input => {
+            input.addEventListener("input", () => {
+                if (input.value.trim() && !/^#[a-f\d]{6}$/i.test(input.value)) return;
+                group.querySelectorAll("input").forEach(peer => { setThemeValueInput(peer, input.value); });
+                changeSidebar();
+            });
+            input.addEventListener("change", saveThemeValues);
+        });
+    });
+    const image = document.querySelector("#sidebar-image input");
+    image.addEventListener("input", changeSidebar);
+    image.addEventListener("change", saveThemeValues);
+    ["solid", "gradient", "image"].forEach(mode => {
+        document.getElementById("radio-sidebar-" + mode).addEventListener("change", () => {
+            // Only change visibility; retain the user's two colors and URL.
+            document.getElementById("sidebar-color2").style.display = mode === "solid" ? "none" : "flex";
+            document.getElementById("sidebar-image").style.display = mode === "image" ? "flex" : "none";
+            changeSidebar();
+            saveThemeValues();
+        });
     });
 });
 
+function refreshThemeInputs() {
+    Object.entries(themeValues).forEach(([key, value]) => {
+        if (key === "sidebar") return;
+        const group = document.getElementById("dp_" + key);
+        if (group) group.querySelectorAll("input").forEach(input => setThemeValueInput(input, value));
+    });
+    const sidebar = themeValues.sidebar || "";
+    displaySidebarMode(sidebar.includes("url") ? "image" : sidebar.includes("gradient") ? "gradient" : "solid", sidebar);
+}
+
 function refreshColors() {
     chrome.storage.sync.get(["dark_preset"], storage => {
-        Object.keys(storage["dark_preset"]).forEach(key => {
-            let c = document.querySelector("#dp_" + key);
-            let color = c.querySelector('input[type="color"]');
-            let text = c.querySelector('input[type="text"]');
-            color.value = storage["dark_preset"][key];
-            text.value = storage["dark_preset"][key];
-        });
-        let mode = storage["dark_preset"]["sidebar"].includes("url") ? "image" : storage["dark_preset"]["sidebar"].includes("gradient") ? "gradient" : "solid";
-        displaySidebarMode(mode, storage["dark_preset"]["sidebar"]);
+        if (presetChangeTimeout) return;
+        themeValues = readThemeValues(storage.dark_preset);
+        refreshThemeInputs();
     });
 }
 
 function changeCSS(name, color) {
-    chrome.storage.sync.get("dark_preset", storage => {
-        storage["dark_preset"][name] = color;
-        chrome.storage.sync.set({ "dark_preset": storage["dark_preset"] }).then(() => refreshColors());
-    });
+    themeValues[name] = color;
+    noteThemeEdit({ dark_preset: { ...themeValues } });
+    sendFromPopup("preview-theme-values", { ...themeValues });
+    clearTimeout(presetChangeTimeout);
+    presetChangeTimeout = setTimeout(saveThemeValues, 500);
 }
 
 function changeToPresetCSS(e, preset = null) {
@@ -2277,7 +2314,12 @@ function changeToPresetCSS(e, preset = null) {
 }
 
 function applyPreset(preset) {
-    chrome.storage.sync.set({ "dark_preset": preset }).then(() => refreshColors());
+    clearTimeout(presetChangeTimeout);
+    presetChangeTimeout = null;
+    themeValues = readThemeValues(preset);
+    noteThemeEdit({ dark_preset: { ...themeValues } });
+    sendFromPopup("preview-theme-values", themeValues);
+    chrome.storage.sync.set({ "dark_preset": themeValues }).then(() => refreshColors());
 }
 
 function makeElement(element, location, options) {

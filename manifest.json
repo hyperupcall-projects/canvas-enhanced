@@ -18,26 +18,42 @@
     "default_title": "Canvas Refined"
   },
   "background": {
-    "scripts": ["js/background.js"],
+    "scripts": [
+      "js/background.js"
+    ],
     "service_worker": "js/background.js"
   },
   "options_page": "html/options.html",
   "content_scripts": [
     {
-      "matches": ["https://*/*"],
-      "js": ["css/darkmodecss.js", "js/markdown.js", "js/content.js"],
-      "css": ["css/content.css"],
+      "matches": [
+        "https://*/*"
+      ],
+      "js": [
+        "css/darkmodecss.js",
+        "js/themes.js",
+        "js/markdown.js",
+        "js/content.js"
+      ],
+      "css": [
+        "css/content.css"
+      ],
       "run_at": "document_start"
     }
   ],
-  "permissions": ["storage", "unlimitedStorage"],
+  "permissions": [
+    "storage",
+    "unlimitedStorage"
+  ],
   "default_locale": "en",
   "browser_specific_settings": {
     "gecko": {
       "id": "canvasrefined@guysan.site",
       "strict_min_version": "109.0",
       "data_collection_permissions": {
-        "required": ["none"]
+        "required": [
+          "none"
+        ]
       }
     }
   }

@@ -5,16 +5,6 @@
     <meta charset="utf-8">
     <title>Canvas Refined</title>
     <link href="../css/popup.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik&display=swap" rel="stylesheet">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
-
-
 
 </head>
 
@@ -36,10 +26,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path></svg>
                     <span data-i18n="card_customization">Card Customization</span>
                 </button>
-                <!-- <button id="card-colors-btn" class="big-button tab-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 3m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z"></path><path d="M19 6h1a2 2 0 0 1 2 2a5 5 0 0 1 -5 5l-5 0v2"></path><path d="M10 15m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"></path></svg>
-                    <span data-i18n="card_colors">Card Colors</span>
-                </button> -->
+
                 <button id="import-export-btn" class="big-button tab-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 21v-4a4 4 0 1 1 4 4h-4"></path><path d="M21 3a16 16 0 0 0 -12.8 10.2"></path><path d="M21 3a16 16 0 0 1 -10.2 12.8"></path><path d="M10.6 9a9 9 0 0 1 4.4 4.4"></path></svg>
                     <span data-i18n="themes">Themes</span>
@@ -433,20 +420,32 @@
                 </div>
             </div>
         </div>
-        <div id="browser-settings-popup">
-            <div style="width: 50%;">
-                <h3 class="header-small" style="margin-bottom:14px;font-size:18px;">Theme browser settings</h3>
-                <div style="display:flex;gap:8px;align-items: center;color:#a7a7a7">
-                    <input type="checkbox" id="browser_show_likes">
-                    <span>Always show like count</span>
-                </div>
-                <button id="close-settings-btn" class="big-button" style="width: 50%;margin-top:14px;">Close</button>
-            </div>
+        <div id="theme-high-contrast-warning" role="status" aria-live="polite" hidden>
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v1"/></svg>
+            <span>High Contrast UI is turned on, so themes may not work as expected.</span>
         </div>
         <div class="tab-header">
             <h2 style="margin-top: 0" data-i18n="themes">Themes</h2>
             <button class="big-button back-btn" data-i18n="back">Back</button>
         </div>
+        <section class="option-container" id="theme-section" aria-labelledby="theme-heading">
+            <h3 class="header-small" id="theme-heading">Theme</h3>
+            <div class="theme-presets">
+                <div style="position:relative">
+                    <div id="premade-themes"></div>
+                </div>
+            </div>
+            <div class="my-themes">
+                <div class="theme-header">
+                    <h3 class="header-small" style="margin:0;flex:100">My Themes</h3>
+                    <div class="theme-actions">
+                        <button id="save-theme" class="customization-button">+ Add Theme</button>
+                        <button id="import-theme" class="customization-button">Import Theme</button>
+                    </div>
+                </div>
+                <div id="saved-themes"></div>
+            </div>
+        </section>
         <div class="option-container">
             <h3 class="header-small"><label for="appearance-mode" data-i18n="appearance">Appearance</label></h3>
             <select id="appearance-mode" class="card-input">
@@ -456,10 +455,11 @@
             </select>
         </div>
         <div class="customize-dark">
-        <div class="customization">
+        <section class="customization" aria-labelledby="theme-values-heading">
+            <h3 class="header-small" id="theme-values-heading">Theme Values</h3>
             <div class="container">
                 <div class="option-container">
-                    <h3 class="header-small" data-i18n="presets">Presets</h3>
+                    <h3 class="header-small">Color Presets</h3>
                     <div class="options-presets">
                         <button id="dark-lighter" class="preset-button customization-button" style="background:#272727;border:1px solid #454545;color:#f5f5f5" data-i18n="dark_lighter">Lighter</button>
                         <button id="dark-light" class="preset-button customization-button" style="background:#202020;border:1px solid #404040;color:#f5f5f5" data-i18n="dark_light">Light</button>
@@ -586,18 +586,126 @@
                         </div>
                 </div>
             </div>
-            <div class="option-container">
-                <h3 class="header-small" data-i18n="dark_mode_fixer">Dark mode fixer (beta)</h3>
-                <div style="display: flex; gap: 10px;align-items: center">
-                    <button id="fix-dm-btn" class="big-button" data-i18n="fix_dm_btn">Go</button>
-                    <span data-i18n="dark_mode_fixer_text">This will try to fix any dark mode gaps on the current page.</span>
+            <div class="option-container" id="card-color-values">
+                <h3 class="header-small">Card Colors</h3>
+                <h4 class="header-small">Color Palettes</h4>
+                <div class="options-presets">
+                    <button id="revert-colors" class="colors-button">Revert to original</button>
+                    <button class="preset-button colors-button">
+                        <p>Reds</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Oranges</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Greens</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Blues</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Pinks</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Purples</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Pastels</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Mesa</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Fade</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Fade2</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Ocean</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Watermelon</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Army</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Rainbow</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Sunset</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Popsicle</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Berries</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Fruit</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Night</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Base</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Muted</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Candy</p>
+                        <div class="colors-preview"></div>
+                    </button>
+                    <button class="preset-button colors-button">
+                        <p>Chess</p>
+                        <div class="colors-preview"></div>
+                    </button>
                 </div>
-                <p id="fix-dm-output" style="margin-top: 10px;color:#ffee00;"></p>
-                <p style="margin: 15px 0 5px;" data-i18n="fix_dm_text">The fixer is automatically running on these pages:</p>
-                <div id="dark-mode-fix-urls">
+                <h4 class="header-small" style="margin-top:16px">Single color</h4>
+                <p>Choose a color to set all cards to that color:</p>
+                <div>
+                    <div class="palette-selection">
+                        <input type="color" value="#34FECB" id="singleColorInput" class="color-picker-small"></input>
+                        <input type="text" class="card-input" value="#34FECB" id="singleColorText" />
+                    </div>
+                </div>
+                <h4 class="header-small" style="margin-top:16px">Gradient</h4>
+                <p>Choose 2 colors to create a gradient between them:</p>
+                <div>
+                    <div class="palette-selection">
+                        <input type="color" value="#EA76DA" id="gradientColorFrom" class="color-picker-small" />
+                        <input type="text" class="card-input" value="#EA76DA" id="gradientColorFromText" />
+                    </div>
+                    <div class="palette-selection">
+                        <input type="color" value="#7B61FF" id="gradientColorTo" class="color-picker-small" />
+                        <input type="text" class="card-input" value="#7B61FF" id="gradientColorToText" />
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
     </div>
 
         <div class="option-container" style="display:none;">
@@ -647,60 +755,6 @@
                 </div>
             </div>
         </div>
-        <div class="option-container">
-            <div class="theme-header">
-                <div style="display:flex;gap:6px;align-items:center">
-                    <h3 class="header-small" style="margin:0">User made themes</h3>
-                    <svg id="browser-settings-btn" xmlns="http://www.w3.org/2000/svg"  width="16"  height="16"  viewBox="0 0 24 24"  fill="currentColor"  class="icon icon-tabler icons-tabler-filled icon-tabler-settings"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14.647 4.081a.724 .724 0 0 0 1.08 .448c2.439 -1.485 5.23 1.305 3.745 3.744a.724 .724 0 0 0 .447 1.08c2.775 .673 2.775 4.62 0 5.294a.724 .724 0 0 0 -.448 1.08c1.485 2.439 -1.305 5.23 -3.744 3.745a.724 .724 0 0 0 -1.08 .447c-.673 2.775 -4.62 2.775 -5.294 0a.724 .724 0 0 0 -1.08 -.448c-2.439 1.485 -5.23 -1.305 -3.745 -3.744a.724 .724 0 0 0 -.447 -1.08c-2.775 -.673 -2.775 -4.62 0 -5.294a.724 .724 0 0 0 .448 -1.08c-1.485 -2.439 1.305 -5.23 3.744 -3.745a.722 .722 0 0 0 1.08 -.447c.673 -2.775 4.62 -2.775 5.294 0zm-2.647 4.919a3 3 0 1 0 0 6a3 3 0 0 0 0 -6z" /></svg>
-                </div>
-                <span id="premade-themes-pagenum"></span>
-            </div>
-            <div class="theme-controls">
-                <div id="theme-sorts-container">
-                    <button id="theme-sorts">
-                        <div>
-                            <svg style="display: block" xmlns="http://www.w3.org/2000/svg"  width="14"  height="14"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-arrows-up-down"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 3l0 18" /><path d="M10 6l-3 -3l-3 3" /><path d="M20 18l-3 3l-3 -3" /><path d="M17 21l0 -18" /></svg>
-                        </div>
-                        <span id="theme-current-sort"></span>
-                    </button>
-                    <div id="theme-sort-selector">
-                        <div id="theme-sort-score" class="theme-sort-btn">Popular</div>
-                        <div id="theme-sort-trending" class="theme-sort-btn">Trending</div>
-                        <div id="theme-sort-liked" class="theme-sort-btn">Liked</div>
-                        <div id="theme-sort-new" class="theme-sort-btn">New</div>
-                        <div id="theme-sort-old" class="theme-sort-btn">Old</div>
-                        <div id="theme-sort-abc" class="theme-sort-btn">ABC</div>
-                    </div>
-                </div>
-                <div class="card-input" id="theme-search-container">
-                    <svg  xmlns="http://www.w3.org/2000/svg"  width="14"  height="14"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
-                    <input type="text" id="theme-search" placeholder="Search">
-                </div>
-                <div style="display:flex;gap:4px;align-items:center">
-                    <button id="premade-themes-left">Back</button>
-                    <button id="premade-themes-right">Next</button>
-                </div>
-            </div>
-            <div style="position:relative">
-                <div id="premade-themes"></div>
-            </div>
-        </div>
-        <div class="option-container">
-            <div>
-                <h3 class="header-small">Revert theme changes</h3>
-            </div>
-            <div style="display:flex;gap: 12px;">
-                <button id="theme-revert" class="customization-button">Revert</button>
-                <p>This will revert customizations back to when you first installed the extension.</p>
-            </div>
-        </div>
-        <div class="option-container">
-            <div class="theme-header">
-                <h3 class="header-small" style="margin:0;flex:100">My saved themes</h3>
-                <button id="save-theme" class="customization-button">+ Save current</button>
-            </div>
-            <div id="saved-themes"></div>
-        </div>
         <div class="export-details option-container">
             <h3 class="header-small" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
                 <span>Export Settings</span>
@@ -746,15 +800,18 @@
                 </div>
             </div>
         </div>
-        <div class="import-export-details">
-            <div class="import-details option-container">
-                <h3 class="header-small">Import</h3>
-                <p>Copy and paste exported themes here:</p>
-                <div>
-                    <textarea class="card-input" id="import-input"></textarea>
+        <dialog id="import-theme-dialog" aria-labelledby="import-theme-heading">
+            <form id="import-theme-form">
+                <h3 class="header-small" id="import-theme-heading">Import Theme</h3>
+                <label for="import-input">Paste an exported theme:</label>
+                <textarea class="card-input" id="import-input" required></textarea>
+                <p id="import-theme-error" role="alert"></p>
+                <div class="theme-actions">
+                    <button type="button" id="cancel-import-theme" class="customization-button">Cancel</button>
+                    <button type="submit" class="customization-button">Import Theme</button>
                 </div>
-            </div>
-        </div>
+            </form>
+        </dialog>
         <!-- <div class="option-container">
             <div class="theme-header">
                 <h3 class="header-small" style="margin:0;flex:100">Theme browser opt-in reset</h3>
@@ -844,133 +901,6 @@
             </div>
         </div>
 
-        <div class="option-container">
-            <p class="sub-text"><b>Disable High Contrast UI</b> if your colors become duller after refreshing! On the sidebar, if you click on your profile icon you can turn it off there.</p>
-        </div>
-        <div class="option-container">
-            <h3 class="header-small">Popular Palettes</h3>
-            <div class="options-presets">
-                <button id="revert-colors" class="colors-button">Revert to original</button>
-                <button class="preset-button colors-button">
-                    <p>Reds</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Oranges</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Greens</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Blues</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Pinks</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Purples</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Pastels</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Mesa</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Fade</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Fade2</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Ocean</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Watermelon</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Army</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Rainbow</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Sunset</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Popsicle</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Berries</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Fruit</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Night</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Base</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Muted</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Candy</p>
-                    <div class="colors-preview"></div>
-                </button>
-                <button class="preset-button colors-button">
-                    <p>Chess</p>
-                    <div class="colors-preview"></div>
-                </button>
-            </div>
-        </div>
-        <div class="option-container">
-            <h3 class="header-small">Single color</h3>
-            <p>Choose a color to set all cards to that color:</p>
-            <div>
-                <div class="palette-selection">
-                    <input type="color" value="#34FECB" id="singleColorInput" class="color-picker-small"></input>
-                    <input type="text" class="card-input" value="#34FECB" id="singleColorText" />
-                    <button id="setSingleColor" class="big-button">Go</button>
-                </div>
-            </div>
-        </div>
-        <div class="option-container">
-            <h3 class="header-small">Gradient</h3>
-            <p>Choose 2 colors to create a gradient between them:</p>
-            <div>
-                <div class="palette-selection">
-                    <input type="color" value="#EA76DA" id="gradientColorFrom" class="color-picker-small" />
-                    <input type="text" class="card-input" value="#EA76DA" id="gradientColorFromText" />
-                </div>
-                <div class="palette-selection">
-                    <input type="color" value="#7B61FF" id="gradientColorTo" class="color-picker-small" />
-                    <input type="text" class="card-input" value="#7B61FF" id="gradientColorToText" />
-                    <button id="setGradientColor" class="big-button">Go</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div class="gpa-bounds-container tab" style="display:none">
