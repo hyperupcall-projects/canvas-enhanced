@@ -25,7 +25,7 @@
             <div class="more-options-container">
                 <button id="advanced-settings" class="big-button tab-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path></svg>
-                    <span data-i18n="card_customization">Card Customization</span>
+                    <span data-i18n="card_customization">Cards</span>
                 </button>
 
                 <button id="import-export-btn" class="big-button tab-btn">
@@ -35,7 +35,11 @@
 
                 <button id="gpa-bounds-btn" class="big-button tab-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6"></path><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4"></path></svg>
-                    <span data-i18n="gpa_settings">GPA Settings</span>
+                    <span data-i18n="gpa">GPA</span>
+                </button>
+                <button id="todo-settings-btn" class="big-button tab-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>
+                    <span data-i18n="todo_list">Todo List</span>
                 </button>
                 <button id="debug-btn" class="big-button tab-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 9v4"></path><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"></path><path d="M12 16h.01"></path></svg>
@@ -49,102 +53,6 @@
         <div class="options">
             <div class="options-left">
                 <div class="option-container">
-                    <div class="option" id="assignments_due">
-                        <input type="radio" id="off" name="assignments_due">
-                        <input type="radio" id="on" name="assignments_due">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div>
-                        <span class="option-name" data-i18n="card_assignments">Card assignments</span>
-                    </div>
-                    <div class="sub-options">
-                        <div class="sub-option">
-                            <input type="checkbox" id="assignment_date_format" name="assignment_date_format">
-                            <label for="assignment_date_format" class="sub-text" data-i18n="useddmm">Use dd/mm</label>
-                        </div>
-                        <div class="sub-option">
-                            <input type="checkbox" id="card_overdues" name="card_overdues">
-                            <label for="card_overdues" class="sub-text" data-i18n="show_past_due">Show past due</label>
-                        </div>
-                        <div class="sub-option">
-                            <input type="checkbox" id="hide_completed_cards" name="hide_completed_cards">
-                            <label for="hide_completed_cards" class="sub-text" data-i18n="hide_completed_cards">Hide completed</label>
-                        </div>
-                        <div class="sub-option">
-                            <input type="checkbox" id="relative_dues" name="relative_dues">
-                            <label for="relative_dues" class="sub-text" data-i18n="relative_due_dates">Relative due dates</label>
-                        </div>
-                        <div class="sub-option">
-                            <input type="checkbox" id="equal_height_cards" name="equal_height_cards">
-                            <label for="equal_height_cards" class="sub-text" data-i18n="equal_height_cards">Equal height</label>
-                        </div>
-                        <div style="margin-top: 5px">
-                            <span class="sub-text" data-i18n="max_items">Max items to show: </span><span
-                                id="numAssignments"></span>
-                            <input type="range" min="1" max="10" id="numAssignmentsSlider">
-                        </div>
-                    </div>
-                </div>
-                <div class="option-container">
-                    <div class="option" id="gpa_calc">
-                        <input type="radio" id="off" name="gpa_calc">
-                        <input type="radio" id="on" name="gpa_calc">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div>
-                        <span class="option-name" data-i18n="gpa_calculator">GPA calculator</span>
-                    </div>
-                    <div class="sub-options">
-                        <div class="sub-option" style="margin-top:5px">
-                            <input type="checkbox" id="gpa_calc_prepend" name="gpa_calc_prepend">
-                            <label for="gpa_calc_prepend" class="sub-text" data-i18n="move_top">Move to top</label>
-                        </div>
-                        <div class="sub-option" style="margin-top:5px">
-                            <input type="checkbox" id="gpa_calc_cumulative" name="gpa_calc_cumulative">
-                            <label for="gpa_calc_cumulative" class="sub-text" data-i18n="gpa_calc_cumulative">Show cumulative GPA</label>
-                        </div>
-                        <div class="sub-option" style="margin-top:5px">
-                            <input type="checkbox" id="gpa_calc_weighted" name="gpa_calc_weighted">
-                            <label for="gpa_calc_weighted" class="sub-text" data-i18n="gpa_calc_weighted">Show weighted GPA</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="option-container">
-                    <div class="option" id="dashboard_grades">
-                        <input type="radio" id="off" name="dashboard_grades">
-                        <input type="radio" id="on" name="dashboard_grades">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div>
-                        <span class="option-name" data-i18n="card_grades">Card Grades</span>
-                    </div>
-                    <div class="sub-options">
-                        <div class="sub-option" style="margin-top:5px">
-                            <input type="checkbox" id="grade_hover" name="grade_hover">
-                            <label for="grade_hover" class="sub-text" data-i18n="grade_hover">Show only when hovering</label>
-                        </div>
-                        <div class="sub-option" style="margin-top:5px">
-                            <input type="checkbox" id="card_letter" name="card_letter">
-                            <label for="card_letter" class="sub-text" data-i18n="card_letter">Show letter grade</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="option-container" style="display:none">
-					<!-- TODO: scrapped maybe forever -->
-                    <div class="option" id="remind">
-                        <input type="radio" id="off" name="remind">
-                        <input type="radio" id="on" name="remind">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div>
-                        <span class="option-name" data-i18n="todo_remind">Todo Reminders</span>
-                    </div>
-                </div>
-                <div class="option-container">
                     <div class="option" id="quiz_safe_mode">
                         <input type="radio" id="off" name="quiz_safe_mode">
                         <input type="radio" id="on" name="quiz_safe_mode">
@@ -152,10 +60,10 @@
                             <div class="sliderknob"></div>
                             <div class="sliderbg"></div>
                         </div><span class="option-name" data-i18n="quiz_safe_mode">Quiz Safe Mode</span>
-                        <span class="cr-info-bubble" tabindex="0" role="button" aria-label="Quiz Safe Mode info">
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                            <span class="cr-info-bubble-text" data-i18n="quiz_safe_mode_desc">Turns off most Canvas Enhanced features on quiz pages so you get the default Canvas quiz experience.</span>
-                        </span>
+                        <button type="button" class="cr-info-bubble" aria-label="Quiz Safe Mode info" aria-describedby="quiz_safe_mode-info">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span id="quiz_safe_mode-info" class="cr-info-bubble-text" role="tooltip" data-i18n="quiz_safe_mode_desc">Turns off most Canvas Enhanced features on quiz pages so you get the default Canvas quiz experience.</span>
+                        </button>
                     </div>
                     <div class="option" id="dashboard_notes">
                         <input type="radio" id="off" name="dashboard_notes">
@@ -164,6 +72,10 @@
                             <div class="sliderknob"></div>
                             <div class="sliderbg"></div>
                         </div><span class="option-name" data-i18n="dashboard_notes">Dashboard Notes</span>
+                        <button type="button" class="cr-info-bubble" aria-label="Dashboard Notes info" aria-describedby="dashboard_notes-info">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span id="dashboard_notes-info" class="cr-info-bubble-text" role="tooltip" data-i18n="dashboard_notes_desc">Adds a notes area to your Canvas dashboard with Markdown formatting and automatic saving.</span>
+                        </button>
                     </div>
                     <div class="option" id="global_search">
                         <input type="radio" id="off" name="global_search">
@@ -172,6 +84,10 @@
                             <div class="sliderknob"></div>
                             <div class="sliderbg"></div>
                         </div><span class="option-name" data-i18n="global_search">Global Canvas Search</span>
+                        <button type="button" class="cr-info-bubble" aria-label="Global Canvas Search info" aria-describedby="global_search-info">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span id="global_search-info" class="cr-info-bubble-text" role="tooltip" data-i18n="global_search_desc">Searches modules and assignments across your courses. Open search in Canvas with Ctrl+K or Command+K.</span>
+                        </button>
                     </div>
                     <div class="option" id="grade_analytics">
                         <input type="radio" id="off" name="grade_analytics">
@@ -180,121 +96,39 @@
                             <div class="sliderknob"></div>
                             <div class="sliderbg"></div>
                         </div><span class="option-name" data-i18n="grade_analytics">Grade Analytics</span>
-                        <span class="cr-info-bubble" tabindex="0" role="button" aria-label="Grade Analytics info">
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                            <span class="cr-info-bubble-text" data-i18n="grade_analytics_desc">Adds tools to help you analyze your grades.</span>
-                        </span>
+                        <button type="button" class="cr-info-bubble" aria-label="Grade Analytics info" aria-describedby="grade_analytics-info">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span id="grade_analytics-info" class="cr-info-bubble-text" role="tooltip" data-i18n="grade_analytics_desc">Adds tools to help you analyze your grades.</span>
+                        </button>
                     </div>
                     <div class="sub-options">
                         <div class="sub-option" style="margin-top:5px">
                             <input type="checkbox" id="grade_analytics_zones" name="grade_analytics_zones">
                             <label for="grade_analytics_zones" class="sub-text" data-i18n="grade_analytics_zones">Colored grade zones</label>
+                            <button type="button" class="cr-info-bubble" aria-label="Colored grade zones info" aria-describedby="grade_analytics_zones-info">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                <span id="grade_analytics_zones-info" class="cr-info-bubble-text" role="tooltip" data-i18n="grade_analytics_zones_desc">Adds colored grade ranges to the grade analytics chart to help you see where your grades fall.</span>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="options-right">
+
                 <div class="option-container">
-                    <div class="option" id="better_todo">
-                        <input type="radio" id="off" name="better_todo">
-                        <input type="radio" id="on" name="better_todo">
+                    <div class="option" id="bold_sidebar_text">
+                        <input type="radio" id="off" name="bold_sidebar_text">
+                        <input type="radio" id="on" name="bold_sidebar_text">
                         <div class="slider">
                             <div class="sliderknob"></div>
                             <div class="sliderbg"></div>
                         </div>
-                        <span class="option-name" data-i18n="better_todo">Better Todo List</span>
-                    </div>
-                    <div class="sub-options">
-                        <!-- Frequently-changed options stay visible; rarer ones live in the collapsible "More options" section below -->
-                        <div class="sub-option" style="flex-direction:column;align-items:stretch;gap:4px;">
-                            <label for="todo_progress_rings" class="sub-text">Progress display</label>
-                            <select id="todo_progress_rings" name="todo_progress_rings">
-                                <option value="none">None</option>
-                                <option value="rings">Rings</option>
-                                <option value="rainbow">Rainbow</option>
-                                <option value="lines">Multiple lines</option>
-                                <option value="line">One line</option>
-                            </select>
-                        </div>
-                        <div class="sub-option" style="flex-direction:column;align-items:stretch;gap:4px;">
-                            <label for="todo_timeframe" class="sub-text">Time frame</label>
-                            <select id="todo_timeframe" name="todo_timeframe">
-                                <option value="all">All time</option>
-                                <option value="1week">1 week</option>
-                                <option value="2week">2 weeks</option>
-                                <option value="month">Month</option>
-                                <option value="2month">2 months</option>
-                            </select>
-                        </div>
-                        <div class="sub-option">
-                            <input type="checkbox" id="hover_preview" name="hover_preview">
-                            <label for="hover_preview" class="sub-text" data-i18n="hover_preview">Previews on hover</label>
-                        </div>
-                        <div class="sub-option">
-                            <input type="checkbox" id="todo_show_scores" name="todo_show_scores">
-                            <label for="todo_show_scores" class="sub-text">Show assignment scores</label>
-                        </div>
-                        <div class="sub-option">
-                            <input type="checkbox" id="todo_confetti" name="todo_confetti">
-                            <label for="todo_confetti" class="sub-text">Show confetti on complete</label>
-                        </div>
-                        <div class="sub-option">
-                            <input type="checkbox" id="todo_hide_read" name="todo_hide_read">
-                            <label for="todo_hide_read" class="sub-text">Hide read announcements</label>
-                        </div>
-                        <div style="margin-top: 5px">
-                            <span class="sub-text" data-i18n="max_items">Max items to show: </span><span
-                                id="numTodoItems"></span>
-                            <input type="range" min="1" max="12" id="numTodoItemsSlider">
-                        </div>
-                        <div class="todo-more-options" id="todo-more-options">
-                            <div class="todo-more-toggle" id="todo-more-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="todo-more-items">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>
-                                <span data-i18n="more_options">More options</span>
-                            </div>
-                            <div class="todo-more-items" id="todo-more-items">
-                                <div class="sub-option">
-                                    <input type="checkbox" id="todo_separate_scrollbar" name="todo_separate_scrollbar">
-                                    <label for="todo_separate_scrollbar" class="sub-text" data-i18n="todo_separate_scrollbar">Separate Scrollbar</label>
-                                </div>
-                                <div class="sub-option">
-                                    <input type="checkbox" id="todo_hr24" name="todo_hr24">
-                                    <label for="todo_hr24" class="sub-text" data-i18n="24hrformat">Use 24hr format</label>
-                                </div>
-                                <div class="sub-option">
-                                    <input type="checkbox" id="todo_full_height" name="todo_full_height">
-                                    <label for="todo_full_height" class="sub-text" data-i18n="todo_full_height">Force Full Height</label> <!-- TO REMOVE and replace with full height -->
-                                </div>
-                                <div class="sub-option">
-                                    <input type="checkbox" id="todo_hide_feedback" name="todo_hide_feedback">
-                                    <label for="todo_hide_feedback" class="sub-text" data-i18n="todo_hide_feedback">Hide Recent Feedback</label>
-                                </div>
-                                <div class="sub-option" id="todo_alternate_colors_wrap" style="display:none;">
-                                    <input type="checkbox" id="todo_alternate_colors" name="todo_alternate_colors">
-                                    <label for="todo_alternate_colors" class="sub-text" data-i18n="todo_alternate_colors">Alternate colors</label>
-                                </div>
-                                <div class="sub-option">
-                                    <input type="checkbox" id="todo_ignore_card_colors" name="todo_ignore_card_colors">
-                                    <label for="todo_ignore_card_colors" class="sub-text">Ignore card colors</label>
-                                </div>
-                                <div class="sub-option">
-                                    <input type="checkbox" id="todo_remove_icons" name="todo_remove_icons">
-                                    <label for="todo_remove_icons" class="sub-text">Remove icons</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="option-container">
-                    <div class="option" id="better_sidebar">
-                        <input type="radio" id="off" name="better_sidebar">
-                        <input type="radio" id="on" name="better_sidebar">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div>
-                        <span class="option-name" data-i18n="better_sidebar">Better Sidebar</span>
+                        <span class="option-name" data-i18n="bold_sidebar_text">Bold sidebar text</span>
+                        <button type="button" class="cr-info-bubble" aria-label="Bold sidebar text info" aria-describedby="bold_sidebar_text-info">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span id="bold_sidebar_text-info" class="cr-info-bubble-text" role="tooltip" data-i18n="bold_sidebar_text_desc">Makes the text in the Canvas navigation sidebar bold for easier reading.</span>
+                        </button>
                     </div>
                     <div class="sub-options">
                         <div class="option" id="remlogo" style="margin-top:2px">
@@ -305,52 +139,14 @@
                                 <div class="sliderbg"></div>
                             </div>
                             <span class="option-name" data-i18n="remlogo">Remove sidebar logo</span>
-                        </div>
-                        <div class="sub-option">
-                            <input type="checkbox" id="hide_navbar" name="hide_navbar">
-                            <label for="hide_navbar" class="sub-text" data-i18n="hide_navbar">Hide Navigation Bar</label>
-                        </div>
-                        <div style="margin-top: 5px" id="sidebarScaleSub">
-                            <span class="sub-text">Sidebar scale: </span><span id="sidebarScaleValue"></span><span class="sub-text">%</span>
-                            <input type="range" min="70" max="150" id="sidebarScaleSlider">
+                            <button type="button" class="cr-info-bubble" aria-label="Remove sidebar logo info" aria-describedby="remlogo-info">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                <span id="remlogo-info" class="cr-info-bubble-text" role="tooltip" data-i18n="remlogo_desc">Hides the school logo at the top of the Canvas navigation sidebar.</span>
+                            </button>
                         </div>
                     </div>
                 </div>
                 <div class="option-container">
-                    <div class="option" id="center_cards">
-                        <input type="radio" id="off" name="center_cards">
-                        <input type="radio" id="on" name="center_cards">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div>
-                        <span class="option-name" data-i18n="center_cards">Center Cards</span>
-                    </div>
-                    <div class="option" id="gradient_cards">
-                        <input type="radio" id="off" name="gradient_cards">
-                        <input type="radio" id="on" name="gradient_cards">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div>
-                        <span class="option-name" data-i18n="gradient_cards">Gradient cards</span>
-                    </div>
-                    <div class="option" id="condensed_cards">
-                        <input type="radio" id="off" name="condensed_cards">
-                        <input type="radio" id="on" name="condensed_cards">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div><span class="option-name" data-i18n="condensed_cards">Condensed Cards</span>
-                    </div>
-                    <div class="option" id="disable_color_overlay">
-                        <input type="radio" id="off" name="disable_color_overlay">
-                        <input type="radio" id="on" name="disable_color_overlay">
-                        <div class="slider">
-                            <div class="sliderknob"></div>
-                            <div class="sliderbg"></div>
-                        </div><span class="option-name" data-i18n="disable_color">Disable Color Overlay</span>
-                    </div>
                     <div class="option" id="full_width">
                         <input type="radio" id="off" name="full_width">
                         <input type="radio" id="on" name="full_width">
@@ -359,6 +155,10 @@
                             <div class="sliderbg"></div>
                         </div>
                         <span class="option-name" data-i18n="full_width">Full Width Fix</span>
+                        <button type="button" class="cr-info-bubble" aria-label="Full Width Fix info" aria-describedby="full_width-info">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span id="full_width-info" class="cr-info-bubble-text" role="tooltip" data-i18n="full_width_desc">Lets Canvas content use the full available page width instead of a limited central column.</span>
+                        </button>
                     </div>
                     <div class="option" id="tab_icons">
                         <input type="radio" id="off" name="tab_icons">
@@ -366,7 +166,11 @@
                         <div class="slider">
                             <div class="sliderknob"></div>
                             <div class="sliderbg"></div>
-                        </div><span class="option-name" data-i18n="tab_icons">Color coded tab icons</span>
+                        </div><span class="option-name" data-i18n="tab_icons">Colored Favicons</span>
+                        <button type="button" class="cr-info-bubble" aria-label="Colored Favicons info" aria-describedby="tab_icons-info">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span id="tab_icons-info" class="cr-info-bubble-text" role="tooltip" data-i18n="tab_icons_desc">Colors the Canvas browser tab icon to help you identify Canvas tabs.</span>
+                        </button>
                     </div>
                     <div class="option" id="hide_new_canvas">
                         <input type="radio" id="off" name="hide_new_canvas">
@@ -375,6 +179,10 @@
                             <div class="sliderknob"></div>
                             <div class="sliderbg"></div>
                         </div><span class="option-name" data-i18n="hide_new_canvas">Hide New Dashboard</span>
+                        <button type="button" class="cr-info-bubble" aria-label="Hide New Dashboard info" aria-describedby="hide_new_canvas-info">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span id="hide_new_canvas-info" class="cr-info-bubble-text" role="tooltip" data-i18n="hide_new_canvas_desc">Hides the button that switches to the new Canvas dashboard.</span>
+                        </button>
                     </div>
                     <div class="option" id="hide_sequence_footer">
                         <input type="radio" id="off" name="hide_sequence_footer">
@@ -383,17 +191,30 @@
                             <div class="sliderknob"></div>
                             <div class="sliderbg"></div>
                         </div><span class="option-name" data-i18n="hide_sequence_footer">Hide Next/Previous Buttons</span>
+                        <button type="button" class="cr-info-bubble" aria-label="Hide Next/Previous Buttons info" aria-describedby="hide_sequence_footer-info">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span id="hide_sequence_footer-info" class="cr-info-bubble-text" role="tooltip" data-i18n="hide_sequence_footer_desc">Hides the Previous and Next navigation buttons at the bottom of course content pages.</span>
+                        </button>
                     </div>
                 </div>
                 <div class="option-container">
                     <div class="customDomain">
-                        <span data-i18n="enter_url">Your Canvas URLs:</span>
+                        <div class="option-help-row"><span data-i18n="enter_url">Your Canvas URLs:</span>
+                        <button type="button" class="cr-info-bubble" aria-label="Your Canvas URLs info" aria-describedby="enter_url-info">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span id="enter_url-info" class="cr-info-bubble-text" role="tooltip" data-i18n="enter_url_desc">Lists the Canvas sites where the extension should run. Add a URL for each school or Canvas site you use.</span>
+                        </button>
+                        </div>
                         <div id="custom-domain-list"></div>
                         <button id="add-domain-btn" class="customization-button" data-i18n="add_canvas">+ Add canvas</button>
                         <div class="domain-toggles">
                             <div class="sub-option">
                                 <input type="checkbox" id="auto_detect_disabled" name="auto_detect_disabled">
                                 <label for="auto_detect_disabled" class="sub-text" data-i18n="no_auto_detect">Don't auto detect canvases</label>
+                            <button type="button" class="cr-info-bubble" aria-label="Don't auto detect canvases info" aria-describedby="no_auto_detect-info">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                <span id="no_auto_detect-info" class="cr-info-bubble-text" role="tooltip" data-i18n="no_auto_detect_desc">Stops automatically detecting Canvas sites. Use your Canvas URL list to choose where the extension runs.</span>
+                            </button>
                             </div>
                         </div>
                     </div>
@@ -430,7 +251,7 @@
         </div>
         <div id="theme-high-contrast-warning" role="status" aria-live="polite" hidden>
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v1"/></svg>
-            <span>High Contrast UI is turned on, so themes may not work as expected.</span>
+            <span>High Contrast UI is turned on, so themes may not work as expected. Disable it in account settings.</span>
         </div>
         <div class="tab-header">
             <h2 style="margin-top: 0" data-i18n="themes">Themes</h2>
@@ -822,10 +643,89 @@
     <div class="advanced tab" style="display:none">
         <div class="tab-header">
             <div>
-                <h2 style="margin-top: 0" data-i18n="card_customization">Card Customization</h2>
+                <h2 style="margin-top: 0" data-i18n="card_customization">Cards</h2>
             </div>
             <button class="big-button back-btn" data-i18n="back">Back</button>
         </div>
+        <div class="option-container">
+            <div class="option" id="assignments_due">
+                <input type="radio" id="off" name="assignments_due">
+                <input type="radio" id="on" name="assignments_due">
+                <div class="slider">
+                    <div class="sliderknob"></div>
+                    <div class="sliderbg"></div>
+                </div>
+                <span class="option-name" data-i18n="card_assignments">Card assignments</span>
+            </div>
+            <div class="sub-options">
+                <div class="sub-option">
+                    <input type="checkbox" id="assignment_date_format" name="assignment_date_format">
+                    <label for="assignment_date_format" class="sub-text" data-i18n="useddmm">Use dd/mm</label>
+                </div>
+                <div class="sub-option">
+                    <input type="checkbox" id="card_overdues" name="card_overdues">
+                    <label for="card_overdues" class="sub-text" data-i18n="show_past_due">Show past due</label>
+                </div>
+                <div class="sub-option">
+                    <input type="checkbox" id="card_overdue_always_red" name="card_overdue_always_red">
+                    <label for="card_overdue_always_red" class="sub-text" data-i18n="card_overdue_always_red">Always red overdue badges</label>
+                </div>
+                <div class="sub-option">
+                    <input type="checkbox" id="hide_completed_cards" name="hide_completed_cards">
+                    <label for="hide_completed_cards" class="sub-text" data-i18n="hide_completed_cards">Hide completed</label>
+                </div>
+                <div class="sub-option">
+                    <input type="checkbox" id="relative_dues" name="relative_dues">
+                    <label for="relative_dues" class="sub-text" data-i18n="relative_due_dates">Relative due dates</label>
+                </div>
+                <div class="sub-option">
+                    <input type="checkbox" id="equal_height_cards" name="equal_height_cards">
+                    <label for="equal_height_cards" class="sub-text" data-i18n="equal_height_cards">Equal height</label>
+                </div>
+                <div style="margin-top: 5px">
+                    <span class="sub-text" data-i18n="max_items">Max items to show: </span><span
+                        id="numAssignments"></span>
+                    <input type="range" min="1" max="10" id="numAssignmentsSlider">
+                </div>
+            </div>
+        </div>
+        <div class="option-container">
+            <div class="option" id="dashboard_grades">
+                <input type="radio" id="off" name="dashboard_grades">
+                <input type="radio" id="on" name="dashboard_grades">
+                <div class="slider">
+                    <div class="sliderknob"></div>
+                    <div class="sliderbg"></div>
+                </div>
+                <span class="option-name" data-i18n="card_grades">Card Grades</span>
+            </div>
+            <div class="sub-options">
+                <div class="sub-option" style="margin-top:5px">
+                    <input type="checkbox" id="grade_hover" name="grade_hover">
+                    <label for="grade_hover" class="sub-text" data-i18n="grade_hover">Show only when hovering</label>
+                </div>
+                <div class="sub-option" style="margin-top:5px">
+                    <input type="checkbox" id="card_letter" name="card_letter">
+                    <label for="card_letter" class="sub-text" data-i18n="card_letter">Show letter grade</label>
+                </div>
+            </div>
+        </div>
+        <div class="option-container card-display-settings">
+            <div class="option" id="condensed_cards">
+                <input type="radio" id="off" name="condensed_cards">
+                <input type="radio" id="on" name="condensed_cards">
+                <div class="slider">
+                    <div class="sliderknob"></div>
+                    <div class="sliderbg"></div>
+                </div><span class="option-name" data-i18n="condensed_cards">Condensed Cards</span>
+            </div>
+            <h3 class="header-small">Missing cards?</h3>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="checkbox" id="card_method_dashboard"></input>
+                <span>Get Active Cards From Dashboard</span>
+            </div>
+        </div>
+
         <p class="option-container sub-text" style="margin: 5px 0">Enter <b>"none"</b> to hide images and links.<br>You may need to refresh the page to see some changes.</p>
         <!-- <div class="advanced-cards">
             <div id="advanced-current"></div>
@@ -840,35 +740,20 @@
 			</div>
 		</div>
 
-        <div class="option-container">
-            <h3 class="header-small">Missing cards?</h3>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="checkbox" id="card_method_dashboard"></input>
-                <span>Get Active Cards From Dashboard</span>
-            </div>
-        </div>
 
         <div class="option-container">
             <h3 class="header-small">More Card Styles</h3>
-
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="sub-option">
                     <div style="margin-top: 5px;display: flex;gap: 8px;align-items: center">
-                        <span class="sub-text" style="width:75px;">Image Size</span>
-                        <input type="number" id="imageSize" class="card-input" min="0" max="300" value="1" style="width:80px;">
+                        <label for="cardRoundness" class="sub-text" style="width:75px;">Card Border</label>
+                        <input type="number" id="cardRoundness" class="card-input" min="0" max="300" value="5" style="width:80px;" title="Card corner roundness">
                         <span class="sub-text">px</span>
                     </div>
                 </div>
                 <div class="sub-option">
                     <div style="margin-top: 5px;display: flex;gap: 8px;align-items: center">
-                        <span class="sub-text" style="width:75px;">Card Roundness</span>
-                        <input type="number" id="cardRoundness" class="card-input" min="0" max="300" value="1" style="width:80px;">
-                        <span class="sub-text">px</span>
-                    </div>
-                </div>
-                <div class="sub-option">
-                    <div style="margin-top: 5px;display: flex;gap: 8px;align-items: center">
-                        <span class="sub-text" style="width:75px;">Extra Card Spacing</span>
+                        <span class="sub-text" style="width:75px;">Card Margin</span>
                         <input type="number" id="cardSpacing" class="card-input" max="300" value="1" style="width: 80px;">
                         <span class="sub-text">px</span>
                     </div>
@@ -887,23 +772,156 @@
                         <span class="sub-text">px</span>
                     </div>
                 </div>
+            </div>
+            <button type="button" id="reset-card-styles" class="customization-button" style="margin-top:12px;">Reset style numbers</button>
+        </div>
+    </div>
+
+    <div class="todo-settings-container tab" style="display:none">
+        <div class="tab-header">
+            <h2 style="margin-top: 0" data-i18n="todo_list">Todo List</h2>
+            <button class="big-button back-btn" data-i18n="back">Back</button>
+        </div>
+        <div class="option-container">
+            <div class="option" id="better_todo">
+                <input type="radio" id="off" name="better_todo">
+                <input type="radio" id="on" name="better_todo">
+                <div class="slider">
+                    <div class="sliderknob"></div>
+                    <div class="sliderbg"></div>
+                </div>
+                <span class="option-name" data-i18n="better_todo">Better Todo List</span>
+            </div>
+            <div class="sub-options">
+                <!-- Frequently-changed options stay visible; rarer ones live in the collapsible "More options" section below -->
+                <div class="sub-option" style="flex-direction:column;align-items:stretch;gap:4px;">
+                    <label for="todo_progress_rings" class="sub-text">Progress display</label>
+                    <select id="todo_progress_rings" name="todo_progress_rings">
+                        <option value="none">None</option>
+                        <option value="rings">Rings</option>
+                        <option value="rainbow">Rainbow</option>
+                        <option value="lines">Multiple lines</option>
+                        <option value="line">One line</option>
+                    </select>
+                </div>
+                <div class="sub-option" style="flex-direction:column;align-items:stretch;gap:4px;">
+                    <label for="todo_timeframe" class="sub-text">Time frame</label>
+                    <select id="todo_timeframe" name="todo_timeframe">
+                        <option value="all">All time</option>
+                        <option value="1week">1 week</option>
+                        <option value="2week">2 weeks</option>
+                        <option value="month">Month</option>
+                        <option value="2month">2 months</option>
+                    </select>
+                </div>
                 <div class="sub-option">
-                    <div style="margin-top: 5px;display: flex;gap: 8px;align-items: center">
-                        <span class="sub-text" style="width:75px;">Card Padding</span>
-                        <input type="number" id="cardPadding" class="card-input" min="0" max="100" value="0" style="width: 80px;">
-                        <span class="sub-text">px</span>
+                    <input type="checkbox" id="hover_preview" name="hover_preview">
+                    <label for="hover_preview" class="sub-text" data-i18n="hover_preview">Previews on hover</label>
+                </div>
+                <div class="sub-option">
+                    <input type="checkbox" id="todo_show_scores" name="todo_show_scores">
+                    <label for="todo_show_scores" class="sub-text">Show assignment scores</label>
+                </div>
+                <div class="sub-option">
+                    <input type="checkbox" id="todo_confetti" name="todo_confetti">
+                    <label for="todo_confetti" class="sub-text">Show confetti on complete</label>
+                </div>
+                <div class="sub-option">
+                    <input type="checkbox" id="todo_hide_read" name="todo_hide_read">
+                    <label for="todo_hide_read" class="sub-text">Hide read announcements</label>
+                </div>
+                <div style="margin-top: 5px">
+                    <span class="sub-text" data-i18n="max_items">Max items to show: </span><span
+                        id="numTodoItems"></span>
+                    <input type="range" min="1" max="12" id="numTodoItemsSlider">
+                </div>
+                <div class="todo-more-options" id="todo-more-options">
+                    <div class="todo-more-toggle" id="todo-more-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="todo-more-items">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>
+                        <span data-i18n="more_options">More options</span>
+                    </div>
+                    <div class="todo-more-items" id="todo-more-items">
+                        <div class="sub-option">
+                            <input type="checkbox" id="todo_separate_scrollbar" name="todo_separate_scrollbar">
+                            <label for="todo_separate_scrollbar" class="sub-text" data-i18n="todo_separate_scrollbar">Separate Scrollbar</label>
+                        </div>
+                        <div class="sub-option">
+                            <input type="checkbox" id="todo_show_scrollbar" name="todo_show_scrollbar">
+                            <label for="todo_show_scrollbar" class="sub-text">Show scrollbar when scrolling separately</label>
+                        </div>
+                        <div class="sub-option">
+                            <input type="checkbox" id="todo_hr24" name="todo_hr24">
+                            <label for="todo_hr24" class="sub-text" data-i18n="24hrformat">Use 24hr format</label>
+                        </div>
+                        <div class="sub-option">
+                            <input type="checkbox" id="todo_full_height" name="todo_full_height">
+                            <label for="todo_full_height" class="sub-text" data-i18n="todo_full_height">Force Full Height</label> <!-- TO REMOVE and replace with full height -->
+                        </div>
+                        <div class="sub-option">
+                            <input type="checkbox" id="todo_hide_feedback" name="todo_hide_feedback">
+                            <label for="todo_hide_feedback" class="sub-text" data-i18n="todo_hide_feedback">Hide Recent Feedback</label>
+                        </div>
+                        <div class="sub-option" id="todo_alternate_colors_wrap" style="display:none;">
+                            <input type="checkbox" id="todo_alternate_colors" name="todo_alternate_colors">
+                            <label for="todo_alternate_colors" class="sub-text" data-i18n="todo_alternate_colors">Alternate colors</label>
+                        </div>
+                        <div class="sub-option">
+                            <input type="checkbox" id="todo_ignore_card_colors" name="todo_ignore_card_colors">
+                            <label for="todo_ignore_card_colors" class="sub-text">Ignore card colors</label>
+                        </div>
+                        <div class="sub-option">
+                            <input type="checkbox" id="todo_remove_icons" name="todo_remove_icons">
+                            <label for="todo_remove_icons" class="sub-text">Remove icons</label>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
+        <div class="option-container" style="display:none">
+            <!-- TODO: scrapped maybe forever -->
+            <div class="option" id="remind">
+                <input type="radio" id="off" name="remind">
+                <input type="radio" id="on" name="remind">
+                <div class="slider">
+                    <div class="sliderknob"></div>
+                    <div class="sliderbg"></div>
+                </div>
+                <span class="option-name" data-i18n="todo_remind">Todo Reminders</span>
+            </div>
+        </div>
     </div>
 
     <div class="gpa-bounds-container tab" style="display:none">
         <div class="tab-header">
-            <h2 style="margin-top: 0" data-i18n="gpa_settings">GPA Calculator Bounds</h2>
+            <h2 style="margin-top: 0" data-i18n="gpa">GPA</h2>
             <button class="big-button back-btn" data-i18n="back">Back</button>
         </div>
+        <div class="option-container">
+            <div class="option" id="gpa_calc">
+                <input type="radio" id="off" name="gpa_calc">
+                <input type="radio" id="on" name="gpa_calc">
+                <div class="slider">
+                    <div class="sliderknob"></div>
+                    <div class="sliderbg"></div>
+                </div>
+                <span class="option-name" data-i18n="calculator_settings">Calculator Settings</span>
+            </div>
+            <div class="sub-options">
+                <div class="sub-option" style="margin-top:5px">
+                    <input type="checkbox" id="gpa_calc_prepend" name="gpa_calc_prepend">
+                    <label for="gpa_calc_prepend" class="sub-text" data-i18n="move_top">Move to top</label>
+                </div>
+                <div class="sub-option" style="margin-top:5px">
+                    <input type="checkbox" id="gpa_calc_cumulative" name="gpa_calc_cumulative">
+                    <label for="gpa_calc_cumulative" class="sub-text" data-i18n="gpa_calc_cumulative">Show cumulative GPA</label>
+                </div>
+                <div class="sub-option" style="margin-top:5px">
+                    <input type="checkbox" id="gpa_calc_weighted" name="gpa_calc_weighted">
+                    <label for="gpa_calc_weighted" class="sub-text" data-i18n="gpa_calc_weighted">Show weighted GPA</label>
+                </div>
+            </div>
+        </div>
+
         <section class="option-container gpa-threshold-settings">
             <h3 class="header-small">Grade thresholds</h3>
             <label for="gpa-threshold-mode">Apply thresholds to</label>
@@ -931,7 +949,6 @@
             </div>
         </section>
     </div>
-
 
     <div class="debug-container tab">
         <div class="tab-header">

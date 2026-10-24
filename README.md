@@ -25,7 +25,7 @@ Canvas, on its own, leaves much to be desired. The most popular extension provid
 - Card Styles (image size, card roundness, card spacing, width, height, theme compatible)
 - Popup UI revamp
 - NEW Better todo list
-- Better sidebar
+- Bold sidebar text
 - Grade analytics and history
 - Quiz safe mode
 - Global Canvas Search (search modules & assignments across all courses; Ctrl/Cmd+K)

@@ -1,4 +1,7 @@
 {
+    "card_overdue_always_red": {
+        "message": "Always red overdue badges"
+    },
     "appearance": {
         "message": "Appearance"
     },
@@ -74,8 +77,8 @@
     "better_todo": {
         "message": "Better todo list"
     },
-    "better_sidebar": {
-        "message": "Better Sidebar"
+    "bold_sidebar_text": {
+        "message": "Bold sidebar text"
     },
     "quiz_safe_mode": {
         "message": "Quiz Safe Mode"
@@ -100,6 +103,15 @@
     },
     "gpa_calculator": {
         "message": "GPA Calculator"
+    },
+    "gpa": {
+        "message": "GPA"
+    },
+    "calculator_settings": {
+        "message": "Calculator Settings"
+    },
+    "todo_list": {
+        "message": "Todo List"
     },
     "gpa_settings": {
         "message": "GPA Settings"
@@ -174,7 +186,7 @@
         "message": "Hide Recent Feedback"
     },
     "tab_icons": {
-        "message": "Color Coded Tab Icons"
+        "message": "Colored Favicons"
     },
     "todo_hide_feedback": {
         "message": "Hide Recent Feedback"
@@ -299,9 +311,6 @@
     "hide_sequence_footer": {
         "message": "Hide Next/Previous Buttons"
     },
-    "hide_navbar": {
-        "message": "Hide Navigation Bar"
-    },
     "global_search": {
         "message": "Global Canvas Search"
     },
@@ -316,5 +325,38 @@
     },
     "hide_completed_cards": {
         "message": "Hide Completed"
+    },
+    "dashboard_notes_desc": {
+        "message": "Adds a notes area to your Canvas dashboard with Markdown formatting and automatic saving."
+    },
+    "global_search_desc": {
+        "message": "Searches modules and assignments across your courses. Open search in Canvas with Ctrl+K or Command+K."
+    },
+    "grade_analytics_zones_desc": {
+        "message": "Adds colored grade ranges to the grade analytics chart to help you see where your grades fall."
+    },
+    "bold_sidebar_text_desc": {
+        "message": "Makes the text in the Canvas navigation sidebar bold for easier reading."
+    },
+    "remlogo_desc": {
+        "message": "Hides the school logo at the top of the Canvas navigation sidebar."
+    },
+    "full_width_desc": {
+        "message": "Lets Canvas content use the full available page width instead of a limited central column."
+    },
+    "tab_icons_desc": {
+        "message": "Colors the Canvas browser tab icon to help you identify Canvas tabs."
+    },
+    "hide_new_canvas_desc": {
+        "message": "Hides the button that switches to the new Canvas dashboard."
+    },
+    "hide_sequence_footer_desc": {
+        "message": "Hides the Previous and Next navigation buttons at the bottom of course content pages."
+    },
+    "enter_url_desc": {
+        "message": "Lists the Canvas sites where the extension should run. Add a URL for each school or Canvas site you use."
+    },
+    "no_auto_detect_desc": {
+        "message": "Stops automatically detecting Canvas sites. Use your Canvas URL list to choose where the extension runs."
     }
 }

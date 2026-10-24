@@ -1,4 +1,4 @@
-const syncedSwitches = ['remind', 'tab_icons', 'remlogo', 'full_width', 'assignments_due', 'gpa_calc', 'gradient_cards', 'disable_color_overlay', 'dashboard_grades', 'dashboard_notes', 'better_todo', 'better_sidebar', 'condensed_cards', 'hide_new_canvas', 'hide_sequence_footer', 'center_cards', 'quiz_safe_mode', 'global_search', 'grade_analytics', 'hide_personal_details'];
+const syncedSwitches = ['remind', 'tab_icons', 'remlogo', 'full_width', 'assignments_due', 'gpa_calc', 'dashboard_grades', 'dashboard_notes', 'better_todo', 'bold_sidebar_text', 'condensed_cards', 'hide_new_canvas', 'hide_sequence_footer', 'quiz_safe_mode', 'global_search', 'grade_analytics', 'hide_personal_details'];
 const syncedSubOptions = [
 	"grade_analytics_zones",
 	"hide_course_images",
@@ -11,6 +11,7 @@ const syncedSubOptions = [
 
 	"relative_dues",
 	"card_overdues",
+	"card_overdue_always_red",
 	"hide_completed_cards",
 	"equal_height_cards",
 	// "todo_overdues",
@@ -22,6 +23,7 @@ const syncedSubOptions = [
 	"assignment_date_format",
 	"todo_hr24",
 	"todo_separate_scrollbar",
+	"todo_show_scrollbar",
 	"todo_alternate_colors",
 	"todo_ignore_card_colors",
 	"todo_remove_icons",
@@ -38,12 +40,12 @@ const syncedSubOptions = [
 	"cardWidth",
 	"cardHeight",
 	"cardPadding",
-    "sidebar_scale",
 ];
 const localSwitches = [];
 
 // Ignore obsolete settings in older exports and saved themes.
 const removedStyleOptions = new Set([
+    "better_sidebar", "sidebar_scale", "hide_navbar",
     "auto_dark", "auto_dark_start", "auto_dark_end",
     "custom_font", "custom_font_skip_p", "custom_styles", "customCardStyles",
     "customBackgroundLink", "customBackgroundScale", "customBackgroundDaily",
@@ -56,9 +58,9 @@ const removedStyleOptions = new Set([
 // Theme export only carries visual settings, never personal productivity data.
 const exportCardColorToggles = ["gradient_cards", "disable_color_overlay"];
 const exportCardStyles = ["imageSize", "cardRoundness", "cardSpacing", "cardWidth", "cardHeight", "cardPadding"];
-const exportLayout = ["full_width", "center_cards", "condensed_cards", "equal_height_cards", "remlogo", "hide_new_canvas", "hide_navbar", "tab_icons"];
-const exportSidebar = ["better_sidebar", "sidebar_scale"];
-const exportTodo = ["better_todo", "todo_hide_feedback", "todo_hide_read", "todo_full_height", "todo_confetti", "todo_progress_rings", "todo_timeframe", "todo_hr24", "todo_separate_scrollbar", "todo_alternate_colors", "todo_ignore_card_colors", "todo_remove_icons", "todo_show_scores", "hover_preview"];
+const exportLayout = ["full_width", "center_cards", "condensed_cards", "equal_height_cards", "remlogo", "hide_new_canvas", "tab_icons"];
+const exportSidebar = ["bold_sidebar_text"];
+const exportTodo = ["better_todo", "todo_hide_feedback", "todo_hide_read", "todo_full_height", "todo_confetti", "todo_progress_rings", "todo_timeframe", "todo_hr24", "todo_separate_scrollbar", "todo_show_scrollbar", "todo_alternate_colors", "todo_ignore_card_colors", "todo_remove_icons", "todo_show_scores", "hover_preview"];
 const exportGpa = ["gpa_calc", "gpa_calc_prepend", "gpa_calc_cumulative", "gpa_calc_weighted", "gpa_threshold_mode", "gpa_course_bounds"];
 
 const apiurl = "none";
@@ -101,10 +103,10 @@ const defaultOptions = {
         "dashboard_notes_text": "",
         "dashboard_notes_mode": "edit",
         "better_todo": true,
-        "better_sidebar": false,
-        "sidebar_scale": 100,
+        "bold_sidebar_text": false,
         "todo_hr24": false,
 		"todo_separate_scrollbar": false,
+        "todo_show_scrollbar": false,
 		"todo_alternate_colors": false,
 		"todo_ignore_card_colors": false,
 		"todo_remove_icons": false,
@@ -143,12 +145,12 @@ const defaultOptions = {
         },
         // "todo_overdues": false,
         "card_overdues": false,
+        "card_overdue_always_red": false,
         "hide_completed_cards": false,
         "relative_dues": false,
         "equal_height_cards": false,
         "hide_new_canvas": true,
         "hide_sequence_footer": false,
-        "hide_navbar": false,
         "grade_analytics_zones": false,
         "quiz_safe_mode": false,
         "assignment_states": {},
@@ -212,17 +214,6 @@ function setupTodoSlider(initial) {
     document.querySelector('#numTodoItemsSlider').addEventListener('input', function () {
         document.querySelector('#numTodoItems').textContent = this.value;
         chrome.storage.sync.set({ "num_todo_items": this.value });
-    });
-}
-
-function setupSidebarScaleSlider(initial) {
-    let el = document.querySelector("#sidebarScaleSlider");
-    if (!el) return;
-    el.value = initial;
-    document.querySelector("#sidebarScaleValue").textContent = initial;
-    el.addEventListener("input", function () {
-        document.querySelector("#sidebarScaleValue").textContent = this.value;
-        chrome.storage.sync.set({ "sidebar_scale": parseInt(this.value) });
     });
 }
 
@@ -324,8 +315,7 @@ function setupDashboardMethod(initial) {
     });
 }
 
-// Custom card style inputs (image size, roundness, spacing, width, height,
-// padding) fire `chrome.storage.sync.set` on every keystroke/arrow press.
+// Custom card style inputs (border, margin, width, height) fire `chrome.storage.sync.set` on every keystroke/arrow press.
 // chrome.storage.sync caps writes at MAX_WRITE_OPERATIONS_PER_MINUTE (120/min),
 // so rapidly adjusting these number inputs used to hit the quota and surface
 // a "quota exceeded" error. Coalesce rapid edits into a single write with a
@@ -339,19 +329,32 @@ function debouncedCardStyleSet(key, value, delay = 200) {
     }, delay);
 }
 
-function setupImageSizeInput(initial) {
-    let el = document.querySelector("#imageSize");
+function setupCardRoundnessInput(initial) {
+    const el = document.querySelector("#cardRoundness");
     el.value = initial;
-    el.addEventListener("input", (e) => {
-        debouncedCardStyleSet("imageSize", e.target.value);
+    el.addEventListener("input", e => {
+        debouncedCardStyleSet("cardRoundness", e.target.value);
     });
 }
 
-function setupCardRoundnessInput(initial) {
-    let el = document.querySelector("#cardRoundness");
-    el.value = initial;
-    el.addEventListener("input", (e) => {
-        debouncedCardStyleSet("cardRoundness", e.target.value);
+function setupCardStyleReset() {
+    const button = document.getElementById("reset-card-styles");
+    button.addEventListener("click", async () => {
+        const keys = ["cardRoundness", "cardSpacing", "cardWidth", "cardHeight"];
+        const defaults = Object.fromEntries(keys.map(key => [key, defaultOptions.sync[key]]));
+        button.disabled = true;
+        keys.forEach(key => {
+            clearTimeout(cardStyleSetTimers[key]);
+            delete cardStyleSetTimers[key];
+        });
+        try {
+            await chrome.storage.sync.set(defaults);
+            refreshAppliedThemeControls(defaults);
+        } catch (error) {
+            displayAlert(true, "Unable to reset card styles. Please try again.");
+        } finally {
+            button.disabled = false;
+        }
     });
 }
 
@@ -377,25 +380,6 @@ function setupCardHeightInput(initial) {
 	el.addEventListener("input", (e) => {
 		debouncedCardStyleSet("cardHeight", e.target.value);
 	});
-}
-
-function setupCardPaddingInput(initial) {
-    let el = document.querySelector("#cardPadding");
-    el.value = initial;
-    el.addEventListener("input", (e) => {
-        debouncedCardStyleSet("cardPadding", e.target.value);
-    });
-}
-
-function toggleBetterSidebarSubOptions(betterSidebarOn) {
-    const remlogoEl = document.getElementById("remlogo");
-    if (remlogoEl) {
-        remlogoEl.style.display = betterSidebarOn ? "none" : "flex";
-    }
-    const sidebarScaleEl = document.getElementById("sidebarScaleSub");
-    if (sidebarScaleEl) {
-        sidebarScaleEl.style.display = betterSidebarOn ? "block" : "none";
-    }
 }
 
 // "Alternate colors" (Better Todo List sub-option) only makes sense in light
@@ -526,7 +510,9 @@ function setupFeatureSearch(menu) {
     function goToTabElement(el) {
         const tabEl = el.closest(".tab");
         const btnId = tabElToBtnId.get(tabEl);
+        showMain();
         if (btnId) openTab(btnId);
+        revealAncestors(el);
         requestAnimationFrame(() => {
             el.scrollIntoView({ behavior: "smooth", block: "center" });
             highlight(el);
@@ -546,19 +532,19 @@ function setupFeatureSearch(menu) {
             index.push(entry);
         }
 
-        // Big section buttons (Cards, Themes, GPA Settings, Debug)
+        // Big section buttons (Cards, Themes, GPA, Todo List, Debug)
         document.querySelectorAll(".more-options-container .tab-btn").forEach(btn => {
             const span = btn.querySelector("span");
             add({ key: "tab:" + btn.id, text: span ? span.textContent.trim() : "", el: btn, action: () => openTab(btn.id) });
         });
 
-        // Home: option toggles
-        document.querySelectorAll(".options .option").forEach(opt => {
+        // Feature toggles on the main page and section pages.
+        document.querySelectorAll(".options .option, .tab .option").forEach(opt => {
             if (!opt.id) return;
             const name = opt.querySelector(".option-name");
             if (!name) return;
             if (shouldSkip(opt)) return;
-            add({ key: "option:" + opt.id, text: name.textContent.trim(), el: opt, action: () => goToMainElement(opt) });
+            add({ key: "option:" + opt.id, text: name.textContent.trim(), el: opt, action: () => opt.closest(".tab") ? goToTabElement(opt) : goToMainElement(opt) });
         });
 
         // Home: sub-options / timesets / labelled rows (e.g. "Use dd/mm", "Start time", max-items)
@@ -588,8 +574,8 @@ function setupFeatureSearch(menu) {
             add({ key: "heading:" + (btnId || "?") + ":" + text, text, el: h, action: () => goToTabElement(h) });
         });
 
-        // Tabs: checkbox sub-options (e.g. "Center uneven rows", "Flexible grid")
-        document.querySelectorAll(".tab .sub-option").forEach(sub => {
+        // Tabs: sub-options, dropdowns and sliders.
+        document.querySelectorAll(".tab .sub-option, .tab .timeset, .tab .sub-options > div").forEach(sub => {
             if (shouldSkip(sub)) return;
             const text = labelOf(sub);
             if (!text) return;
@@ -750,7 +736,6 @@ function setup() {
     const menu = {
 		switches: syncedSwitches,
 		checkboxes: [
-			"hide_navbar",
 			"gpa_calc_weighted",
 			"gpa_calc_cumulative",
 			// /*'card_method_date',*/ "show_updates",
@@ -761,6 +746,7 @@ function setup() {
 
 			"relative_dues",
 			"card_overdues",
+	"card_overdue_always_red",
 			"hide_completed_cards",
 			"equal_height_cards",
 			// "todo_overdues",
@@ -769,6 +755,7 @@ function setup() {
 			"assignment_date_format",
 			"todo_hr24",
 			"todo_separate_scrollbar",
+			"todo_show_scrollbar",
 			"todo_alternate_colors",
 			"todo_ignore_card_colors",
 			"todo_remove_icons",
@@ -790,8 +777,12 @@ function setup() {
 				setup: displayGPABounds,
 				tab: ".gpa-bounds-container",
 			},
+			"todo-settings-btn": {
+				setup: null,
+				tab: ".todo-settings-container",
+			},
 			"import-export-btn": {
-				setup: () => { displayThemeList(); checkHighContrastWarning(); },
+				setup: () => { displayThemeList(); displaySavedThemes(); checkHighContrastWarning(); },
 				tab: ".import-export",
 			},
 			"debug-btn": {
@@ -809,10 +800,6 @@ function setup() {
 				identifier: "num_todo_items",
 				setup: (initial) => setupTodoSlider(initial),
 			},
-            {
-                identifier: "sidebar_scale",
-                setup: (initial) => setupSidebarScaleSlider(initial),
-            },
 
 			{
 				identifier: "card_limit",
@@ -823,10 +810,6 @@ function setup() {
 				setup: (initial) => setupDashboardMethod(initial),
 			},
 
-			{
-				identifier: "imageSize",
-				setup: (initial) => setupImageSizeInput(initial),
-			},
 			{
 				identifier: "cardRoundness",
 				setup: (initial) => setupCardRoundnessInput(initial),
@@ -842,10 +825,6 @@ function setup() {
 			{
 				identifier: "cardHeight",
 				setup: (initial) => setupCardHeightInput(initial),
-			},
-			{
-				identifier: "cardPadding",
-				setup: (initial) => setupCardPaddingInput(initial),
 			},
 
 			{
@@ -876,9 +855,6 @@ function setup() {
                 optionSwitch.querySelector("#on").classList.toggle("checked");
                 optionSwitch.querySelector("#off").classList.toggle("checked");
                 chrome.storage.sync.set({ [option]: status });
-                if (option === "better_sidebar") {
-                    toggleBetterSidebarSubOptions(status);
-                }
                 if (option === "hide_personal_details" && status === false) {
                     // "Temporarily remove all course images" is a sub-option of
                     // the privacy mode: switching the mode off restores the
@@ -891,7 +867,6 @@ function setup() {
                 toggleSubOptionsVisibility(option, status);
             });
         });
-        toggleBetterSidebarSubOptions(sync["better_sidebar"] === true);
         ["gpa_calc", "assignments_due", "better_todo", "grade_analytics", "hide_personal_details"].forEach(opt => {
             toggleSubOptionsVisibility(opt, sync[opt] === true);
         });
@@ -924,6 +899,7 @@ function setup() {
     })
 
     setupAppearanceMode();
+    setupSavedThemes();
 
     // activate tab buttons
     document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -1189,6 +1165,7 @@ function setup() {
     });
 
     setupExports();
+    setupCardStyleReset();
 
     document.querySelector("#alert").addEventListener("click", clearAlert);
     // TODO: maybe fix this at some point, idk what is causing the error here
@@ -1328,8 +1305,8 @@ function setup() {
         });
     });
 
-    // Note: the card-style number inputs (imageSize, cardRoundness,
-    // cardSpacing, cardWidth, cardHeight, cardPadding) are wired
+    // Note: the card-style number inputs (cardSpacing, cardWidth,
+    // cardHeight) are wired
     // via their setup*Input
     // handlers in menu.special above, which debounce the storage writes. The
     // duplicate listeners that used to live here referenced nonexistent
@@ -1360,7 +1337,7 @@ function displayThemeSubmissionForm() {
 // Settings exports omit theme visuals, saved themes, notes, and task data.
 const settingsExportKeys = [...new Set([
     ...syncedSwitches, ...syncedSubOptions, ...exportLayout, ...exportSidebar,
-    ...exportTodo, ...exportGpa, "gpa_calc_bounds", "hide_navbar",
+    ...exportTodo, ...exportGpa, "gpa_calc_bounds",
     "card_method_dashboard", "card_method_date", "card_limit"
 ])].filter(key => ![...exportCardColorToggles, ...exportCardStyles].includes(key));
 
@@ -1618,6 +1595,38 @@ function readThemeValues(preset) {
     return { ...emptyThemeValues(), ...preset };
 }
 
+function noThemeSettings() {
+    // Reset appearance controls as well as the palette. Keep feature choices
+    // and personal course data separate from removing a theme.
+    const keys = [...exportCardColorToggles, ...exportCardStyles, ...exportSidebar];
+    return {
+        ...Object.fromEntries(keys.map(key => [key, defaultOptions.sync[key] ?? false])),
+        dark_preset: emptyThemeValues(),
+        custom_cards: [],
+        card_colors: [],
+    };
+}
+
+function refreshAppliedThemeControls(values) {
+    exportCardStyles.forEach(key => {
+        const input = document.getElementById(key);
+        if (input && Object.hasOwn(values, key)) input.value = values[key];
+    });
+    syncedSwitches.forEach(key => {
+        if (!Object.hasOwn(values, key)) return;
+        const control = document.getElementById(key);
+        if (!control) return;
+        const on = control.querySelector('#on');
+        const off = control.querySelector('#off');
+        if (!on || !off) return;
+        on.checked = values[key] === true;
+        off.checked = !on.checked;
+        on.classList.toggle('checked', on.checked);
+        off.classList.toggle('checked', off.checked);
+        toggleSubOptionsVisibility(key, on.checked);
+    });
+}
+
 let highContrastWarningRequest = 0;
 async function checkHighContrastWarning() {
     const warning = document.getElementById("theme-high-contrast-warning");
@@ -1643,18 +1652,16 @@ function displayThemeList() {
     container.textContent = "";
     // Retain palette definitions for previously saved themes, but omit these
     // retired presets from the picker.
-    const listedThemes = themes.filter(theme => !["McDonalds by cmoon3611", "Purple by otulpp"].includes(theme.title));
+    const listedThemes = themes.filter(theme => !["McDonalds", "Purple"].includes(theme.title));
     const presets = [...listedThemes, {
         title: "_No Theme",
-        exports: { dark_preset: emptyThemeValues(), custom_cards: [], card_colors: [], gradient_cards: false, disable_color_overlay: false, better_sidebar: false }
+        exports: noThemeSettings()
     }]
         .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
     presets.forEach(theme => {
         const button = makeElement("button", container, { className: "theme-button customization-button" });
         if (theme.preview) button.style.backgroundImage = "linear-gradient(#00000070, #00000070), url(" + theme.preview + ")";
-        const [title, creator] = theme.title.split(" by ");
-        makeElement("p", button, { className: "theme-button-title", textContent: title });
-        if (creator) makeElement("p", button, { className: "theme-button-creator", textContent: creator });
+        makeElement("p", button, { className: "theme-button-title", textContent: theme.title });
         button.addEventListener("click", async () => {
             button.disabled = true;
             try {
@@ -1690,9 +1697,21 @@ function getRelativeDate(date, short = false) {
     return { time: relative, ms: now.getTime() - date.getTime() };
 }
 
+function setupSavedThemes() {
+    displaySavedThemes();
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === "local" && ["saved_themes", "saved_theme_names", "saved_theme_updated_at"].some(key => changes[key])) {
+            displaySavedThemes();
+        }
+    });
+}
+
+let savedThemesRequest = 0;
 function displaySavedThemes(force = false) {
+    const request = ++savedThemesRequest;
     chrome.storage.local.get(["saved_themes", "saved_theme_names", "saved_theme_updated_at"], local => {
         const target = document.getElementById("saved-themes");
+        if (!target || request !== savedThemesRequest) return;
         if (!force && target.querySelector(".saved-theme-rename:not([hidden])")) return;
         target.textContent = "";
         Object.entries(local.saved_themes || {}).forEach(([key, theme], index) => {
@@ -1764,6 +1783,8 @@ async function importTheme(theme, source = { type: "imported" }) {
         themeImportInProgress = true;
         clearTimeout(presetChangeTimeout);
         presetChangeTimeout = null;
+        // A queued input write must not bring back a style after a theme reset.
+        Object.values(cardStyleSetTimers).forEach(clearTimeout);
         // Built-in palettes support both appearances; selecting one must keep
         // the user's Light / Dark / System choice instead of forcing Dark.
         const keepAppearance = source.type === "builtin";
@@ -1791,6 +1812,7 @@ async function importTheme(theme, source = { type: "imported" }) {
         });
         expectedThemeChanges = JSON.parse(JSON.stringify(final));
         await chrome.storage.sync.set(final);
+        refreshAppliedThemeControls(final);
         workingThemeOverrides = {};
         activeThemeSource = source;
         await chrome.storage.local.set({ active_theme: source });
@@ -1884,9 +1906,10 @@ function clearAlert() {
 
 function displayAlert(bad, msg) {
     clearTimeout(removeAlert);
-    document.querySelector("#alert").style.bottom = "0";
-    document.querySelector("#alert").textContent = msg;
-    document.querySelector("#alert").style.background = bad ? "#e7495ed9" : "#468b46d9";
+    const alert = document.querySelector("#alert");
+    alert.dataset.status = bad ? "error" : "success";
+    alert.textContent = msg;
+    alert.style.bottom = "0";
     removeAlert = setTimeout(() => {
         clearAlert();
     }, 15000);

@@ -45,7 +45,7 @@ for (const theme of api.themes) {
 }
 
 test('suitable existing colors survive unchanged', () => {
-    context.options = api.themes.find(theme => theme.title === 'Ocean by Grant').exports;
+    context.options = api.themes.find(theme => theme.title === 'Ocean').exports;
     const palette = api.activeThemeValues(true);
     assert.equal(palette['background-0'], context.options.dark_preset['background-0']);
     assert.equal(palette.links, context.options.dark_preset.links);
@@ -102,6 +102,7 @@ test('selecting a built-in theme preserves Light / Dark / System', async () => {
     const imports = vm.createContext({
         persistUnsavedTheme: async () => {}, themeSourceReady: Promise.resolve(),
         clearTimeout: () => {}, presetChangeTimeout: null, removedStyleOptions: new Set(),
+        cardStyleSetTimers: {}, refreshAppliedThemeControls: () => {},
         chrome: { storage: {
             sync: { get: async () => ({ custom_cards: {} }), set: async value => { saved = value; } },
             local: { set: async () => {} }

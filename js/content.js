@@ -36,14 +36,6 @@ function getCurrentCourseId() {
     return match ? parseInt(match[1]) : null;
 }
 
-function getSidebarLayoutMode() {
-    if (current_page.match(/^\/courses\/(\d+)(?:\/|$)/)) return "course";
-    if (isProfilePage()) return "course";
-    if (current_page === "/courses" || current_page === "/courses/") return "dash";
-    if (current_page === "/" || current_page === "") return "dash";
-    return "dash";
-}
-
 function isGradesPage() {
     return /^\/courses\/\d+\/grades(?:\/|$)/.test(current_page);
 }
@@ -58,10 +50,6 @@ function isGroupsIndexPage() {
 
 function isConversationsPage() {
     return /^\/conversations(?:\/|$)/.test(current_page);
-}
-
-function isAccountsPage() {
-    return /^\/accounts(?:\/|$)/.test(current_page);
 }
 
 function isProfilePage() {
@@ -419,24 +407,6 @@ function isDashboardPage() {
     return !!document.querySelector("#DashboardCard_Container");
 }
 
-function getSidebarStateMode(mode = getSidebarLayoutMode()) {
-    return mode === "course" ? "course" : "dashboard";
-}
-
-function getSidebarStateKey(mode = getSidebarLayoutMode()) {
-    return `better_sidebar_expanded_${getSidebarStateMode(mode)}`;
-}
-
-async function getSidebarExpandedState(mode = getSidebarLayoutMode()) {
-    const key = getSidebarStateKey(mode);
-    const result = await chrome.storage.local.get(key);
-    return result[key] ?? false;
-}
-
-function setSidebarExpandedState(mode, expanded) {
-    chrome.storage.local.set({ [getSidebarStateKey(mode)]: expanded });
-}
-
 let assignments = null;
 let grades = null;
 let announcements = [];
@@ -457,9 +427,7 @@ let reminderCheck = null;
 // Set while a background planner-cache refresh is in flight so overlapping
 // schedules (multiple loads, multiple tabs) can't run concurrently.
 let plannerRefreshRunning = false;
-let betterSidebarLoading = false;
 let dashboardReadyTimer = null;
-let sidebarReadyTimer = null;
 // Signature of the dashboard card set last time we ran the full setup pass.
 // The MutationObserver in checkDashboardReady fires on every childList change
 // in the document — including the ones our own setup pass (loadCardAssignments,
@@ -468,9 +436,6 @@ let sidebarReadyTimer = null;
 // We only need to re-run when Canvas actually changes the dashboard cards, so
 // we skip the heavy pass whenever the card set is unchanged.
 let lastDashboardCardSignature = null;
-let sidebarBadgeObserver = null;
-let sidebarBadgeSyncTimer = null;
-let sidebarBadgeWatchRetries = 0;
 
 /*
 Start
@@ -570,15 +535,19 @@ function updateReminders() {
     const fiveDays = 1000 * 60 * 60 * 24 * 5;
     const now = (new Date()).getTime();
     const list = [];
-    assignments.then(data => {
+    return assignments.then(data => {
+        if (!Array.isArray(data)) return;
         data.forEach(item => {
+            // Planner responses can include incomplete entries without a plannable.
+            if (!item?.plannable?.title || !item.html_url) return;
             const due = (new Date(item.plannable_date)).getTime();
+            if (!Number.isFinite(due)) return;
             if (item.plannable_type === "announcement") return;
             if (due < now) return;
             if (due > now + fiveDays * 2) return;
             // { due, title, href, hide count }
             // hide count of -1 indicates the item has a submission
-            list.push({ "d": due, "t": item.plannable.title, "h": domain + item.html_url, "c": item?.submissions?.submitted || false ? -1 : 0 });
+            list.push({ "d": due, "t": item.plannable.title, "h": domain + item.html_url, "c": item.submissions?.submitted ? -1 : 0 });
         });
         insertReminders(list);
     });
@@ -760,13 +729,9 @@ function startExtension() {
         }
     });
 
-    chrome.storage.sync.get(["better_sidebar", "sidebar_scale"], result => {
-        options = { ...options, ...result };
-        ensureBetterSidebar();
-    });
-
     chrome.storage.sync.get(null, result => {
         options = { ...options, ...result };
+        applyBoldSidebarText();
         applyTodoAlternateColors();
         // toggleScheduledReminders();
         getApiData();
@@ -775,8 +740,6 @@ function startExtension() {
         watchNewCanvasButton();
         changeFavicon();
         updateReminders();
-        setupMobileNavStyle();
-        ensureBetterSidebar();
         watchSequenceFooter();
         watchProfileLogoutPageButton();
         watchGradeAnalytics();
@@ -855,6 +818,7 @@ function applyOptionsChanges(changes) {
 			case "custom_assignments":
 			case "assignment_date_format":
 			case "card_overdues":
+			case "card_overdue_always_red":
 			case "relative_dues":
 				cardAssignments = preloadAssignmentEls();
 				loadCardAssignments();
@@ -879,22 +843,26 @@ function applyOptionsChanges(changes) {
 				}
 				break;
 			case "custom_cards_2":
-			case "custom_cards_3":
 				customizeCards();
 				break;
+			case "custom_cards_3":
+                refreshCourseColorUI();
+                break;
+            case "todo_separate_scrollbar":
+            case "todo_show_scrollbar":
+            case "todo_full_height":
+                if (options.better_todo && document.getElementById("better-todo-main")) applyTodoSidebarLayout();
+                break;
 			case "todo_hr24":
-			case "todo_separate_scrollbar":
 			case "num_todo_items":
 			case "hover_preview":
 			case "todo_timeframe":
 			// case "todo_overdues":
 			case "todo_hide_feedback":
 			case "todo_hide_read":
-			case "todo_full_height":
 			case "todo_ignore_card_colors":
 			case "todo_remove_icons":
 			case "todo_show_scores":
-			case "custom_cards_3":
 				if (options.better_todo && document.getElementById("better-todo-main")) {
 					moreAnnouncementCount = 0;
 					moreAssignmentCount = 0;
@@ -937,30 +905,15 @@ function applyOptionsChanges(changes) {
 				if (document.querySelector("#canvasrefined-gpa-unweighted")) calculateGPA2();
 				insertGrades();
 				break;
+			case "bold_sidebar_text":
+                applyBoldSidebarText();
+                break;
 			case "remlogo":
 			case "disable_color_overlay":
 			case "condensed_cards":
 			case "full_width":
 			case "center_cards":
-			case "hide_navbar":
 				applyAestheticChanges();
-				// Better Sidebar also hides the nav-toggle + breadcrumbs bar with
-				// an inline style (part of its layout). The "Hide Navigation
-				// Bar" sub-option is the single source of truth for that
-				// element, so live-apply/restore the inline style here too —
-				// setupBetterSidebar only sets it once, on first mount.
-				if (options.better_sidebar) {
-					const crumbsBar = document.querySelector(".ic-app-nav-toggle-and-crumbs");
-					if (options.hide_navbar === true) {
-						crumbsBar?.style.setProperty("display", "none");
-					} else {
-						crumbsBar?.style.removeProperty("display");
-					}
-					// The mobile context nav + arrow button follow the same
-					// "Hide Navigation Bar" gate — restyle to add/remove the
-					// hide rules live.
-					setupMobileNavStyle();
-				}
 				break;
 			case "hide_new_canvas":
 				watchNewCanvasButton();
@@ -1015,23 +968,6 @@ function applyOptionsChanges(changes) {
                     }
                     break;
                 }
-			case "better_sidebar":
-				// Better Sidebar mounts its whole layout on page load, so either
-				// direction of the toggle reloads the page for a clean mount/
-				// removal. The old-value guard keeps a re-save of the same value
-				// from looping the reload.
-				if (changes["better_sidebar"]?.oldValue !== options.better_sidebar) {
-					window.location.reload();
-					break;
-				}
-				if (options.better_sidebar) {
-                    ensureBetterSidebar();
-                    setupMobileNavStyle();
-                } else {
-                    resetBetterSidebarLayout();
-                    setupMobileNavStyle();
-                }
-				break;
             case "grade_analytics":
                 watchGradeAnalytics();
                 break;
@@ -1044,75 +980,67 @@ function applyOptionsChanges(changes) {
                 // so the gating is applied cleanly.
                 if (isQuizPage()) window.location.reload();
                 break;
-            case "sidebar_scale": {
-                const existingSidebar = document.getElementById("better-sidebar-container");
-                if (existingSidebar) {
-                    const expander = existingSidebar.querySelector(".better-sidebar-expander");
-                    updateSidebar(existingSidebar.dataset.expanded === "true", existingSidebar, expander);
-                }
-                break;
-            }
 		}
     });
 }
 
-function resetBetterSidebarLayout() {
-    document.getElementById("header")?.style.removeProperty("display");
-    document.querySelector(".ic-Layout-wrapper")?.style.removeProperty("margin-left");
-    document.querySelector("#main")?.style.removeProperty("margin-left");
-    document.querySelector(".ic-app-nav-toggle-and-crumbs")?.style.removeProperty("display");
-    document.getElementById("not_right_side")?.style.removeProperty("display");
-    document.getElementById("not_right_side")?.style.removeProperty("flex");
-    document.getElementById("not_right_side")?.style.removeProperty("min-width");
-    document.getElementById("right-side-wrapper")?.style.removeProperty("flex");
-    document.getElementById("right-side-wrapper")?.style.removeProperty("width");
-    document.getElementById("right-side-wrapper")?.style.removeProperty("max-width");
-    document.querySelector(".ic-Layout-contentWrapper")?.style.removeProperty("display");
-    document.querySelector(".ic-Layout-contentWrapper")?.style.removeProperty("align-items");
-    document.querySelector(".ic-Layout-contentWrapper")?.style.removeProperty("min-width");
-    document.querySelector(".ic-Layout-contentMain")?.style.removeProperty("flex");
-    document.querySelector(".ic-Layout-contentMain")?.style.removeProperty("min-width");
-    document.querySelector(".ic-Layout-contentMain")?.style.removeProperty("margin");
-    document.querySelector(".ic-Layout-contentMain")?.style.removeProperty("padding");
-    document.querySelector(".ic-Layout-contentMain")?.style.removeProperty("background");
-    document.querySelector(".ic-Layout-contentMain")?.style.removeProperty("backdrop-filter");
-    document.querySelector(".ic-Layout-contentMain")?.style.removeProperty("-webkit-backdrop-filter");
-    document.getElementById("left-side")?.style.removeProperty("display");
-    document.getElementById("left-side")?.style.removeProperty("padding-top");
-    document.getElementById("left-side")?.style.removeProperty("padding-left");
-    document.getElementById("section-tabs")?.style.removeProperty("padding-top");
-    document.getElementById("better-sidebar-container")?.remove();
-    clearBetterSidebarLayoutFix();
-    if (sidebarBadgeObserver) { sidebarBadgeObserver.disconnect(); sidebarBadgeObserver = null; }
-    if (sidebarBadgeSyncTimer) { clearTimeout(sidebarBadgeSyncTimer); sidebarBadgeSyncTimer = null; }
-    sidebarBadgeWatchRetries = 0;
-}
+// Wrap text nodes rather than bolding links: links may also contain icon fonts
+// or SVGs, whose weight and appearance must remain untouched.
+let boldSidebarObserver = null;
+function applyBoldSidebarText() {
+    const id = "canvasrefined-bold-sidebar-text";
+    const labelClass = "canvasrefined-sidebar-text";
+    const existing = document.getElementById(id);
+    if (options.bold_sidebar_text !== true) {
+        boldSidebarObserver?.disconnect();
+        boldSidebarObserver = null;
+        existing?.remove();
+        document.querySelectorAll(`.${labelClass}`).forEach(label => {
+            label.replaceWith(...label.childNodes);
+        });
+        return;
+    }
 
-function ensureBetterSidebar() {
-    if (!options.better_sidebar) return;
-    // Quiz safe mode: don't replace the Canvas sidebar on quiz pages.
-    if (quizSafeModeActive()) return;
-    if (document.querySelector("#better-sidebar-container")) return;
-    if (!document.querySelector("#wrapper") || !document.querySelector(".ic-Layout-contentWrapper")) return;
-    setupBetterSidebar(getSidebarLayoutMode());
-}
+    const wrapLabels = () => {
+        const roots = document.querySelectorAll(
+            '.ic-app-header .menu-item__text, #menu .menu-item__text, #section-tabs a'
+        );
+        roots.forEach(root => {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            const texts = [];
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                if (!node.textContent.trim() || node.parentElement.closest(
+                    `.${labelClass}, svg, i, [aria-hidden="true"], .menu-item-icon-container, [class^="icon-"], [class*=" icon-"]`
+                )) continue;
+                texts.push(node);
+            }
+            texts.forEach(node => {
+                const label = document.createElement("span");
+                label.className = labelClass;
+                node.replaceWith(label);
+                label.appendChild(node);
+            });
+        });
+    };
 
-function applyBetterSidebarLayoutFix() {
-    let style = document.querySelector("#canvasrefined-sidebar-layout-fix") || document.createElement("style");
-    style.id = "canvasrefined-sidebar-layout-fix";
-    style.textContent = `
-        #wrapper,
-        .ic-Layout-wrapper,
-        #main {
-            margin-left: 0 !important;
-        }
-    `;
-    document.documentElement.appendChild(style);
-}
-
-function clearBetterSidebarLayoutFix() {
-	let style = document.querySelector("#canvasrefined-sidebar-layout-fix");
-	if (style) style.remove();
+    if (!existing) {
+        const style = document.createElement("style");
+        style.id = id;
+        style.textContent = `.${labelClass} { font-weight: 700 !important; }`;
+        document.documentElement.appendChild(style);
+    }
+    // Disconnect while wrapping so our own DOM edits cannot trigger a loop.
+    boldSidebarObserver?.disconnect();
+    wrapLabels();
+    if (!boldSidebarObserver) {
+        boldSidebarObserver = new MutationObserver(() => {
+            boldSidebarObserver.disconnect();
+            wrapLabels();
+            boldSidebarObserver.observe(document.documentElement, { childList: true, subtree: true });
+        });
+    }
+    boldSidebarObserver.observe(document.documentElement, { childList: true, subtree: true });
 }
 
 let insertTimer;
@@ -1192,21 +1120,9 @@ function checkDashboardReady() {
                 const rightSide = document.querySelector("#right-side");
                 if (rightSide && !rightSide.querySelector(".canvasrefined-todosidebar")) {
                     setupBetterTodo();
-                    setupBetterSidebar(getSidebarLayoutMode());
                 }
 
-                if (options.better_sidebar) {
-                    ensureBetterSidebar();
-                }
             }, 0);
-        } else if (options.better_sidebar) {
-            // Throttle sidebar setup checks on non-dashboard (course) pages instead
-            // of calling ensureBetterSidebar() on every mutation burst.
-            if (sidebarReadyTimer) return;
-            sidebarReadyTimer = setTimeout(() => {
-                sidebarReadyTimer = null;
-                ensureBetterSidebar();
-            }, 100);
         }
     };
 
@@ -2880,6 +2796,7 @@ async function createTodoSections(location) {
 	// resolves. Incremented only after the guards above, so a bail-out can
 	// never cancel an in-flight render without scheduling a replacement.
 	const renderGen = ++todoRenderGen;
+    applyTodoSidebarLayout();
 	if (!location.querySelector("#better-todo-header")) {
 		let header = makeElement("div", location, { id: "better-todo-header" });
 		header.style = "display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bcbackground-1);padding-bottom:-2px;";
@@ -3151,28 +3068,7 @@ async function createTodoSections(location) {
             }
         }
 
-        const sidebar = document.getElementById("right-side-wrapper");
-        ensureRightSideWrapperScrollbarHidden();
-        sidebar.style.setProperty("scrollbar-width", "none");
-        sidebar.style.setProperty("-ms-overflow-style", "none");
-		const viewportOffset = todoViewportOffsetPx();
-		if (options.todo_full_height) {
-			sidebar.style.minHeight = viewportOffset > 0 ? `calc(100vh - ${viewportOffset}px)` : "100vh";
-		} else {
-			sidebar.style.minHeight = "";
-		}
-		if (options.todo_separate_scrollbar) {
-			sidebar.style.position = "sticky";
-			sidebar.style.top = "0";
-			sidebar.style.height = viewportOffset > 0 ? `calc(100vh - ${viewportOffset}px)` : "100vh";
-			sidebar.style.overflowY = "auto";
-		} else {
-			sidebar.style.position = "";
-			sidebar.style.top = "";
-			sidebar.style.height = "";
-			sidebar.style.overflowY = "";
-			// maybe invisible scrollbar?
-		}
+        applyTodoSidebarLayout();
 	}).catch(err => {
 		// A rejected data promise must not leave the todo list half-rendered or
 		// throw unhandled; the generation guard above keeps renders idempotent.
@@ -3182,11 +3078,9 @@ async function createTodoSections(location) {
 
 // Height the todo sidebar must shed to fit the viewport: the nav-toggle +
 // breadcrumbs bar sits above the content column, so a full-viewport (100vh)
-// sidebar forces the page to scroll by exactly the bar's height now that the
-// bar is visible again (Hide Navigation Bar defaults to off). Returns 0 when
-// the bar is hidden or absent (dashboard pages have no crumbs bar).
+// sidebar forces the page to scroll by exactly the bar's height. Returns 0
+// when the bar is hidden or absent (dashboard pages have no crumbs bar).
 function todoViewportOffsetPx() {
-	if (options.hide_navbar === true) return 0;
 	const crumbs = document.querySelector(".ic-app-nav-toggle-and-crumbs");
 	const h = crumbs ? crumbs.offsetHeight : 0;
 	return h > 0 ? h : 0;
@@ -3198,22 +3092,52 @@ let todoHeightResizeTimer = null;
 window.addEventListener("resize", () => {
 	if (todoHeightResizeTimer) clearTimeout(todoHeightResizeTimer);
 	todoHeightResizeTimer = setTimeout(() => {
-		const sidebar = document.getElementById("right-side-wrapper");
-		if (!sidebar || !document.getElementById("better-todo-main")) return;
-		const viewportOffset = todoViewportOffsetPx();
-		if (options.todo_full_height) {
-			sidebar.style.minHeight = viewportOffset > 0 ? `calc(100vh - ${viewportOffset}px)` : "100vh";
-		}
-		if (options.todo_separate_scrollbar) {
-			sidebar.style.height = viewportOffset > 0 ? `calc(100vh - ${viewportOffset}px)` : "100vh";
-		}
+        if (!document.getElementById("better-todo-main")) return;
+        applyTodoSidebarLayout();
 	}, 150);
 });
 
-function ensureRightSideWrapperScrollbarHidden() {
-    let style = document.getElementById("canvasrefined-hide-right-sidebar-scrollbar") || document.createElement("style");
-    style.id = "canvasrefined-hide-right-sidebar-scrollbar";
-    style.textContent = `
+function applyTodoSidebarLayout() {
+    const sidebar = document.getElementById("right-side-wrapper");
+    if (!sidebar) return;
+    const dashboard = isDashboardPage();
+    const gap = dashboard ? 24 : 0;
+    const viewportOffset = todoViewportOffsetPx() + gap * 2;
+    const height = viewportOffset > 0 ? `calc(100vh - ${viewportOffset}px)` : "100vh";
+    sidebar.style.boxSizing = "border-box";
+    sidebar.style.marginTop = gap ? `${gap}px` : "";
+    sidebar.style.marginBottom = gap ? `${gap}px` : "";
+    sidebar.style.minHeight = options.todo_full_height ? height : "";
+    sidebar.style.position = options.todo_separate_scrollbar ? "sticky" : "";
+    sidebar.style.top = options.todo_separate_scrollbar ? `${gap}px` : "";
+    sidebar.style.height = options.todo_separate_scrollbar ? height : "";
+    sidebar.style.overflowY = options.todo_separate_scrollbar ? "auto" : "";
+    sidebar.style.removeProperty("scrollbar-width");
+    sidebar.style.removeProperty("-ms-overflow-style");
+
+    const show = options.todo_separate_scrollbar === true && options.todo_show_scrollbar === true;
+    let style = document.getElementById("canvasrefined-right-sidebar-scrollbar") || document.createElement("style");
+    // Remove the old rule too when updating a tab that already has it.
+    document.getElementById("canvasrefined-hide-right-sidebar-scrollbar")?.remove();
+    style.id = "canvasrefined-right-sidebar-scrollbar";
+    style.textContent = show ? `
+        #right-side-wrapper {
+            scrollbar-width: thin !important;
+            scrollbar-color: var(--bctext-2, #68737d) var(--bcbackground-1, #f5f5f5) !important;
+            scrollbar-gutter: stable;
+        }
+        #right-side-wrapper::-webkit-scrollbar {
+            width: 8px !important;
+            display: block !important;
+        }
+        #right-side-wrapper::-webkit-scrollbar-thumb {
+            background: var(--bctext-2, #68737d) !important;
+            border-radius: 4px;
+        }
+        #right-side-wrapper::-webkit-scrollbar-track {
+            background: var(--bcbackground-1, #f5f5f5) !important;
+        }
+    ` : `
         #right-side-wrapper {
             scrollbar-width: none !important;
             -ms-overflow-style: none !important;
@@ -3224,7 +3148,7 @@ function ensureRightSideWrapperScrollbarHidden() {
             display: none !important;
         }
     `;
-    document.head.append(style);
+    document.documentElement.append(style);
 }
 
 function clearTodoList() {
@@ -4083,502 +4007,6 @@ function setupBetterTodo() {
     }
 }
 
-function getSidebarScale() {
-    const rawScale = parseInt(options.sidebar_scale || 100);
-    if (isNaN(rawScale)) return 1;
-    return Math.max(0.7, Math.min(1.5, rawScale / 100));
-}
-
-function applySidebarScaleStyles(sidebarList) {
-    const scale = getSidebarScale();
-    sidebarList.style.setProperty("--bc-sidebar-icon-size", `${Math.round(20 * scale)}px`);
-    sidebarList.style.setProperty("--bc-sidebar-btn-height", `${Math.round(30 * scale)}px`);
-    sidebarList.style.setProperty("--bc-sidebar-btn-gap", `${Math.round(8 * scale)}px`);
-    sidebarList.style.setProperty("--bc-sidebar-label-size", `${Math.round(14 * scale)}px`);
-}
-
-// --- Mobile global-nav tray (Better Sidebar styling) ------------------------
-// Below Canvas' responsive breakpoint the global nav collapses into an InstUI
-// tray dialog ([role="dialog"][aria-label="Global Navigation"]) instead of the
-// .ic-app-header rail, so none of the rail's theming reaches it. When Better
-// Sidebar is enabled, give that dialog the same look as the rail: --bcsidebar
-// surface, --bcsidebar-text ink, and rounded sidebar-style rows. The dialog's
-// behavior, item list and a11y attributes are left untouched — styling only.
-// Selectors use stable attributes ([role], [aria-label], [data-cid]) instead of
-// emotion hashes, which shift between Canvas releases; an unmatched rule is
-// simply inert.
-function setupMobileNavStyle() {
-    let style = document.getElementById("canvasrefined-mobile-nav") || document.createElement("style");
-    style.id = "canvasrefined-mobile-nav";
-    if (!options.better_sidebar) {
-        style.remove();
-        return;
-    }
-    const dialog = '[role="dialog"][aria-label="Global Navigation"]';
-    style.textContent = `
-        /* Tray wrapper: consistent drawer width instead of InstUI's inline
-           width, so labels have room on any narrow window. */
-        span:has(> ${dialog}) {
-            width: min(320px, 90vw) !important;
-            max-width: 90vw !important;
-        }
-        /* Panel: the same surface as the Better Sidebar rail */
-        ${dialog} {
-            background: var(--bcsidebar) !important;
-            border-right: 1px solid color-mix(in srgb, var(--bcsidebar-text) 10%, transparent) !important;
-            border-radius: 0 16px 16px 0 !important;
-            box-shadow: 8px 0 40px rgba(0, 0, 0, .28) !important;
-            color: var(--bcsidebar-text) !important;
-        }
-        /* Ink: recolor labels, icons and expand arrows to the sidebar text
-           color. Tray icons are fill-based InstUI SVGIcons, so fill covers
-           them; stroke-based icons inherit currentColor from the dialog.
-           Canvas ships some tray text with color="brand" (link-blue), so
-           cover every text/emotion View span too, not just <a>. */
-        ${dialog} svg {
-            fill: var(--bcsidebar-text) !important;
-        }
-        ${dialog} a,
-        ${dialog} span[class*="-text"],
-        ${dialog} h2[class*="-heading"],
-        ${dialog} h2[class*="-heading"] a {
-            color: var(--bcsidebar-text) !important;
-            text-decoration: none !important;
-        }
-        /* The tray header's big institution logo link (Canvas renders it as a
-           large image or wordmark). Hide it so the header collapses to just
-           the close button, matching the rail's compact top. */
-        ${dialog} .ic-brand-mobile-global-nav-logo {
-            display: none !important;
-        }
-        /* Rows: padded, rounded, same hover tint as the rail's links */
-        ${dialog} li[data-cid="ListItem"] > a,
-        ${dialog} li[data-cid="ListItem"] > div[data-cid="ToggleDetails"] > button {
-            padding: 12px 14px !important;
-            border-radius: 10px !important;
-            transition: background-color .15s ease !important;
-        }
-        ${dialog} li[data-cid="ListItem"] > a:hover,
-        ${dialog} li[data-cid="ListItem"] > a:focus-visible,
-        ${dialog} li[data-cid="ListItem"] > div[data-cid="ToggleDetails"] > button:hover,
-        ${dialog} li[data-cid="ListItem"] > div[data-cid="ToggleDetails"] > button:focus-visible {
-            background: #0000004f !important;
-        }
-        /* Expanded sub-items (Account/Courses/History/Help details), indented
-           under their parent like the rail's expanded section links */
-        ${dialog} div[id^="Expandable"] a {
-            padding: 10px 14px 10px 40px !important;
-            border-radius: 10px !important;
-            opacity: .92;
-            transition: background-color .15s ease !important;
-        }
-        ${dialog} div[id^="Expandable"] a:hover,
-        ${dialog} div[id^="Expandable"] a:focus-visible {
-            background: #0000004f !important;
-        }
-        /* Close button: bare glass circle (data-cid holds multiple tokens, so
-           match on substring) */
-        ${dialog} button[data-cid*="BaseButton"] {
-            background: color-mix(in srgb, var(--bcsidebar-text) 12%, transparent) !important;
-            border-radius: 999px !important;
-            color: var(--bcsidebar-text) !important;
-            transition: background-color .15s ease !important;
-        }
-        ${dialog} button[data-cid*="BaseButton"]:hover {
-            background: color-mix(in srgb, var(--bcsidebar-text) 22%, transparent) !important;
-        }
-        /* Avatar: subtle ring so it reads on the glass surface */
-        ${dialog} [class*="-avatar"] {
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--bcsidebar-text) 30%, transparent) !important;
-        }
-        /* Thin, theme-tinted scrollbar for the tray content */
-        ${dialog} ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ${dialog} ::-webkit-scrollbar-track { background: transparent; }
-        ${dialog} ::-webkit-scrollbar-thumb {
-            background: color-mix(in srgb, var(--bcsidebar-text) 30%, transparent);
-            border-radius: 999px;
-        }
-    `;
-    // The mobile course-context nav (#mobileContextNavContainer — the
-    // Home/Assignments/Grades list behind the arrow button) is the narrow-
-    // window counterpart of the desktop nav-toggle + breadcrumbs bar, which
-    // Better Sidebar already hides under the "Hide Navigation Bar" sub-option.
-    // Apply the same gate here: hide the nav and its .mobile-header-arrow
-    // button only when Better Sidebar is on AND "Hide Navigation Bar" is on.
-    if (options.hide_navbar === true) {
-        style.textContent += `
-            #mobileContextNavContainer,
-            button.mobile-header-arrow {
-                display: none !important;
-            }
-        `;
-    }
-    if (!style.isConnected) document.documentElement.append(style);
-}
-
-async function setupBetterSidebar(mode = getSidebarLayoutMode()) {
-    if (!options.better_sidebar) return;
-    if (document.querySelector('#better-sidebar-container')) return;
-    let wrapper = document.querySelector("#wrapper");
-    if (!wrapper || betterSidebarLoading) return;
-    betterSidebarLoading = true;
-    try {
-        const layoutMode = mode === "course" || mode === "dash" ? mode : getSidebarLayoutMode();
-        let expanded = await getSidebarExpandedState(layoutMode);
-        const outerWrapper = document.getElementById("main");
-        outerWrapper?.style.setProperty("display", "flex", "important");
-        // document.getElementById("not_right_side").style.setProperty("display", "none", "important");
-        const leftSide = document.getElementById("left-side");
-        leftSide?.style.setProperty("opacity", "1");
-        leftSide?.style.setProperty("position", "static");
-        const mainWrapper = document.querySelector(".ic-Layout-contentWrapper");
-        if (!mainWrapper) return;
-        applyBetterSidebarLayoutFix();
-        mainWrapper.style.display = "flex";
-        mainWrapper.style.alignItems = "stretch";
-        mainWrapper.style.minWidth = "0";
-        const contentMain = document.querySelector(".ic-Layout-contentMain");
-        contentMain?.style.setProperty("flex", "1 1 auto");
-        contentMain?.style.setProperty("min-width", "0");
-        const notRightSide = document.getElementById("not_right_side");
-        if (notRightSide && isAccountsPage()) {
-            notRightSide.style.setProperty("width", "100%");
-            notRightSide.style.setProperty("max-width", "100%");
-            notRightSide.style.setProperty("min-width", "0");
-        }
-        if (layoutMode === "course" && leftSide) {
-            const rightSideWrapper = document.getElementById("right-side-wrapper");
-            const sectionTabs = document.getElementById("section-tabs");
-            leftSide.style.setProperty("padding-top", "0", "important");
-            leftSide.style.setProperty("padding-left", "0", "important");
-            if (sectionTabs) {
-                if (getCurrentCourseId() !== null || isProfilePage()) {
-                    sectionTabs.style.setProperty("padding-top", "40px", "important");
-                } else {
-                    sectionTabs.style.removeProperty("padding-top");
-                }
-            }
-            leftSide.style.flex = "0 0 250px";
-            leftSide.style.width = "250px";
-            leftSide.style.maxWidth = "250px";
-            if (notRightSide) {
-                notRightSide.style.display = "flex";
-                notRightSide.style.flex = "1 1 auto";
-                notRightSide.style.minWidth = "0";
-            }
-            if (rightSideWrapper) {
-                rightSideWrapper.style.flex = "0 0 280px";
-                rightSideWrapper.style.width = "280px";
-                rightSideWrapper.style.maxWidth = "280px";
-            }
-            contentMain?.style.setProperty("margin", "26px 38px 38px", "important");
-            contentMain?.style.setProperty("padding", "10px", "important");
-            contentMain?.style.setProperty("border-radius", "10px", "important");
-            contentMain?.style.setProperty("background", "var(--bcbackground-0)", "important");
-        }
-        // The rail must always render leftmost. Course-layout pages already
-        // prepend it into #left-side; dash-layout pages that still have a
-        // native left nav (accounts, groups, etc.) must too — otherwise the
-        // native #left-side column (made position:static above) flows before
-        // #not_right_side and shows up to the LEFT of the Better Sidebar,
-        // looking like a competing sidebar once the custom background tints
-        // it. Prepending keeps the order: [Better Sidebar rail][native nav].
-        const sidebarParent = leftSide ? leftSide : mainWrapper;
-        if (leftSide) {
-            leftSide.style.display = "flex";
-            leftSide.style.flexDirection = "row";
-            leftSide.style.alignItems = "stretch";
-            leftSide.style.minWidth = "0";
-            leftSide.style.gap = "0";
-        }
-        // Only hide the nav-toggle + breadcrumbs bar when the Better Sidebar
-        // "Hide Navigation Bar" sub-option is on — this used to be hidden
-        // unconditionally. (The global hide lives in applyAestheticChanges;
-        // live toggling is handled in applyOptionsChanges.)
-        if (options.hide_navbar === true) {
-            document.querySelector(".ic-app-nav-toggle-and-crumbs")?.style.setProperty("display", "none");
-        }
-        if (layoutMode == "dash") {
-            document.getElementById("header")?.style.setProperty("display", "none");
-        }
-        else if (layoutMode == "course") {
-            document.getElementById("header")?.style.setProperty("display", "none");
-        }
-
-        let sidebarList = makeElement("div", sidebarParent, { id: "better-sidebar-container",
-            style: `display:flex;flex-direction:column;width:50px;justify-content:center;align-items:center;box-sizing:border-box;position:relative;background-color:var(--bcsidebar);height:100vh;position:sticky;top:0;left:0;`
-        }, true);
-        let sidebarContent = makeElement("div", sidebarList, {
-            style: "display:flex;flex-direction:column;gap:20px;width:100%;flex:1;justify-content:flex-start;align-items:center;margin:40px;"
-        });
-        applySidebarScaleStyles(sidebarList);
-        let expander = makeElement("div", sidebarList, {
-            className: "better-sidebar-expander",
-            style: "display:flex;flex-direction:column;gap:0px;margin-top:auto;width:100%;justify-content:center;align-items:center;cursor:pointer;",
-        });
-        expander.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:30px;height:30px;transition:all .3s ease;">
-                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                <g id="SVGRepo_iconCarrier">
-                    <path d="M20 4V20M4 12H16M16 12L12 8M16 12L12 16" stroke="var(--bcsidebar-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                </g>
-            </svg>
-        `
-        sidebarList.dataset.expanded = expanded ? "true" : "false";
-        updateSidebar(expanded, sidebarList, expander);
-        setSidebarExpandedState(layoutMode, expanded);
-        requestAnimationFrame(() => {
-            populateSidebarFromNav(sidebarContent);
-            updateSidebar(expanded, sidebarList, expander);
-            watchSidebarBadges();
-        });
-
-        expander.addEventListener("click", () => {
-            expanded = !expanded;
-            sidebarList.dataset.expanded = expanded ? "true" : "false";
-            setSidebarExpandedState(layoutMode, expanded);
-            updateSidebar(expanded, sidebarList, expander);
-        })
-    } catch (e) {
-        logError(e);
-    } finally {
-        betterSidebarLoading = false;
-    }
-}
-function createSidebarButton(text, url, parent, icon) {
-	let button = makeElement("a", parent, {
-        style: "width:40%;height:var(--bc-sidebar-btn-height,30px);cursor:pointer;text-align:center;text-decoration:none;display:inline-flex;justify-content:center;align-items:center;gap:var(--bc-sidebar-btn-gap,8px);color:var(--bcsidebar-text) !important;font-weight:bold;position:relative;",
-		className: "canvasrefined-custom-btn better-sidebar-btn",
-		href: url,
-	});
-    button.innerHTML = `${icon ? `${icon}<span class="better-sidebar-label" style="font-size:var(--bc-sidebar-label-size,14px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${text}</span>` : `<span class="better-sidebar-label" style="font-size:var(--bc-sidebar-label-size,14px);">${text}</span>`}`;
-    return button;
-}
-
-function getNavBadgeCount(item) {
-    const badge = item.querySelector(".menu-item__badge");
-    if (!badge) return 0;
-    const badgeText = badge.querySelector('[aria-hidden="true"]')?.textContent?.trim() || badge.textContent?.trim() || "";
-    const count = parseInt(badgeText, 10);
-    return Number.isFinite(count) && count > 0 ? count : 0;
-}
-
-function addSidebarButtonBadge(button, count) {
-    if (!button) return;
-    // Always clear any existing badge first so a drop to 0 unread removes it.
-    button.querySelector(".better-sidebar-badge")?.remove();
-    if (!count) return;
-    makeElement("div", button, {
-        className: "better-sidebar-badge",
-        style: "position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background-color:#ff0000;color:white;font-size:11px;line-height:16px;display:flex;justify-content:center;align-items:center;box-sizing:border-box;pointer-events:none;",
-        textContent: String(count),
-    });
-}
-
-// Re-read the global nav badge for each better-sidebar button and update its dot.
-// Canvas loads the unread counts (Inbox/announcements) asynchronously after the
-// page renders, so the dot captured at build time is often missing or stale.
-function syncSidebarBadges() {
-    document.querySelectorAll(".better-sidebar-btn").forEach(button => {
-        const navId = button.dataset.navItemId;
-        if (!navId) return;
-        const navItem = document.getElementById(navId);
-        if (!navItem) return;
-        addSidebarButtonBadge(button, getNavBadgeCount(navItem));
-    });
-}
-
-function scheduleSidebarBadgeSync() {
-    if (sidebarBadgeSyncTimer) clearTimeout(sidebarBadgeSyncTimer);
-    sidebarBadgeSyncTimer = setTimeout(() => {
-        sidebarBadgeSyncTimer = null;
-        syncSidebarBadges();
-    }, 100);
-}
-
-// Watch the global nav for badge changes (late load, new mail, read/unread)
-// and keep the better-sidebar dots in sync.
-function watchSidebarBadges() {
-    const navMenu = document.getElementById("menu");
-    if (!navMenu) {
-        if (sidebarBadgeWatchRetries++ < 20) setTimeout(watchSidebarBadges, 500);
-        return;
-    }
-    sidebarBadgeWatchRetries = 0;
-    if (sidebarBadgeObserver) sidebarBadgeObserver.disconnect();
-    sidebarBadgeObserver = new MutationObserver(scheduleSidebarBadgeSync);
-    sidebarBadgeObserver.observe(navMenu, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
-    scheduleSidebarBadgeSync();
-}
-function populateSidebarFromNav(sidebarContent) {
-	const excludeIds = ["global_nav_help_link", "global_nav_history_link"];
-	const customIcons = {
-		"global_nav_profile_link": `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="var(--bcsidebar-text)"></path></g></svg>`,
-		"global_nav_dashboard_link": `<svg fill="var(--bcsidebar-text)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><rect x="2" y="2" width="9" height="11" rx="2"></rect><rect x="13" y="2" width="9" height="7" rx="2"></rect><rect x="2" y="15" width="9" height="7" rx="2"></rect><rect x="13" y="11" width="9" height="11" rx="2"></rect></g></svg>`,
-		"global_nav_conversations_link": `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M4 18L9 12M20 18L15 12M3 8L10.225 12.8166C10.8665 13.2443 11.1872 13.4582 11.5339 13.5412C11.8403 13.6147 12.1597 13.6147 12.4661 13.5412C12.8128 13.4582 13.1335 13.2443 13.775 12.8166L21 8M6.2 19H17.8C18.9201 19 19.4802 19 19.908 18.782C20.2843 18.5903 20.5903 18.2843 20.782 17.908C21 17.4802 21 16.9201 21 15.8V8.2C21 7.0799 21 6.51984 20.782 6.09202C20.5903 5.71569 20.2843 5.40973 19.908 5.21799C19.4802 5 18.9201 5 17.8 5H6.2C5.0799 5 4.51984 5 4.09202 5.21799C3.71569 5.40973 3.40973 5.71569 3.21799 6.09202C3 6.51984 3 7.07989 3 8.2V15.8C3 16.9201 3 17.4802 3.21799 17.908C3.40973 18.2843 3.71569 18.5903 4.09202 18.782C4.51984 19 5.07989 19 6.2 19Z" stroke="var(--bcsidebar-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`,
-		"global_nav_calendar_link": `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M3 9H21M7 3V5M17 3V5M6 12H8M11 12H13M16 12H18M6 15H8M11 15H13M16 15H18M6 18H8M11 18H13M16 18H18M6.2 21H17.8C18.9201 21 19.4802 21 19.908 20.782C20.2843 20.5903 20.5903 20.2843 20.782 19.908C21 19.4802 21 18.9201 21 17.8V8.2C21 7.07989 21 6.51984 20.782 6.09202C20.5903 5.71569 20.2843 5.40973 19.908 5.21799C19.4802 5 18.9201 5 17.8 5H6.2C5.0799 5 4.51984 5 4.09202 5.21799C3.71569 5.40973 3.40973 5.71569 3.21799 6.09202C3 6.51984 3 7.07989 3 8.2V17.8C3 18.9201 3 19.4802 3.21799 19.908C3.40973 20.2843 3.71569 20.5903 4.09202 20.782C4.51984 21 5.07989 21 6.2 21Z" stroke="var(--bcsidebar-text)" stroke-width="2" stroke-linecap="round"></path></g></svg>`,
-		"global_nav_courses_link": `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M20 12V4C20 2.89543 19.1046 2 18 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V18.5" stroke="var(--bcsidebar-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M13 2V14L16.8182 11L20 14V5" stroke="var(--bcsidebar-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`,
-		"global_nav_groups_link": `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd" clip-rule="evenodd" d="M16 6C14.3432 6 13 7.34315 13 9C13 10.6569 14.3432 12 16 12C17.6569 12 19 10.6569 19 9C19 7.34315 17.6569 6 16 6ZM11 9C11 6.23858 13.2386 4 16 4C18.7614 4 21 6.23858 21 9C21 10.3193 20.489 11.5193 19.6542 12.4128C21.4951 13.0124 22.9176 14.1993 23.8264 15.5329C24.1374 15.9893 24.0195 16.6114 23.5631 16.9224C23.1068 17.2334 22.4846 17.1155 22.1736 16.6591C21.1979 15.2273 19.4178 14 17 14C13.166 14 11 17.0742 11 19C11 19.5523 10.5523 20 10 20C9.44773 20 9.00001 19.5523 9.00001 19C9.00001 18.308 9.15848 17.57 9.46082 16.8425C9.38379 16.7931 9.3123 16.7323 9.24889 16.6602C8.42804 15.7262 7.15417 15 5.50001 15C3.84585 15 2.57199 15.7262 1.75114 16.6602C1.38655 17.075 0.754692 17.1157 0.339855 16.7511C-0.0749807 16.3865 -0.115709 15.7547 0.248886 15.3398C0.809035 14.7025 1.51784 14.1364 2.35725 13.7207C1.51989 12.9035 1.00001 11.7625 1.00001 10.5C1.00001 8.01472 3.01473 6 5.50001 6C7.98529 6 10 8.01472 10 10.5C10 11.7625 9.48013 12.9035 8.64278 13.7207C9.36518 14.0785 9.99085 14.5476 10.5083 15.0777C11.152 14.2659 11.9886 13.5382 12.9922 12.9945C11.7822 12.0819 11 10.6323 11 9ZM3.00001 10.5C3.00001 9.11929 4.1193 8 5.50001 8C6.88072 8 8.00001 9.11929 8.00001 10.5C8.00001 11.8807 6.88072 13 5.50001 13C4.1193 13 3.00001 11.8807 3.00001 10.5Z" fill="var(--bcsidebar-text)"></path></g></svg>`,
-		"globalNavExternalTool-69": `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd" clip-rule="evenodd" d="M6 1C4.34315 1 3 2.34315 3 4V17V20C3 21.6569 4.34315 23 6 23H18C19.6569 23 21 21.6569 21 20V17V4C21 2.34315 19.6569 1 18 1H6ZM5 20V17C5 16.4477 5.44772 16 6 16H18C18.5523 16 19 16.4477 19 17V20C19 20.5523 18.5523 21 18 21H6C5.44772 21 5 20.5523 5 20ZM18 14C18.3506 14 18.6872 14.0602 19 14.1707V4C19 3.44772 18.5523 3 18 3H6C5.44772 3 5 3.44772 5 4V14.1707C5.31278 14.0602 5.64936 14 6 14H18ZM14.5 19.25C15.1904 19.25 15.75 18.6904 15.75 18C15.75 17.3096 15.1904 16.75 14.5 16.75C13.8096 16.75 13.25 17.3096 13.25 18C13.25 18.6904 13.8096 19.25 14.5 19.25Z" fill="var(--bcsidebar-text)"></path></g></svg>`,
-	};
-	
-	const navMenu = document.getElementById("menu");
-    let hasDashboardButton = false;
-
-    // Keep the global-search trigger last in the sidebar. The search button's
-    // placement pass and this populate pass run on independent rAF callbacks,
-    // so either can execute first. If the search button was appended before
-    // the nav buttons exist, slot the nav buttons in ahead of it so Search
-    // always stays at the bottom of the sidebar.
-    const searchBtn = sidebarContent.querySelector("#canvasrefined-gs-sidebar-btn");
-    const insertNavButton = (text, href, icon) => {
-        const button = createSidebarButton(text, href, sidebarContent, icon);
-        if (searchBtn && searchBtn.parentNode === sidebarContent) {
-            sidebarContent.insertBefore(button, searchBtn);
-        }
-        return button;
-    };
-
-    if (navMenu) {
-        const menuItems = navMenu.querySelectorAll("a[id^='global_nav'], .globalNavExternalTool a");
-        menuItems.forEach(item => {
-            const itemId = item.id;
-            if (excludeIds.includes(itemId)) return;
-
-            const href = item.getAttribute("href");
-            let textEl = item.querySelector(".menu-item__text");
-            let text = textEl?.textContent?.trim();
-		
-            // If text not found, try other sources
-            if (!text) {
-                text = item.getAttribute("aria-label")?.trim() || 
-                        item.getAttribute("title")?.trim() || 
-                        item.textContent?.trim();
-            }
-		
-            if (!text || !href) return;
-
-            let icon = customIcons[itemId] || "";
-            if (!icon) {
-                const svg = item.querySelector("svg");
-                if (svg) {
-                    icon = svg.outerHTML;
-                    // Detect and scale down large viewBox SVGs
-                    const viewBoxMatch = icon.match(/viewBox="([^"]+)"/);
-                    if (viewBoxMatch) {
-                        const [, viewBox] = viewBoxMatch;
-                        const parts = viewBox.split(/\s+/);
-                        const width = parseFloat(parts[2]);
-                        const height = parseFloat(parts[3]);
-                        // If viewBox is large, add fixed size to scale it down
-                        if (width > 32 || height > 32) {
-                            // Check if svg already has a style attribute
-                            if (icon.includes('style="')) {
-                                // Append to existing style
-                                icon = icon.replace(/style="([^"]*)"/, `style="$1 width:20px;height:20px;flex-shrink:0;fill:var(--bcsidebar-text);stroke:var(--bcsidebar-text);"`);
-                            } else {
-                                // Add new style attribute
-                                icon = icon.replace("<svg", '<svg style="width:20px;height:20px;flex-shrink:0;fill:var(--bcsidebar-text);stroke:var(--bcsidebar-text);"');
-                            }
-                        } else {
-                            // Smaller SVG - just add colors
-                            if (icon.includes('style="')) {
-                                icon = icon.replace(/style="([^"]*)"/, `style="$1 fill:var(--bcsidebar-text);stroke:var(--bcsidebar-text);flex-shrink:0;"`);
-                            } else {
-                                icon = icon.replace("<svg", '<svg style="fill:var(--bcsidebar-text);stroke:var(--bcsidebar-text);flex-shrink:0;"');
-                            }
-                        }
-                    } else {
-                        // No viewBox - just add colors
-                        if (icon.includes('style="')) {
-                            icon = icon.replace(/style="([^"]*)"/, `style="$1 fill:var(--bcsidebar-text);stroke:var(--bcsidebar-text);"`);
-                        } else {
-                            icon = icon.replace("<svg", '<svg style="fill:var(--bcsidebar-text);stroke:var(--bcsidebar-text);"');
-                        }
-                    }
-                }
-            }
-
-            if (itemId === "global_nav_dashboard_link") hasDashboardButton = true;
-            const button = insertNavButton(text, href, icon);
-            if (itemId) button.dataset.navItemId = itemId;
-            addSidebarButtonBadge(button, getNavBadgeCount(item));
-        });
-    }
-
-    if (!hasDashboardButton) {
-        insertNavButton("Dashboard", `${domain}/`, customIcons["global_nav_dashboard_link"]);
-    }
-}
-function updateSidebar(expanded, sidebarList, expander) {
-    const scale = getSidebarScale();
-    const expandedWidth = Math.round(150 * scale);
-    const collapsedWidth = Math.round(50 * scale);
-    sidebarList.style.width = expanded ? `${expandedWidth}px` : `${collapsedWidth}px`;
-    applySidebarScaleStyles(sidebarList);
-
-    expander.style.transform = expanded ? "rotate(180deg)" : "rotate(0deg)";
-    expander.querySelector("svg").style.width = `${Math.round(30 * scale)}px`;
-    expander.querySelector("svg").style.height = `${Math.round(30 * scale)}px`;
-    const labels = document.querySelectorAll(".better-sidebar-label");
-    labels.forEach(label => label.style.display = expanded ? "block" : "none");
-    const buttons = document.querySelectorAll(".better-sidebar-btn");
-    buttons.forEach(label => label.style.width = expanded ? "80%" : "40%");
-    sidebarList.querySelectorAll(".better-sidebar-btn svg").forEach(svg => {
-        svg.style.width = "var(--bc-sidebar-icon-size,20px)";
-        svg.style.height = "var(--bc-sidebar-icon-size,20px)";
-    });
-
-    // Expand (or restore) the entire left-side column when the sidebar toggles
-    const leftSide = document.getElementById("left-side");
-    if (leftSide) {
-        // on first run store the original width (prefer computed) and inline flex/maxWidth
-        if (!leftSide.dataset.bcOrigWidth) {
-            const computed = getComputedStyle(leftSide).width || "";
-            leftSide.dataset.bcOrigWidth = leftSide.style.width || "";
-            leftSide.dataset.bcOrigFlex = leftSide.style.flex || "";
-            leftSide.dataset.bcOrigMaxWidth = leftSide.style.maxWidth || "";
-            leftSide.dataset.bcOrigWidthPx = parseFloat(computed) || 0;
-        }
-
-        const origPx = parseFloat(leftSide.dataset.bcOrigWidthPx || 0);
-        const delta = expandedWidth - collapsedWidth;
-
-        if (expanded) {
-            if (origPx > 0) {
-                const newWidth = Math.round(origPx + delta);
-                leftSide.style.flex = `0 0 ${newWidth}px`;
-                leftSide.style.width = `${newWidth}px`;
-                leftSide.style.maxWidth = `${newWidth}px`;
-            } else {
-                leftSide.style.flex = `0 0 ${expandedWidth}px`;
-                leftSide.style.width = `${expandedWidth}px`;
-                leftSide.style.maxWidth = `${expandedWidth}px`;
-            }
-        } else {
-            // restore original inline values if present, otherwise remove the properties
-            if (leftSide.dataset.bcOrigWidth !== "") leftSide.style.width = leftSide.dataset.bcOrigWidth; else leftSide.style.removeProperty('width');
-            if (leftSide.dataset.bcOrigFlex !== "") leftSide.style.flex = leftSide.dataset.bcOrigFlex; else leftSide.style.removeProperty('flex');
-            if (leftSide.dataset.bcOrigMaxWidth !== "") leftSide.style.maxWidth = leftSide.dataset.bcOrigMaxWidth; else leftSide.style.removeProperty('max-width');
-        }
-    }
-
-    const courseLinksTitle = document.getElementById("better-course-links-title");
-    if (courseLinksTitle) {
-        courseLinksTitle.style.display = expanded ? "block" : "none";
-        // Also hide separator when collapsed
-        const separator = courseLinksTitle.nextElementSibling;
-        if (separator) separator.style.display = expanded ? "block" : "none";
-        
-        const container = document.getElementById("better-course-links");
-        if (container) {
-            container.style.opacity = expanded ? "1" : "0.6";
-            container.style.gap = expanded ? "12px" : "8px";
-        }
-    }
-}
-
 let delay;
 let moreAssignmentCount = 0;
 let moreAnnouncementCount = 0;
@@ -4864,11 +4292,23 @@ async function getPaletteCards() {
     return { cards, apiColors };
 }
 
+// All course-colored consumers must receive the same palette as the cards.
+function refreshCourseColorUI() {
+    changeFavicon();
+    if (options.better_todo && document.getElementById("better-todo-main")) {
+        clearTodoList();
+        createTodoSections(document.querySelector("#canvasrefined-todo-list"));
+    }
+}
+
+let paletteChangeVersion = 0;
 let palettePreviewCards = null;
+let palettePreviewOriginalColors = {};
 
 async function changeColorPreset(colors, previewOnly = false) {
-
-    if (colors.length === 0) return;
+    const version = ++paletteChangeVersion;
+    const restoring = colors.length === 0;
+    if (restoring && previewOnly) return;
 
     // reset everything
     //let res = await getData(`${domain}/api/v1/users/self/colors`);
@@ -4885,28 +4325,63 @@ async function changeColorPreset(colors, previewOnly = false) {
     // where discovering courses requires API reads. Previews never issue PUTs.
     palettePreviewCards ||= getPaletteCards();
     const { cards: sortedCards, apiColors } = await palettePreviewCards;
+    if (version !== paletteChangeVersion) return;
     if (!previewOnly) palettePreviewCards = null;
+    if (previewOnly) sortedCards.forEach(card => {
+        const id = card.href.split("courses/")[1];
+        if (Object.hasOwn(palettePreviewOriginalColors, id)) return;
+        const hero = card.el?.querySelector(".ic-DashboardCard__header_hero");
+        palettePreviewOriginalColors[id] = hero ? rgbToHex(hero.style.backgroundColor) : apiColors["course_" + id];
+    });
+
+    // Keep the pre-theme colors by school and course, rather than by dashboard
+    // order. The old temporary revert list can expire or use a different order.
+    let originalColors = {};
+    if (!previewOnly) {
+        const local = await chrome.storage.local.get(["theme_original_colors", "previous_colors"]);
+        if (version !== paletteChangeVersion) return;
+        const schools = local.theme_original_colors || {};
+        originalColors = { ...(schools[domain] || {}) };
+        sortedCards.forEach((card, index) => {
+            const id = card.href.split("courses/")[1];
+            if (Object.hasOwn(originalColors, id)) return;
+            // Migrate the old revert list for themes applied before this snapshot
+            // existed. Once captured, the course IDs keep reordering safe.
+            const prev = local.previous_colors;
+            const sameSchool = prev?.domain === domain || (!prev?.domain && Object.keys(schools).length === 0);
+            const oldColor = !schools[domain] && sameSchool ? prev?.colors?.[index] : null;
+            const hero = card.el?.querySelector(".ic-DashboardCard__header_hero");
+            const current = palettePreviewOriginalColors[id] || (hero ? rgbToHex(hero.style.backgroundColor) : apiColors["course_" + id]);
+            if (oldColor || (!restoring && current)) originalColors[id] = oldColor || current;
+        });
+        await chrome.storage.local.set({ theme_original_colors: { ...schools, [domain]: originalColors } });
+        if (version !== paletteChangeVersion) return;
+        palettePreviewOriginalColors = {};
+    }
 
     // push each color change into a queue
+    const courseColors = { ...options.custom_cards_3 };
     try {
         sortedCards.forEach((card, i) => {
             let course_id = card.href.split("courses/")[1];
+            const color = restoring ? originalColors[course_id] : colors[i % colors.length];
+            if (!color) return;
+            courseColors[course_id] = { ...courseColors[course_id], color };
             let previousColor = card.el
                 ? rgbToHex(card.el.querySelector(".ic-DashboardCard__header_hero").style.backgroundColor)
                 : (apiColors["course_" + course_id] || "#ffffff");
             previous.push(previousColor);
-
-            let cnum = i % colors.length;
 
             // Apply the new color to whatever surface is rendered: dashboard
             // card elements (card view) or planner item avatars (list view),
             // so the change is visible immediately instead of only after a
             // reload.
             let applyColor = () => {
+                if (version !== paletteChangeVersion) return;
                 if (card.el) {
-                    card.el.querySelector(".ic-DashboardCard__header_hero").style.backgroundColor = colors[cnum];
-                    card.el.querySelector(".ic-DashboardCard__header-title span").style.color = colors[cnum];
-                    card.el.querySelector(".ic-DashboardCard__header-button-bg").style.backgroundColor = colors[cnum];
+                    card.el.querySelector(".ic-DashboardCard__header_hero").style.backgroundColor = color;
+                    card.el.querySelector(".ic-DashboardCard__header-title span").style.color = color;
+                    card.el.querySelector(".ic-DashboardCard__header-button-bg").style.backgroundColor = color;
                     // Recompute this card's gradient from its NEW color right
                     // away — changeGradientCards() outside the queue ran too
                     // early (colors land later, on the 250ms interval), which
@@ -4921,13 +4396,14 @@ async function changeColorPreset(colors, previewOnly = false) {
                             (heroLink && (heroLink.getAttribute("href") || "").startsWith(coursePrefix));
                         if (inCourse) {
                             const avatar = item.querySelector(".PlannerItem-styles__avatar, .PlannerItem-styles__icon");
-                            if (avatar) avatar.style.color = colors[cnum];
+                            if (avatar) avatar.style.color = color;
                         }
                     });
                 }
             };
 
             let changeCardColor = () => {
+                if (version !== paletteChangeVersion) return;
                 fetch(domain + "/api/v1/users/self/colors/courses_" + course_id,
                     {
                         method: "PUT",
@@ -4936,7 +4412,7 @@ async function changeColorPreset(colors, previewOnly = false) {
                             'accept': 'application/json',
                             'X-CSRF-Token': csrfToken,
                         },
-                        body: JSON.stringify({ "hexcode": colors[cnum] })
+                        body: JSON.stringify({ "hexcode": color })
                     }).then(() => applyColor());
             }
 
@@ -4950,6 +4426,10 @@ async function changeColorPreset(colors, previewOnly = false) {
     }
 
     changeGradientCards();
+    options.custom_cards_3 = courseColors;
+    if (previewOnly) refreshCourseColorUI();
+    else await chrome.storage.sync.set({ custom_cards_3: courseColors });
+    if (version !== paletteChangeVersion) return;
 
     // go through the queue until empty
     if (!previewOnly) changeColorInterval = setInterval(() => {
@@ -4962,7 +4442,7 @@ async function changeColorPreset(colors, previewOnly = false) {
     }, delay);
 
     // set colors to revert back to
-    chrome.storage.local.get("previous_colors", local => {
+    if (!previewOnly && !restoring) chrome.storage.local.get("previous_colors", local => {
         const now = Date.now();
         const prev = local["previous_colors"];
         // Overwrite when missing or expired — and when an old list-mode run
@@ -4971,7 +4451,7 @@ async function changeColorPreset(colors, previewOnly = false) {
         // revert to). chrome.storage.local.get yields undefined (not null)
         // for an unset key, so the old `=== null` check never matched it.
         if (previous.length > 0 && (!prev || now >= prev.expire || !Array.isArray(prev.colors) || prev.colors.length === 0)) {
-            chrome.storage.local.set({ "previous_colors": { "colors": previous, "expire": now + 86400000 } });
+            chrome.storage.local.set({ "previous_colors": { "colors": previous, "expire": now + 86400000, domain } });
         }
     });
 }
@@ -5638,7 +5118,10 @@ function createCardAssignment(assignment) {
     assignmentContainer.className = "canvasrefined-assignment-container";
     let assignmentName = makeElement("a", assignmentContainer, { "className": "canvasrefined-assignment-link", "textContent": anonTitleForItem(assignment), "href": assignment.html_url });
     let assignmentDueAt = makeElement("span", assignmentContainer, { "className": "canvasrefined-assignment-dueat", "textContent": formatCardDue(new Date(assignment.plannable_date)) });
-    if (assignment.overdue === true) assignmentDueAt.classList.add("canvasrefined-assignment-overdue");
+    if (assignment.overdue === true) {
+        assignmentDueAt.classList.add("canvasrefined-assignment-overdue");
+        if (options.card_overdue_always_red === true) assignmentDueAt.classList.add("canvasrefined-overdue-red");
+    }
     if (assignment?.submissions?.submitted === true) {
         assignmentContainer.classList.add("canvasrefined-completed");
     } else {
@@ -5840,6 +5323,42 @@ function getCardId(card) {
     return -1;
 }
 
+const originalCardImages = new WeakMap();
+function applyCardImage(card, image) {
+    const hero = card.querySelector(".ic-DashboardCard__header_hero");
+    const header = card.querySelector(".ic-DashboardCard__header");
+    let container = card.querySelector(".ic-DashboardCard__header_image");
+    if (!hero || !header) return;
+    if (image && !originalCardImages.has(card)) {
+        originalCardImages.set(card, {
+            container,
+            backgroundImage: container?.style.backgroundImage || "",
+            opacity: hero.style.opacity,
+        });
+    }
+    if (!image) {
+        const original = originalCardImages.get(card);
+        if (!original) return;
+        if (original.container) {
+            original.container.style.backgroundImage = original.backgroundImage;
+        } else if (container) {
+            header.prepend(hero);
+            container.remove();
+        }
+        hero.style.opacity = original.opacity;
+        originalCardImages.delete(card);
+    } else if (image === "none") {
+        if (container) container.style.backgroundImage = "none";
+        hero.style.opacity = 1;
+    } else {
+        container ||= makeElement("div", card, { className: "ic-DashboardCard__header_image" });
+        header.prepend(container);
+        container.appendChild(hero);
+        container.style.backgroundImage = `url("${image}")`;
+        hero.style.opacity = .5;
+    }
+}
+
 function customizeCards(c = null) {
     if (!options.custom_cards) return;
     try {
@@ -5855,19 +5374,7 @@ function customizeCards(c = null) {
             card.style.display = cardOptions.hidden === true ? "none" : "inline-block";
 
             // card image
-            if (cardOptions.img === "none") {
-                let currentImg = card.querySelector(".ic-DashboardCard__header_image");
-                if (currentImg) {
-                    card.querySelector(".ic-DashboardCard__header_hero").style.opacity = 1;
-                }
-            } else if (cardOptions.img !== "") {
-                let topColor = card.querySelector(".ic-DashboardCard__header_hero");
-                let container = card.querySelector(".ic-DashboardCard__header_image") || makeElement("div", card, { "className": "ic-DashboardCard__header_image" });
-                card.querySelector(".ic-DashboardCard__header").prepend(container);
-                container.appendChild(topColor);
-                container.style.backgroundImage = "url(\"" + cardOptions.img + "\")";
-                topColor.style.opacity = .5;
-            }
+            applyCardImage(card, cardOptions.img);
 
             // card name
             if (cardOptions.name !== "") {
@@ -6509,7 +6016,6 @@ function applyAestheticChanges() {
     // margins are always removed so the bar lines up with the content column
     // edges (cosmetic, light and dark mode).
     style.textContent += ".ic-app-nav-toggle-and-crumbs{margin-left:0!important;margin-right:0!important}";
-    if (options.hide_navbar === true) style.textContent += ".ic-app-nav-toggle-and-crumbs{display:none!important}";
     document.documentElement.appendChild(style);
 }
 
@@ -6622,7 +6128,6 @@ function setupGlobalSearch() {
 
 function removeGlobalSearch() {
     document.getElementById("canvasrefined-global-search-header-btn")?.remove();
-    removeGlobalSearchBetterSidebarButton();
     removeGlobalSearchNativeSidebarButton();
     closeGlobalSearchModal();
     if (_gsPlacementObserver) { _gsPlacementObserver.disconnect(); _gsPlacementObserver = null; }
@@ -6635,9 +6140,8 @@ function removeGlobalSearch() {
 // Shared search icon used by the sidebar + header triggers.
 const GLOBAL_SEARCH_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle cx="11" cy="11" r="7" stroke="var(--bcsidebar-text)" stroke-width="2" fill="none"/><path d="m20 20-3.2-3.2" stroke="var(--bcsidebar-text)" stroke-width="2" stroke-linecap="round"/></g></svg>`;
 
-// Placement: a search trigger is injected into whichever left sidebar is
-// active — the Better Sidebar (when enabled) or Canvas' native global nav —
-// and, on the dashboard, a button is also placed in the header actions row.
+// Placement: a search trigger is injected into Canvas' native global nav
+// and, on the dashboard, into the header actions row.
 // There is no floating button. A rAF-debounced MutationObserver re-evaluates
 // placement as Canvas renders/SPA-navigates/rebuilds the sidebar.
 let _gsPlacementObserver = null;
@@ -6662,14 +6166,6 @@ function placeGlobalSearchTrigger() {
     // Native global nav (the slim icon bar) — always present, so always add.
     ensureGlobalSearchNativeSidebarButton();
 
-    // Better Sidebar (extra column when the option is enabled) — add when present.
-    const betterSidebar = document.getElementById("better-sidebar-container");
-    if (betterSidebar) {
-        ensureGlobalSearchBetterSidebarButton(betterSidebar);
-    } else {
-        removeGlobalSearchBetterSidebarButton();
-    }
-
     // Dashboard header button (in addition to the sidebar triggers).
     const headerActions = document.querySelector(".ic-Dashboard-header__actions");
     if (isDashboardPage() && headerActions) {
@@ -6677,49 +6173,6 @@ function placeGlobalSearchTrigger() {
     } else {
         document.getElementById("canvasrefined-global-search-header-btn")?.remove();
     }
-}
-
-// --- Better Sidebar trigger --------------------------------------------------
-
-function ensureGlobalSearchBetterSidebarButton(betterSidebar) {
-    // The first child of #better-sidebar-container is the button list.
-    const sidebarContent = betterSidebar.querySelector("div");
-    if (!sidebarContent) return;
-    if (sidebarContent.querySelector("#canvasrefined-gs-sidebar-btn")) return;
-    const btn = document.createElement("a");
-    btn.id = "canvasrefined-gs-sidebar-btn";
-    btn.className = "canvasrefined-custom-btn better-sidebar-btn canvasrefined-gs-sidebar-btn";
-    btn.href = "#";
-    btn.title = "Search Canvas (Ctrl+K)";
-    btn.setAttribute("role", "button");
-    btn.setAttribute("aria-label", "Search Canvas");
-    btn.style.cssText = "width:40%;height:var(--bc-sidebar-btn-height,30px);cursor:pointer;text-align:center;text-decoration:none;display:inline-flex;justify-content:center;align-items:center;gap:var(--bc-sidebar-btn-gap,8px);color:var(--bcsidebar-text) !important;font-weight:bold;position:relative;";
-    btn.innerHTML = `${GLOBAL_SEARCH_ICON_SVG}<span class="better-sidebar-label" style="font-size:var(--bc-sidebar-label-size,14px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">Search</span>`;
-    btn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); openGlobalSearchModal(); });
-    // Append so it sits at the bottom of the sidebar item list.
-    sidebarContent.appendChild(btn);
-    // Match the sidebar's current expanded/collapsed mode immediately so the
-    // button doesn't briefly render in the wrong state (e.g. label visible while
-    // collapsed) until the next toggle calls updateSidebar().
-    applyGlobalSearchSidebarButtonMode(btn, betterSidebar.dataset.expanded === "true");
-}
-
-function removeGlobalSearchBetterSidebarButton() {
-    document.getElementById("canvasrefined-gs-sidebar-btn")?.remove();
-}
-
-// Apply the Better Sidebar's current expanded/collapsed styling to the search
-// button, mirroring updateSidebar()'s button/label/svg rules so the button is
-// correct the moment it's inserted (and whenever the sidebar re-renders).
-function applyGlobalSearchSidebarButtonMode(btn, expanded) {
-    if (!btn) return;
-    btn.style.width = expanded ? "80%" : "40%";
-    const label = btn.querySelector(".better-sidebar-label");
-    if (label) label.style.display = expanded ? "block" : "none";
-    btn.querySelectorAll("svg").forEach(svg => {
-        svg.style.width = "var(--bc-sidebar-icon-size,20px)";
-        svg.style.height = "var(--bc-sidebar-icon-size,20px)";
-    });
 }
 
 // --- Native global-nav trigger ----------------------------------------------
@@ -7420,8 +6873,10 @@ function getGrades() {
 }
 
 function getColors() {
-    if (options.tab_icons || options.better_todo || options.better_sidebar) {
+    const version = paletteChangeVersion;
+    if (options.tab_icons || options.better_todo) {
         return getData(`${domain}/api/v1/users/self/colors`).then(data => {
+            if (version !== paletteChangeVersion) return options.custom_cards_3;
             let cards = options.custom_cards_3;
             Object.keys(cards).forEach(key => {
                 cards[key] = { ...cards[key], "color": data["custom_colors"]["course_" + key] ? data["custom_colors"]["course_" + key] : null };
@@ -7790,8 +7245,7 @@ function getNextPageUrl(linkHeader) {
 }
 
 // ===================== Grade Analytics =====================
-// On course grades pages, adds an "Analytics" toggle on the left side (in the
-// Better Sidebar when enabled, otherwise in the native course nav) that shows
+// On course grades pages, adds an "Analytics" toggle in the native course nav that shows
 // a panel with a score-distribution doughnut, an overall-grade-over-time
 // line chart, a GitHub-style grade heatmap, and a final-grade calculator.
 // Data comes from the Canvas API with the user's session, so it
@@ -8699,7 +8153,7 @@ function gaBuildHeatmapData() {
 // Tooltip anchored beside the hovered day cell. Positioning is relative to
 // the heatmap tab (the tip's offsetParent), NOT the viewport: position:fixed
 // is unreliable here because ancestors with transforms/backdrop-filters
-// (Better Sidebar's glass panels, Canvas layout) redefine the containing
+// in the Canvas layout redefine the containing
 // block, which sent a fixed-position tooltip to the wrong part of the page.
 function gaHeatmapShowTip(tip, e, cell, avg) {
     const d = cell.date;
@@ -9674,7 +9128,7 @@ function gaExitImagineIf() {
 
 
 function getApiData() {
-    if (current_page === "/" || current_page === "" || options.better_todo || options.better_sidebar) {
+    if (current_page === "/" || current_page === "" || options.better_todo) {
         getAssignments();
         getGrades();
         getColors();

@@ -16,7 +16,6 @@ html,
 #right-side,
 #better-todo-main,
 .ic-DashboardCard,
-.ic-DashboardCard__box,
 .ic-DashboardCard__header_content {
     background-color: var(--bcbackground-1) !important;
 }
@@ -972,6 +971,20 @@ span[style='color: #000000;'],
 
 .list-view a.active {
     border-left:2px solid var(--bclinks)!important
+}
+
+/* Course navigation must not retain Canvas's branded hover/focus colors. */
+#section-tabs a:hover,
+#section-tabs a:focus,
+#section-tabs a.active,
+#section-tabs a[aria-current="page"] {
+    background:var(--bcbackground-2)!important;
+    color:var(--bctext-0)!important;
+}
+
+#section-tabs a:focus-visible {
+    outline:2px solid var(--bclinks)!important;
+    outline-offset:-2px;
 }
 
 .ToDoSidebarItem svg,
