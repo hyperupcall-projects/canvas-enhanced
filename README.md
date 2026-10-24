@@ -1,6 +1,6 @@
 # Canvas Enhanced
 
-Canvas LMS leaves much to be desired. The most popular extension providing additional features, BetterCanvas, became closed-source, which is a security liability. [CanvasRefined](https://github.com/GuySandler/CanvasRefined), the leading alternative, is a fork of the last version under an open-source license. CanvasRefined is good, but I wanted something more to my liking.
+Canvas LMS leaves much to be desired. The most popular extension providing additional features, BetterCampus (formerly BetterCanvas), is now closed-source, which is a security liability. [CanvasRefined](https://github.com/GuySandler/CanvasRefined), the leading alternative, is a fork of the last version of BetterCampus that was under an open-source license. CanvasRefined is good, but I made my own fork of it because I wanted something simple that matched my taste.
 
 ![Picture of extension](./assets/demo.png)
 
@@ -18,11 +18,12 @@ Canvas LMS leaves much to be desired. The most popular extension providing addit
 - GPA calculator
 - Grade analytics and history
 - Quiz safe mode
-- Global Canvas Search (search modules & assignments across all courses; Ctrl/Cmd+K)
+- Canvas search for all courses/modules/assignments
 
-In general compared to CanvasRefined, Canvas Enhanced reduces features and customization, opting for simplicity where possible.
 
-## Other Notes
+## Notes
+
+Compared to CanvasRefined, Canvas Enhanced reduces features and customization, opting for simplicity where possible.
 
 It is recommended to use this with [Canvas Calendar Fix](https://canvas-calendar-fix.apps.edwinkofler.com/dashboard).
 
