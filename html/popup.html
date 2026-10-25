@@ -17,32 +17,31 @@
         <div class="header">
             <img id="bclogo" src="../icon/icon-128.png">
             <h1 data-i18n="Canvas_Refined">Canvas Enhanced</h1>
-            <div class="header-search" id="header-search">
-                <svg class="header-search-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
-                <input type="text" id="feature-search" data-i18n-placeholder="search_features" placeholder="Search features..." autocomplete="off" spellcheck="false">
-                <div class="search-results" id="feature-search-results"></div>
-            </div>
         </div>
-            <div class="more-options-container">
-                <button id="advanced-settings" class="big-button tab-btn">
+            <div class="more-options-container" role="tablist" aria-label="Settings categories">
+                <button type="button" id="home-settings" class="big-button tab-btn" role="tab" aria-controls="home-panel" aria-selected="true" tabindex="0">
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></svg>
+                    <span>Home</span>
+                </button>
+                <button type="button" id="advanced-settings" class="big-button tab-btn" role="tab" aria-controls="cards-panel" aria-selected="false" tabindex="-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path></svg>
                     <span data-i18n="card_customization">Cards</span>
                 </button>
 
-                <button id="import-export-btn" class="big-button tab-btn">
+                <button type="button" id="import-export-btn" class="big-button tab-btn" role="tab" aria-controls="themes-panel" aria-selected="false" tabindex="-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 21v-4a4 4 0 1 1 4 4h-4"></path><path d="M21 3a16 16 0 0 0 -12.8 10.2"></path><path d="M21 3a16 16 0 0 1 -10.2 12.8"></path><path d="M10.6 9a9 9 0 0 1 4.4 4.4"></path></svg>
                     <span data-i18n="themes">Themes</span>
                 </button>
 
-                <button id="gpa-bounds-btn" class="big-button tab-btn">
+                <button type="button" id="gpa-bounds-btn" class="big-button tab-btn" role="tab" aria-controls="gpa-panel" aria-selected="false" tabindex="-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6"></path><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4"></path></svg>
                     <span data-i18n="gpa">GPA</span>
                 </button>
-                <button id="todo-settings-btn" class="big-button tab-btn">
+                <button type="button" id="todo-settings-btn" class="big-button tab-btn" role="tab" aria-controls="todo-panel" aria-selected="false" tabindex="-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>
                     <span data-i18n="todo_list">Todo List</span>
                 </button>
-                <button id="debug-btn" class="big-button tab-btn">
+                <button type="button" id="debug-btn" class="big-button tab-btn" role="tab" aria-controls="debug-panel" aria-selected="false" tabindex="-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 9v4"></path><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"></path><path d="M12 16h.01"></path></svg>
                     <span data-i18n="debug">Debug</span>
                 </button>
@@ -51,6 +50,8 @@
                     <span data-i18n="updates">Updates</span>
                 </button> -->
             </div>
+        <div id="home-panel" class="home-settings tab" role="tabpanel" aria-labelledby="home-settings" tabindex="0">
+        <div class="tab-header"><h2 style="margin-top: 0">Home</h2></div>
         <div class="options">
             <div class="options-left">
                 <div class="option-container">
@@ -113,6 +114,13 @@
                         </div>
                     </div>
                 </div>
+                <section class="option-container settings-export" aria-labelledby="settings-export-heading">
+                    <h3 class="header-small" id="settings-export-heading">Export Settings</h3>
+                    <p class="sub-text">Export feature preferences, Todo options, and GPA settings. Export colors, images, and card styles from Themes.</p>
+                    <button type="button" id="settings-export" class="customization-button">Generate settings export</button>
+                    <textarea class="card-input" id="settings-export-output" aria-label="Exported settings" placeholder="Settings JSON" readonly></textarea>
+                    <button type="button" id="settings-export-copy" class="customization-button">Copy settings</button>
+                </section>
             </div>
 
             <div class="options-right">
@@ -222,16 +230,9 @@
                 </div>
             </div>
         </div>
-        <section class="option-container settings-export" aria-labelledby="settings-export-heading">
-            <h3 class="header-small" id="settings-export-heading">Export Settings</h3>
-            <p class="sub-text">Export feature preferences, Todo options, and GPA settings. Export colors, images, and card styles from Themes.</p>
-            <button type="button" id="settings-export" class="customization-button">Generate settings export</button>
-            <textarea class="card-input" id="settings-export-output" aria-label="Exported settings" placeholder="Settings JSON" readonly></textarea>
-            <button type="button" id="settings-export-copy" class="customization-button">Copy settings</button>
-        </section>
     </div>
 
-    <div class="import-export tab" style="display: none">
+    <div id="themes-panel" class="import-export tab" role="tabpanel" aria-labelledby="import-export-btn" tabindex="0" hidden>
         <div id="submit-popup">
             <div style="max-width: 75%;color:#a7a7a7">
                 <h3 class="header-small" style="font-size:18px;color:#fff">Submission confirmation</h3>
@@ -254,9 +255,13 @@
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v1"/></svg>
             <span>High Contrast UI is turned on, so themes may not work as expected. Disable it in account settings.</span>
         </div>
-        <div class="tab-header">
-            <h2 style="margin-top: 0" data-i18n="themes">Themes</h2>
-            <button class="big-button back-btn" data-i18n="back">Back</button>
+        <div class="tab-header themes-header">
+            <h2 data-i18n="themes">Themes</h2>
+            <select id="appearance-mode" class="card-input" aria-label="Appearance">
+                <option value="light" data-i18n="appearance_light">Light</option>
+                <option value="dark" data-i18n="appearance_dark">Dark</option>
+                <option value="system" data-i18n="appearance_system">System</option>
+            </select>
         </div>
         <section class="option-container" id="theme-section" aria-labelledby="theme-heading">
             <h3 class="header-small" id="theme-heading">Theme</h3>
@@ -276,14 +281,6 @@
                 <div id="saved-themes"></div>
             </div>
         </section>
-        <div class="option-container">
-            <h3 class="header-small"><label for="appearance-mode" data-i18n="appearance">Appearance</label></h3>
-            <select id="appearance-mode" class="card-input">
-                <option value="light" data-i18n="appearance_light">Light</option>
-                <option value="dark" data-i18n="appearance_dark">Dark</option>
-                <option value="system" data-i18n="appearance_system">System</option>
-            </select>
-        </div>
         <div class="customize-dark">
         <section class="customization" aria-labelledby="theme-values-heading">
             <h3 class="header-small" id="theme-values-heading">Theme Values</h3>
@@ -641,12 +638,11 @@
         </div> -->
     </div>
 
-    <div class="advanced tab" style="display:none">
+    <div id="cards-panel" class="advanced tab" role="tabpanel" aria-labelledby="advanced-settings" tabindex="0" hidden>
         <div class="tab-header">
             <div>
                 <h2 style="margin-top: 0" data-i18n="card_customization">Cards</h2>
             </div>
-            <button class="big-button back-btn" data-i18n="back">Back</button>
         </div>
         <div class="option-container">
             <div class="option" id="assignments_due">
@@ -778,10 +774,9 @@
         </div>
     </div>
 
-    <div class="todo-settings-container tab" style="display:none">
+    <div id="todo-panel" class="todo-settings-container tab" role="tabpanel" aria-labelledby="todo-settings-btn" tabindex="0" hidden>
         <div class="tab-header">
             <h2 style="margin-top: 0" data-i18n="todo_list">Todo List</h2>
-            <button class="big-button back-btn" data-i18n="back">Back</button>
         </div>
         <div class="option-container">
             <div class="option" id="better_todo">
@@ -888,10 +883,9 @@
         </div>
     </div>
 
-    <div class="gpa-bounds-container tab" style="display:none">
+    <div id="gpa-panel" class="gpa-bounds-container tab" role="tabpanel" aria-labelledby="gpa-bounds-btn" tabindex="0" hidden>
         <div class="tab-header">
             <h2 style="margin-top: 0" data-i18n="gpa">GPA</h2>
-            <button class="big-button back-btn" data-i18n="back">Back</button>
         </div>
         <div class="option-container">
             <div class="option" id="gpa_calc">
@@ -947,12 +941,11 @@
         </section>
     </div>
 
-    <div class="debug-container tab">
+    <div id="debug-panel" class="debug-container tab" role="tabpanel" aria-labelledby="debug-btn" tabindex="0" hidden>
         <div class="tab-header">
             <div>
                 <h2 style="margin-top: 0" data-i18n="debug">Debug</h2>
             </div>
-            <button class="big-button back-btn" data-i18n="back">Back</button>
         </div>
         <div class="option-container">
             <h3 class="header-small">Privacy</h3>
@@ -1048,6 +1041,8 @@
                 <textarea id="error_log_output" class="card-input"></textarea>
             </div>
         </div>
+    </div>
+
     </div>
 
     <script type="text/javascript" src="../js/themes.js"></script>

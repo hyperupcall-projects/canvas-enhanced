@@ -31,7 +31,7 @@ test('No Theme resets appearance defaults and images while preserving course dat
     vm.runInContext(popup.slice(0, popup.indexOf('sendFromPopup("getCards")')), context);
     vm.runInContext(popup.slice(popup.indexOf('function emptyThemeValues()'), popup.indexOf('let highContrastWarningRequest')), context);
     vm.runInContext(popup.slice(popup.indexOf('async function importTheme('), popup.indexOf('function updateCards(')), context);
-    await context.importTheme(context.noThemeSettings(), { type: 'builtin', key: '_No Theme' });
+    await context.importTheme(context.noThemeSettings(), { type: 'builtin', key: 'No Theme' });
     assert.equal(stored.cardWidth, 262);
     assert.equal(stored.cardHeight, 146);
     assert.equal(stored.cardPadding, 0);

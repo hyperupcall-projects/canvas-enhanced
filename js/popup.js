@@ -400,337 +400,6 @@ function toggleSubOptionsVisibility(option, isOn) {
     subOptions.style.display = isOn ? "" : "none";
 }
 
-function setupFeatureSearch(menu) {
-    const searchInput = document.querySelector("#feature-search");
-    const resultsEl = document.querySelector("#feature-search-results");
-    const headerSearch = document.querySelector("#header-search");
-    if (!searchInput || !resultsEl || !headerSearch) return;
-
-    // Map (reference-keyed) each .tab element -> the button id that opens it.
-    // A plain object won't work: DOM elements stringify to the same key.
-    const tabElToBtnId = new Map();
-    Object.entries(menu.tabs).forEach(([btnId, info]) => {
-        const tabEl = document.querySelector(info.tab);
-        if (tabEl) tabElToBtnId.set(tabEl, btnId);
-    });
-
-    function shouldSkip(el) {
-        // Skip overlays / scrapped containers that aren't real features
-        if (el.closest('#submit-popup, #opt-in, #card-edit-menu')) return true;
-        // Skip statically-hidden containers but keep dynamically-hidden sub-options.
-        let node = el;
-        while (node && node !== document.body) {
-            if (node.classList && node.classList.contains('option-container') && node.style.display === 'none') return true;
-            node = node.parentElement;
-        }
-        return false;
-    }
-
-    function labelOf(sub) {
-        const label = sub.querySelector("label");
-        if (label) return label.textContent.trim();
-        const st = sub.querySelector(".sub-text");
-        if (st) return st.textContent.trim();
-        // Bare <span> label (e.g. Export Settings checkboxes have no label/.sub-text).
-        const span = sub.querySelector("span");
-        if (span) return span.textContent.trim();
-        return "";
-    }
-
-    function keyIdOf(sub) {
-        const label = sub.querySelector("label");
-        if (label && label.getAttribute("for")) return label.getAttribute("for");
-        const input = sub.querySelector("input");
-        if (input && input.id) return input.id;
-        return labelOf(sub);
-    }
-
-    function categoryFor(el) {
-        const tabEl = el.closest(".tab");
-        if (tabEl) {
-            const btnId = tabElToBtnId.get(tabEl);
-            if (btnId) {
-                const btn = document.getElementById(btnId);
-                const span = btn && btn.querySelector("span");
-                if (span) return span.textContent.trim();
-            }
-            return "Section";
-        }
-        if (el.classList && el.classList.contains("tab-btn")) return "Section";
-        if (el.classList && el.classList.contains("option")) return "Settings";
-        const owner = el.closest(".option");
-        if (owner) {
-            const name = owner.querySelector(".option-name");
-            if (name) return name.textContent.trim();
-        }
-        return "Settings";
-    }
-
-    function openTab(btnId) {
-        const btn = document.getElementById(btnId);
-        if (btn) btn.click();
-    }
-
-    function showMain() {
-        const back = document.querySelector(".back-btn");
-        if (back) back.click();
-    }
-
-    // Reveal any hidden sub-option blocks between el and .main so the target
-    // is visible (purely visual; doesn't change stored settings).
-    function revealAncestors(el) {
-        const main = document.querySelector(".main");
-        let node = el;
-        while (node && node !== main && node !== document.body) {
-            if (node.style && node.style.display === "none") node.style.display = "";
-            node = node.parentElement;
-        }
-        // Expand the Better Todo "More options" collapsible if the target lives inside it.
-        const moreWrap = el.closest ? el.closest("#todo-more-options") : null;
-        if (moreWrap && !moreWrap.classList.contains("expanded")) {
-            const toggle = document.getElementById("todo-more-toggle");
-            if (toggle) toggle.click();
-        }
-    }
-
-    function highlight(el) {
-        el.classList.add("search-highlight");
-        setTimeout(() => el.classList.remove("search-highlight"), 2000);
-    }
-
-    function goToMainElement(el) {
-        showMain();
-        revealAncestors(el);
-        requestAnimationFrame(() => {
-            el.scrollIntoView({ behavior: "instant", block: "center" });
-            highlight(el);
-        });
-    }
-
-    function goToTabElement(el) {
-        const tabEl = el.closest(".tab");
-        const btnId = tabElToBtnId.get(tabEl);
-        showMain();
-        if (btnId) openTab(btnId);
-        revealAncestors(el);
-        requestAnimationFrame(() => {
-            el.scrollIntoView({ behavior: "instant", block: "center" });
-            highlight(el);
-        });
-    }
-
-    let featureIndex = null;
-    let currentMatches = [];
-    let activeIndex = -1;
-
-    function buildIndex() {
-        const index = [];
-        const seen = new Set();
-        function add(entry) {
-            if (!entry.text || seen.has(entry.key)) return;
-            seen.add(entry.key);
-            index.push(entry);
-        }
-
-        // Big section buttons (Cards, Themes, GPA, Todo List, Debug)
-        document.querySelectorAll(".more-options-container .tab-btn").forEach(btn => {
-            const span = btn.querySelector("span");
-            add({ key: "tab:" + btn.id, text: span ? span.textContent.trim() : "", el: btn, action: () => openTab(btn.id) });
-        });
-
-        // Feature toggles on the main page and section pages.
-        document.querySelectorAll(".options .option, .tab .option").forEach(opt => {
-            if (!opt.id) return;
-            const name = opt.querySelector(".option-name");
-            if (!name) return;
-            if (shouldSkip(opt)) return;
-            add({ key: "option:" + opt.id, text: name.textContent.trim(), el: opt, action: () => opt.closest(".tab") ? goToTabElement(opt) : goToMainElement(opt) });
-        });
-
-        // Home: sub-options / timesets / labelled rows (e.g. "Use dd/mm", "Start time", max-items)
-        document.querySelectorAll(".options .sub-option, .options .timeset, .options .sub-options > div").forEach(sub => {
-            if (shouldSkip(sub)) return;
-            // Skip statically-hidden sub-options; dynamically-hidden ones stay indexed.
-            if (sub.classList.contains("sub-option") && sub.style.display === "none") return;
-            const text = labelOf(sub);
-            if (!text) return;
-            add({ key: "sub:" + keyIdOf(sub), text, el: sub, action: () => goToMainElement(sub) });
-        });
-
-        // Home: custom Canvas URLs
-        const customDomain = document.querySelector(".customDomain");
-        if (customDomain && !shouldSkip(customDomain)) {
-            const wrap = customDomain.closest(".customDomain");
-            const label = wrap ? wrap.querySelector("[data-i18n='enter_url']") : null;
-            add({ key: "custom:customDomain", text: label ? label.textContent.trim() : "Canvas URL", el: wrap || customDomain, action: () => goToMainElement(wrap || customDomain) });
-        }
-
-        // Tabs: section headings (e.g. "Presets", "Popular Palettes")
-        document.querySelectorAll(".tab .header-small").forEach(h => {
-            if (shouldSkip(h)) return;
-            const text = h.textContent.trim();
-            if (!text) return;
-            const btnId = tabElToBtnId.get(h.closest(".tab"));
-            add({ key: "heading:" + (btnId || "?") + ":" + text, text, el: h, action: () => goToTabElement(h) });
-        });
-
-        // Tabs: sub-options, dropdowns and sliders.
-        document.querySelectorAll(".tab .sub-option, .tab .timeset, .tab .sub-options > div").forEach(sub => {
-            if (shouldSkip(sub)) return;
-            const text = labelOf(sub);
-            if (!text) return;
-            const btnId = tabElToBtnId.get(sub.closest(".tab"));
-            add({ key: "tabsub:" + (btnId || "?") + ":" + keyIdOf(sub), text, el: sub, action: () => goToTabElement(sub) });
-        });
-
-        // Dark mode color fields (e.g. "Sidebar Text", "Background Main")
-        document.querySelectorAll(".tab .color-type-header").forEach(h => {
-            if (shouldSkip(h)) return;
-            const text = h.textContent.trim();
-            if (!text) return;
-            const btnId = tabElToBtnId.get(h.closest(".tab"));
-            add({ key: "color:" + (btnId || "?") + ":" + text, text, el: h, action: () => goToTabElement(h) });
-        });
-
-        // Tab: preset buttons (dark mode presets + popular color palettes).
-        document.querySelectorAll(".tab .preset-button").forEach(btn => {
-            if (shouldSkip(btn)) return;
-            const text = btn.textContent.trim().replace(/\s+/g, " ");
-            if (!text || text === "placeholder") return;
-            const btnId = tabElToBtnId.get(btn.closest(".tab"));
-            add({ key: "preset:" + (btnId || "?") + ":" + (btn.id || text), text, el: btn, action: () => goToTabElement(btn) });
-        });
-
-        // Tab: standalone action buttons with distinct labels (GPA scale presets, revert colors).
-        ["gpa-plus-minus", "gpa-by-letter", "revert-colors", "save-theme", "import-theme"].forEach(id => {
-            const btn = document.getElementById(id);
-            if (!btn || shouldSkip(btn)) return;
-            const text = btn.textContent.trim();
-            if (!text) return;
-            add({ key: "action:" + id, text, el: btn, action: () => goToTabElement(btn) });
-        });
-
-        // Tab: checkbox/radio controls whose label is a bare sibling span and that
-        // aren't wrapped in .sub-option (e.g. "Get Active Cards From Dashboard",
-        // sidebar background "Solid/Gradient/Image").
-        document.querySelectorAll(".tab input[type='checkbox'], .tab input[type='radio']").forEach(input => {
-            if (!input.id) return;
-            if (input.closest(".sub-option") || input.closest(".option")) return;
-            if (shouldSkip(input)) return;
-            const text = (input.parentElement && input.parentElement.textContent.trim()) || "";
-            if (!text) return;
-            const btnId = tabElToBtnId.get(input.closest(".tab"));
-            add({ key: "control:" + (btnId || "?") + ":" + input.id, text, el: input, action: () => goToTabElement(input) });
-        });
-
-        return index;
-    }
-
-    function filterFeatures(query) {
-        const q = query.trim().toLowerCase();
-        if (!q) return [];
-        if (!featureIndex) featureIndex = buildIndex();
-        const scored = [];
-        for (const entry of featureIndex) {
-            const t = entry.text.toLowerCase();
-            let score = -1;
-            if (t === q) score = 1000;
-            else if (t.startsWith(q)) score = 500 - t.length;
-            else {
-                const idx = t.indexOf(q);
-                if (idx !== -1) score = 200 - idx;
-                else if (t.split(/\s+/).some(w => w.toLowerCase().startsWith(q))) score = 50;
-            }
-            if (score >= 0) scored.push({ entry, score });
-        }
-        scored.sort((a, b) => b.score - a.score || a.entry.text.length - b.entry.text.length);
-        return scored.slice(0, 12).map(s => s.entry);
-    }
-
-    function renderResults(matches) {
-        currentMatches = matches;
-        activeIndex = matches.length ? 0 : -1;
-        resultsEl.innerHTML = "";
-        if (!matches.length) {
-            const empty = document.createElement("div");
-            empty.className = "search-result empty";
-            empty.textContent = "No features found";
-            resultsEl.appendChild(empty);
-            resultsEl.classList.add("open");
-            return;
-        }
-        matches.forEach((entry, i) => {
-            const item = document.createElement("div");
-            item.className = "search-result" + (i === activeIndex ? " active" : "");
-            item.setAttribute("role", "option");
-            const title = document.createElement("span");
-            title.className = "search-result-title";
-            title.textContent = entry.text;
-            const cat = document.createElement("span");
-            cat.className = "search-result-category";
-            cat.textContent = categoryFor(entry.el);
-            item.appendChild(title);
-            item.appendChild(cat);
-            item.addEventListener("mousedown", (e) => {
-                e.preventDefault();
-                selectResult(i);
-            });
-            resultsEl.appendChild(item);
-        });
-        resultsEl.classList.add("open");
-    }
-
-    function setActive(i) {
-        activeIndex = i;
-        const items = resultsEl.querySelectorAll(".search-result");
-        items.forEach((el, idx) => el.classList.toggle("active", idx === i));
-        const active = resultsEl.querySelector(".search-result.active");
-        if (active) active.scrollIntoView({ block: "nearest" });
-    }
-
-    function closeResults() {
-        resultsEl.classList.remove("open");
-        resultsEl.innerHTML = "";
-        currentMatches = [];
-        activeIndex = -1;
-    }
-
-    function selectResult(i) {
-        const entry = currentMatches[i];
-        if (!entry) return;
-        closeResults();
-        searchInput.value = "";
-        searchInput.blur();
-        entry.action();
-    }
-
-    searchInput.addEventListener("input", () => {
-        if (!searchInput.value.trim()) { closeResults(); return; }
-        renderResults(filterFeatures(searchInput.value));
-    });
-    searchInput.addEventListener("focus", () => {
-        if (searchInput.value.trim()) renderResults(filterFeatures(searchInput.value));
-    });
-    searchInput.addEventListener("keydown", (e) => {
-        if (!currentMatches.length) {
-            if (e.key === "Escape") searchInput.blur();
-            return;
-        }
-        if (e.key === "ArrowDown") { e.preventDefault(); setActive((activeIndex + 1) % currentMatches.length); }
-        else if (e.key === "ArrowUp") { e.preventDefault(); setActive((activeIndex - 1 + currentMatches.length) % currentMatches.length); }
-        else if (e.key === "Enter") { e.preventDefault(); if (activeIndex >= 0) selectResult(activeIndex); }
-        else if (e.key === "Escape") { e.preventDefault(); closeResults(); searchInput.blur(); }
-    });
-    searchInput.addEventListener("blur", () => setTimeout(closeResults, 150));
-
-    const icon = headerSearch.querySelector(".header-search-icon");
-    if (icon) icon.addEventListener("click", () => searchInput.focus());
-
-    document.addEventListener("click", (e) => {
-        if (!e.target.closest("#header-search")) closeResults();
-    });
-}
-
 function setup() {
 
     const menu = {
@@ -769,6 +438,7 @@ function setup() {
 			"grade_analytics_zones",
 		],
 		tabs: {
+            "home-settings": { setup: null, tab: ".home-settings" },
 			"advanced-settings": {
 				setup: displayAdvancedCards,
 				tab: ".advanced",
@@ -901,23 +571,31 @@ function setup() {
     setupAppearanceMode();
     setupSavedThemes();
 
-    // activate tab buttons
-    document.querySelectorAll(".tab-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            if (menu.tabs[btn.id].setup !== null) menu.tabs[btn.id].setup();
-            document.querySelector(".main").style.display = "none";
-            document.querySelector(menu.tabs[btn.id].tab).style.display = "block";
-            window.scrollTo(0, 0);
+    // Keep category navigation visible while switching the panel below it.
+    const tabButtons = Array.from(document.querySelectorAll('.more-options-container [role="tab"]'));
+    function selectSettingsTab(button) {
+        if (button.getAttribute("aria-selected") === "true") return;
+        tabButtons.forEach(tabButton => {
+            const selected = tabButton === button;
+            tabButton.setAttribute("aria-selected", String(selected));
+            tabButton.tabIndex = selected ? 0 : -1;
+            document.getElementById(tabButton.getAttribute("aria-controls")).hidden = !selected;
         });
-    });
-
-    // activate the back buttons on each tab
-    document.querySelectorAll(".back-btn").forEach(btn => {
-        btn.addEventListener("click", function () {
-            document.querySelectorAll(".tab").forEach(tab => {
-                tab.style.display = "none";
-            });
-            document.querySelector(".main").style.display = "block";
+        const setup = menu.tabs[button.id].setup;
+        if (setup) setup();
+    }
+    tabButtons.forEach((button, index) => {
+        button.addEventListener("click", () => selectSettingsTab(button));
+        button.addEventListener("keydown", event => {
+            let nextIndex;
+            if (event.key === "ArrowRight") nextIndex = (index + 1) % tabButtons.length;
+            else if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabButtons.length) % tabButtons.length;
+            else if (event.key === "Home") nextIndex = 0;
+            else if (event.key === "End") nextIndex = tabButtons.length - 1;
+            else return;
+            event.preventDefault();
+            tabButtons[nextIndex].focus();
+            selectSettingsTab(tabButtons[nextIndex]);
         });
     });
 
@@ -927,17 +605,10 @@ function setup() {
         // keep the in-HTML fallback text when a key is missing instead of blanking it
         if (msg) text.innerText = msg;
     });
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const msg = chrome.i18n.getMessage(el.dataset.i18nPlaceholder);
-        if (msg) el.placeholder = msg;
-    });
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const msg = chrome.i18n.getMessage(el.dataset.i18nTitle);
         if (msg) el.title = msg;
     });
-
-    // header feature search (search bar that jumps to features)
-    setupFeatureSearch(menu);
 
     // activate dark mode inspector button
     document.querySelector("#inspector-btn").addEventListener("click", async function () {
@@ -1653,11 +1324,11 @@ function displayThemeList() {
     // Retain palette definitions for previously saved themes, but omit these
     // retired presets from the picker.
     const listedThemes = themes.filter(theme => !["McDonalds", "Purple"].includes(theme.title));
-    const presets = [...listedThemes, {
-        title: "_No Theme",
+    listedThemes.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+    const presets = [{
+        title: "No Theme",
         exports: noThemeSettings()
-    }]
-        .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+    }, ...listedThemes];
     presets.forEach(theme => {
         const button = makeElement("button", container, { className: "theme-button customization-button" });
         if (theme.preview) button.style.backgroundImage = "linear-gradient(#00000070, #00000070), url(" + theme.preview + ")";
