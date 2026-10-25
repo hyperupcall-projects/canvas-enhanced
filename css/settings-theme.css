@@ -2,13 +2,13 @@
 :root {
     color-scheme: light;
     --settings-bg: #fff;
-    --settings-panel: #f7f7f8;
-    --settings-input: #ededf0;
-    --settings-text: #24262b;
+    --settings-panel: #fafafa;
+    --settings-input: #fff;
+    --settings-text: #333;
     --settings-muted: #60646c;
-    --settings-border: #d4d5da;
-    --settings-hover: #e3e4e8;
-    --settings-link: #1769aa;
+    --settings-border: #ccc;
+    --settings-hover: #e6e6e6;
+    --settings-link: #0078e7;
     --settings-success: #24663d;
     --settings-success-bg: #e4f4e9;
     --settings-success-hover: #d3ecdc;
@@ -27,13 +27,13 @@
 }
 :root[data-settings-theme="dark"] {
     color-scheme: dark;
-    --settings-bg: #18191c;
-    --settings-panel: #222328;
-    --settings-input: #303138;
-    --settings-text: #ececf0;
+    --settings-bg: #191919;
+    --settings-panel: #222;
+    --settings-input: #262626;
+    --settings-text: #eee;
     --settings-muted: #b5b6bf;
-    --settings-border: #454650;
-    --settings-hover: #3b3c45;
+    --settings-border: #505050;
+    --settings-hover: #383838;
     --settings-link: #82bfff;
     --settings-success: #c5f5d7;
     --settings-success-bg: #254b39;
@@ -63,3 +63,145 @@ input::placeholder, textarea::placeholder {color: var(--settings-muted); opacity
 
 .cr-info-bubble-text {border-color: var(--settings-border);}
 .search-results {border: 1px solid var(--settings-border);}
+
+/* Pure-inspired shared foundation for the popup and welcome page. */
+:root {
+    --settings-button: #e6e6e6;
+    --settings-primary: #0078e7;
+    --settings-on-primary: #fff;
+    --settings-radius: 2px;
+    --settings-hover-border: #a3a3a3;
+    --settings-hover-shadow: 0 2px 5px rgb(0 0 0 / 12%);
+}
+:root[data-settings-theme="dark"] {
+    --settings-button: #333;
+    --settings-primary: #176fc1;
+    --settings-hover-border: #737373;
+    --settings-hover-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+}
+html, body {
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.5;
+}
+button, input, select, textarea {font-family: inherit;}
+a {color: var(--settings-link);}
+a:hover {text-decoration: underline;}
+button {line-height: 1.4;}
+.big-button, .colors-button, .customization-button, .course-card-button,
+.submit-tab-btn, .help-link {
+    border: 1px solid transparent;
+    border-radius: var(--settings-radius);
+    background-color: var(--settings-button);
+    color: var(--settings-text);
+    font-weight: 400;
+    box-shadow: none;
+    text-shadow: none;
+    transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+.big-button:hover, .colors-button:hover, .customization-button:hover,
+.course-card-button:hover, .submit-tab-btn:hover, .help-link:hover {
+    background-color: var(--settings-hover);
+    transform: none;
+    text-decoration: none;
+}
+button:active {filter: none; box-shadow: inset 0 0 0 1px var(--settings-border);}
+button:disabled {opacity: .4; cursor: not-allowed;}
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--settings-link);
+    outline-offset: 2px;
+}
+.option-container, .card-edit-menu, .submitted-theme {
+    background: var(--settings-panel);
+    border: 1px solid var(--settings-border);
+    border-radius: var(--settings-radius);
+    box-shadow: none;
+}
+:is(#customDomain, #auto_dark_start, #auto_dark_end, #todo_progress_rings,
+#todo_timeframe, #appearance-mode, .card-input:not([type="color"]), .gpa-bounds-input,
+.domain-row input, .gpa-threshold-settings select, .card-file-input) {
+    box-sizing: border-box;
+    padding: .5em .6em;
+    border: 1px solid var(--settings-border);
+    border-radius: 4px;
+    background-color: var(--settings-input);
+    color: var(--settings-text);
+    box-shadow: inset 0 1px 3px #00000012;
+}
+.custom-card-inputs .card-input {border-color: var(--settings-border);}
+:is(#customDomain, #auto_dark_start, #auto_dark_end, #todo_progress_rings,
+#todo_timeframe, #appearance-mode, .card-input:not([type="color"]), .gpa-bounds-input,
+.domain-row input, .gpa-threshold-settings select):focus {
+    border-color: var(--settings-link);
+}
+.header {padding-bottom: 16px; border-bottom: 1px solid var(--settings-border);}
+.header h1 {font-weight: 400;}
+h2, .customization-header {font-weight: 400;}
+.header-search {
+    background: var(--settings-input);
+    border: 1px solid var(--settings-border);
+    border-radius: 4px;
+    box-shadow: inset 0 1px 3px #00000012;
+}
+.header-search:focus-within {border-color: var(--settings-link); box-shadow: none;}
+#feature-search {font-weight: 400;}
+.search-results, .cr-info-bubble-text {
+    border-radius: 3px;
+    box-shadow: 0 2px 8px #0002;
+    backdrop-filter: none;
+}
+.search-result, .search-highlight {border-radius: var(--settings-radius);}
+.search-highlight {outline-color: var(--settings-link); animation: none;}
+.course-card-button.active, .submit-tab-btn.active {
+    background: var(--settings-primary);
+    color: var(--settings-on-primary);
+}
+#alert, #import-theme-dialog, #theme-high-contrast-warning {
+    border-radius: 3px;
+    box-shadow: none;
+}
+input[type="checkbox"] {border-radius: 2px; flex-shrink: 0;}
+.sliderbg {border: 1px solid var(--settings-border); box-sizing: border-box; border-radius: 3px;}
+.sliderknob {border-radius: 2px;}
+.domain-row .domain-remove, .saved-theme, .theme-button {border-radius: 2px;}
+/* Preview tiles keep their theme images and colors. */
+.theme-button {color: #fff; text-shadow: 0 1px 3px #000;}
+.theme-button:hover {background-size: cover;}
+::-webkit-scrollbar-thumb {background: var(--settings-border);}
+
+
+/* Color swatches are previews, not text fields. */
+.changer-container .card-input[type="color"] {padding: 0; border: 0; box-shadow: none;}
+.card-file-input::file-selector-button {
+    border: 1px solid var(--settings-border);
+    border-radius: 2px;
+    font-weight: 400;
+}
+
+/* Keep hover feedback subtle, without changing control dimensions. */
+:root :is(.big-button, .colors-button, .customization-button,
+.course-card-button, .submit-tab-btn, .help-link, .saved-theme-action,
+.domain-remove, #updateCSS):not(:disabled):not([aria-disabled="true"]):hover {
+    border-color: var(--settings-hover-border);
+    box-shadow: var(--settings-hover-shadow);
+}
+:root :is(#customDomain, #auto_dark_start, #auto_dark_end, #todo_progress_rings,
+#todo_timeframe, #appearance-mode, .card-input:not([type="color"]), .gpa-bounds-input,
+.domain-row input, .gpa-threshold-settings select, .card-file-input):not(:disabled):not(:focus):hover,
+.header-search:hover:not(:focus-within) {
+    border-color: var(--settings-hover-border);
+    box-shadow: inset 0 1px 3px #00000012, var(--settings-hover-shadow);
+}
+.option:not(.switch_disabled):hover .sliderbg,
+.option:not(.switch_disabled):focus-within .sliderbg {
+    border-color: var(--settings-hover-border);
+    box-shadow: var(--settings-hover-shadow);
+}
+
+/* All settings interactions update immediately. */
+html, *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+#opt-in-box {opacity: 1;}

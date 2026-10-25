@@ -5,7 +5,7 @@ const syncedSubOptions = [
 	"todo_hide_feedback",
 	"todo_hide_read",
 	"todo_full_height",
-    "todo_confetti",
+
     "todo_progress_rings",
     "todo_timeframe",
 
@@ -502,7 +502,7 @@ function setupFeatureSearch(menu) {
         showMain();
         revealAncestors(el);
         requestAnimationFrame(() => {
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.scrollIntoView({ behavior: "instant", block: "center" });
             highlight(el);
         });
     }
@@ -514,7 +514,7 @@ function setupFeatureSearch(menu) {
         if (btnId) openTab(btnId);
         revealAncestors(el);
         requestAnimationFrame(() => {
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.scrollIntoView({ behavior: "instant", block: "center" });
             highlight(el);
         });
     }
@@ -741,7 +741,7 @@ function setup() {
 			// /*'card_method_date',*/ "show_updates",
             "todo_hide_feedback",
             "todo_hide_read",
-            "todo_confetti",
+
 			"todo_full_height",
 
 			"relative_dues",

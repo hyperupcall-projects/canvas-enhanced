@@ -450,3 +450,93 @@
 #breadcrumbs {
     padding-top: 3px !important;
 }
+
+/* Pure-inspired controls and surfaces, scoped to Canvas and our own UI.
+   Keep palette variables so custom themes and both appearances still apply. */
+:root:has(.ic-app-header) body {
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.5;
+}
+:root:has(.ic-app-header) :is(.btn, .Button),
+.canvasrefined-custom-btn, .canvasrefined-gpa-edit-btn,
+.canvasrefined-todo-label-btn, .extension-linkpreview {
+    border: 1px solid var(--bcborders, #ccc);
+    border-radius: 2px;
+    background-color: var(--bcbackground-1, #e6e6e6);
+    color: var(--bctext-0, #333);
+    padding: .5em 1em;
+    font-weight: 400;
+    text-shadow: none;
+    box-shadow: none;
+}
+:root:has(.ic-app-header) :is(.btn, .Button):hover,
+.canvasrefined-custom-btn:hover, .canvasrefined-gpa-edit-btn:hover,
+.extension-linkpreview:hover {
+    background-color: var(--bcbackground-2, #dcdcdc) !important;
+}
+:root:has(.ic-app-header) :is(.btn-primary, .Button--primary) {
+    background-color: var(--bclinks, #0078e7) !important;
+    color: var(--bclink-text, #fff) !important;
+}
+:root:has(.ic-app-header) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]), select, textarea) {
+    border: 1px solid var(--bcborders, #ccc);
+    border-radius: 4px;
+    box-shadow: inset 0 1px 3px #00000012;
+}
+:root:has(.ic-app-header) :is(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid var(--bclinks, #0078e7);
+    outline-offset: 2px;
+}
+:root:has(.ic-app-header) .ic-DashboardCard,
+.canvasrefined-gpa-card, .canvasrefined-dashboard-notes,
+.canvasrefined-gs-modal, .canvasrefined-hover-preview, .hypodivcalc {
+    border: 1px solid var(--bcborders, #ccc);
+    border-radius: 3px;
+    box-shadow: none !important;
+}
+.canvasrefined-gpa {
+    border: 1px solid var(--bcborders, #ccc);
+    box-shadow: none !important;
+}
+.hypodivcalc, .extension-linkpreview,
+.canvasrefined-todo-actions, .canvasrefined-gpa-card {
+    background-color: var(--bcbackground-1, #fafafa);
+    color: var(--bctext-0, #333);
+}
+.canvasrefined-assignment-container:hover {
+    background-color: var(--bcbackground-2, #eee);
+}
+.canvasrefined-card-grade, .canvasrefined-gs-row {border-radius: 2px;}
+.canvasrefined-assignment-dueat:hover {box-shadow: none !important;}
+
+:root:has(.ic-app-header) :is(.btn-primary, .Button--primary):hover {
+    background-color: color-mix(in srgb, var(--bclinks, #0078e7) 88%, #000) !important;
+}
+
+/* Theme-aware hover feedback for Canvas controls and extension surfaces. */
+:root:has(.ic-app-header) :is(.btn, .Button, .ic-DashboardCard):not(:disabled):not([aria-disabled="true"]):hover,
+:is(.canvasrefined-custom-btn, .canvasrefined-gpa-edit-btn,
+.canvasrefined-todo-label-btn, .extension-linkpreview, .canvasrefined-gpa-card):not(:disabled):hover {
+    border-color: color-mix(in srgb, var(--bcborders, #ccc) 70%, var(--bctext-0, #333)) !important;
+    box-shadow: 0 2px 5px rgb(0 0 0 / 18%) !important;
+}
+:root:has(.ic-app-header) :is(input:not([type="hidden"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]), select, textarea):not(:disabled):not(:focus):hover {
+    border-color: color-mix(in srgb, var(--bcborders, #ccc) 70%, var(--bctext-0, #333)) !important;
+    box-shadow: inset 0 1px 3px #00000012, 0 2px 5px rgb(0 0 0 / 18%);
+}
+
+/* Apply instant feedback on Canvas, including dynamically inserted UI.
+   This stylesheet also loads on non-Canvas sites, so scope page-wide rules. */
+:root:has(.ic-app-header, #darkcss),
+:root:has(.ic-app-header, #darkcss) *,
+:root:has(.ic-app-header, #darkcss) *::before,
+:root:has(.ic-app-header, #darkcss) *::after,
+:is([class*="canvasrefined-"], [class*="extension-"], [id^="better-todo-"]),
+:is([class*="canvasrefined-"], [class*="extension-"], [id^="better-todo-"]) *,
+:is([class*="canvasrefined-"], [class*="extension-"], [id^="better-todo-"])::before,
+:is([class*="canvasrefined-"], [class*="extension-"], [id^="better-todo-"])::after {
+
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}

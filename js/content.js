@@ -1858,7 +1858,7 @@ function renderProgressRingsMode(wrapper, shown, totalAll, completedAll, percent
         bg.style.transition = 'opacity .3s ease';
         bg.style.opacity = dim ? '0.25' : '';
         fg.style.opacity = dim ? '0.3' : '';
-        requestAnimationFrame(() => requestAnimationFrame(() => fg.setAttribute('stroke-dashoffset', target)));
+        fg.setAttribute('stroke-dashoffset', target);
         // transparent hit band on top so the whole ring is easy to click;
         // width tracks the ring spacing so adjacent bands don't overlap.
         const step = Math.max(1, Math.floor(decrement * adjustFactor));
@@ -1981,7 +1981,7 @@ function renderProgressRainbow(wrapper, shown, totalAll, completedAll, percent) 
         track.style.transition = 'opacity .3s ease';
         track.style.opacity = dim ? '0.25' : '';
         progArc.style.opacity = dim ? '0.3' : '';
-        requestAnimationFrame(() => requestAnimationFrame(() => progArc.setAttribute('stroke-dashoffset', targetOff)));
+        progArc.setAttribute('stroke-dashoffset', targetOff);
         // transparent hit arc on top so the whole arc is easy to click.
         let hit = svg.querySelector(`path[data-idx='${idx}'][data-role='hit']`);
         if (!hit) {
@@ -2090,7 +2090,7 @@ function renderProgressLines(wrapper, shown) {
         fill.style.background = color;
         if (!fill.dataset.init) {
             fill.dataset.init = '1';
-            requestAnimationFrame(() => requestAnimationFrame(() => fill.style.width = `${pct}%`));
+            fill.style.width = `${pct}%`;
         } else {
             fill.style.width = `${pct}%`;
         }
@@ -3302,9 +3302,7 @@ function attachTodoHoverPreview(anchor, item) {
     if (options.hover_preview !== true) return;
     anchor.addEventListener("mouseenter", () => {
         clearTimeout(todoPreviewDelay);
-        todoPreviewDelay = setTimeout(() => {
-            if (anchor.matches(":hover")) showTodoPreview(anchor, item);
-        }, 250);
+        showTodoPreview(anchor, item);
     });
     anchor.addEventListener("mouseleave", () => {
         clearTimeout(todoPreviewDelay);
@@ -3692,121 +3690,6 @@ function populateAnnouncements() {
 	});
 }
 
-function createConfettiBurst(targetElement, opts = {}) {
-    try {
-        if (options.todo_confetti === false) return;
-
-        const count = opts.count || 48;
-        const colors = opts.colors || ['#ff4d4f', '#ffc107', '#28a745', '#17a2b8', '#6f42c1', '#ff6b6b', '#ff8a65', '#ffd54f'];
-        const rect = targetElement.getBoundingClientRect();
-        const container = document.createElement('div');
-        container.className = 'canvasrefined-confetti-container';
-        container.style.position = 'fixed';
-        container.style.left = '0';
-        container.style.top = '0';
-        container.style.pointerEvents = 'none';
-        container.style.overflow = 'visible';
-        container.style.zIndex = '2147483647';
-        document.body.appendChild(container);
-
-        const originX = rect.left + rect.width / 2;
-        const originY = rect.top + rect.height * 0.35;
-        const particles = [];
-
-        for (let i = 0; i < count; i++) {
-            const el = document.createElement('div');
-            el.className = 'canvasrefined-confetti';
-            const w = 4 + Math.floor(Math.random() * 7); // smaller pieces
-            const h = Math.max(3, Math.floor(w * (0.4 + Math.random() * 0.8)));
-            el.style.position = 'absolute';
-            el.style.width = w + 'px';
-            el.style.height = h + 'px';
-            el.style.background = colors[Math.floor(Math.random() * colors.length)];
-            el.style.left = (originX - w / 2) + 'px';
-            el.style.top = (originY - h / 2) + 'px';
-            el.style.opacity = '1';
-            el.style.borderRadius = Math.random() > 0.75 ? '50%' : '2px';
-            el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.18)';
-            el.style.transformOrigin = 'center center';
-            el.style.willChange = 'transform, opacity';
-            container.appendChild(el);
-
-            const duration = 850 + Math.floor(Math.random() * 500);
-            const delay = Math.floor(Math.random() * 90);
-            const spread = opts.spread || 110;
-            const horizontalBias = (Math.random() - 0.5) * 2;
-
-            // Arc stays lower and wider than the old cone-shaped burst.
-            const endX = originX + horizontalBias * (spread * (0.7 + Math.random() * 0.6));
-            const endY = originY - (16 + Math.random() * 34);
-            const ctrlX = originX + horizontalBias * (spread * 0.25) + (Math.random() - 0.5) * 14;
-            const ctrlY = originY - (30 + Math.random() * 55);
-
-            particles.push({
-                el,
-                delay,
-                duration,
-                originX,
-                originY,
-                ctrlX,
-                ctrlY,
-                endX,
-                endY,
-                rotate: (Math.random() * 260) - 130,
-                scale: 0.8 + Math.random() * 0.5,
-            });
-        }
-
-        const startTime = performance.now();
-        let rafId = null;
-
-        const animate = now => {
-            let active = false;
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const particle = particles[i];
-                const elapsed = now - startTime - particle.delay;
-                if (elapsed < 0) {
-                    active = true;
-                    continue;
-                }
-
-                const progress = Math.min(1, elapsed / particle.duration);
-                const eased = 1 - Math.pow(1 - progress, 3);
-
-                const x = (1 - eased) * (1 - eased) * particle.originX + 2 * (1 - eased) * eased * particle.ctrlX + eased * eased * particle.endX;
-                const y = (1 - eased) * (1 - eased) * particle.originY + 2 * (1 - eased) * eased * particle.ctrlY + eased * eased * particle.endY;
-
-                particle.el.style.transform = `translate(${Math.round(x - particle.originX)}px, ${Math.round(y - particle.originY)}px) rotate(${particle.rotate * eased}deg) scale(${particle.scale * (1 - eased * 0.15)})`;
-                particle.el.style.opacity = String(1 - progress);
-
-                if (progress < 1) {
-                    active = true;
-                } else {
-                    particle.el.remove();
-                    particles.splice(i, 1);
-                }
-            }
-
-            if (active) {
-                rafId = requestAnimationFrame(animate);
-            } else {
-                try { container.remove(); } catch (e) { /* ignore */ }
-                if (rafId) cancelAnimationFrame(rafId);
-            }
-        };
-
-        rafId = requestAnimationFrame(animate);
-
-        // cleanup container after animations
-        setTimeout(() => {
-            try { container.remove(); } catch (e) { /* ignore */ }
-        }, 2400);
-    } catch (e) {
-        console.error('confetti error', e);
-    }
-}
-
 // --- Local "incomplete" pins -----------------------------------------------
 // Canvas records real submissions server-side and offers no API to un-submit,
 // so an assignment the user actually handed in can never leave the Completed
@@ -3844,21 +3727,13 @@ function markAs(item, element, makeComplete) {
     // Canvas's /planner/overrides endpoint occasionally returns 400 (Bad
     // Request) for both custom tasks and normal tasks, even though the action
     // is actually applied server-side shortly after. When that happens the
-    // item would neither visually mark nor animate, and would later appear
+    // item would not visually update, and would later appear
     // "secretly complete" on reload. To avoid that confusing UX, we update the
     // UI as if the request succeeded immediately, and fire the actual API
     // call in the background for persistence.
     item.planner_override = item.planner_override || {};
     item.planner_override.marked_complete = completeState;
-    element.style.transform = "translate(100%)";
-    element.style.opacity = "0";
-
-    // fire confetti only when marking complete (not when unmarking)
-    if (completeState) {
-        try { createConfettiBurst(element); } catch (e) { console.error('confetti trigger error', e); }
-    }
-
-    // update progress rings immediately so they animate while the item slides/fades
+    // Reflect task completion immediately, including progress indicators.
     const progressPlaceholder = document.getElementById("better-todo-progress-placeholder");
     if (progressPlaceholder && typeof assignments?.then === 'function' && progressRingsEnabled()) {
         assignments.then(data => {
@@ -3878,10 +3753,8 @@ function markAs(item, element, makeComplete) {
         });
     }
 
-    setTimeout(() => {
-        clearTodoList();
-        createTodoSections(document.querySelector("#canvasrefined-todo-list"));
-    }, 400);
+    clearTodoList();
+    createTodoSections(document.querySelector("#canvasrefined-todo-list"));
 
     // --- Persistence (background, best-effort) ---
     // Toggle the planner override server-side. The override id returned by a
@@ -4140,7 +4013,7 @@ async function loadBetterTodo() {
                                     }
                                     preview.style.display = "block";
                                 }
-                            }, 250);
+                            }, 0);
                         });
 
                         listItem.addEventListener("mouseleave", () => {
@@ -4724,7 +4597,7 @@ function runiframeChecker() {
                 style.id = "darkcss";
                 doc.documentElement.prepend(style);
             }
-            style.textContent = generateDarkModeCSS();
+            style.textContent = generateDarkModeCSS() + "\nhtml, *, *::before, *::after {animation:none !important;transition:none !important;scroll-behavior:auto !important;}";
             doc.body.classList.toggle("canvasrefined--darkmode--enabled", isDarkModeActive());
         } catch (_) { /* Cross-origin or detached frame. */ }
     };
