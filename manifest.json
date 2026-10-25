@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Canvas Enhanced",
   "description": "Even More Feature packed extension for Canvas.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "icons": {
     "16": "icon/icon-16.png",
     "32": "icon/icon-32.png",
