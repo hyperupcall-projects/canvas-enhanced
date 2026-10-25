@@ -21,6 +21,16 @@ Canvas LMS leaves much to be desired. The most popular extension providing addit
 - Canvas search for all courses/modules/assignments
 
 
+## Canvas site access
+
+The extension only loads on `https://*.instructure.com/*`. It declares no
+all-sites host access, including optional permissions.
+
+For a custom Canvas domain in a locally loaded copy, add its exact HTTPS match
+pattern (for example, `https://canvas.school.edu/*`) to
+`content_scripts[0].matches` in `manifest.json`, reload the extension, and
+refresh Canvas. A popup setting cannot extend the manifest's allowed sites.
+
 ## Notes
 
 Compared to CanvasRefined, Canvas Enhanced reduces features and customization, opting for simplicity where possible.

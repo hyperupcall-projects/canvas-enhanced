@@ -576,14 +576,14 @@ function isDomainCanvasPage() {
         options = result;
         const domains = (result.custom_domain || []).filter(d => d && d !== "");
         const denied = result.custom_domain_denied || [];
-        if (domains.some(d => domain.includes(d))) {
+        if (domains.some(d => normalizeCanvasDomain(d) === window.location.hostname)) {
             startExtension();
             return;
         }
 
         // not in the list — no prompting/probing if the user turned auto detect
         // off, or already said no here; just run reminders
-        if (result.auto_detect_disabled === true || denied.some(d => domain.includes(d))) {
+        if (result.auto_detect_disabled === true || denied.some(d => normalizeCanvasDomain(d) === window.location.hostname)) {
             startReminderMode();
             return;
         }
@@ -645,7 +645,7 @@ function addCanvasDomain(courses) {
                 // the domain was just accepted — make sure it isn't on the
                 // "don't ask again" list
                 chrome.storage.sync.get(["custom_domain_denied"], deniedStorage => {
-                    const denied = (deniedStorage.custom_domain_denied || []).filter(d => !domain.includes(d));
+                    const denied = (deniedStorage.custom_domain_denied || []).filter(d => normalizeCanvasDomain(d) !== window.location.hostname);
                     chrome.storage.sync.set({ custom_domain: domains, custom_domain_denied: denied }).then(resolve);
                 });
             });
@@ -686,7 +686,7 @@ function showCanvasPrompt(courses) {
         dismiss();
         chrome.storage.sync.get(["custom_domain_denied"], storage => {
             const denied = storage.custom_domain_denied || [];
-            if (!denied.some(d => domain.includes(d))) denied.push(domain);
+            if (!denied.some(d => normalizeCanvasDomain(d) === window.location.hostname)) denied.push(domain);
             chrome.storage.sync.set({ custom_domain_denied: denied });
         });
         startReminderMode();

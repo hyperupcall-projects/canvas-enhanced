@@ -24,9 +24,10 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*/*"
+        "https://*.instructure.com/*"
       ],
       "js": [
+        "js/domain-access.js",
         "css/darkmodecss.js",
         "js/themes.js",
         "js/markdown.js",
@@ -39,8 +40,7 @@
     }
   ],
   "permissions": [
-    "storage",
-    "unlimitedStorage"
+    "storage"
   ],
   "default_locale": "en",
   "browser_specific_settings": {
