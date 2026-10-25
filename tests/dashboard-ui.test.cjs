@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-const popup = fs.readFileSync('js/popup.js', 'utf8');
+const settings = fs.readFileSync('js/settings.js', 'utf8');
 const content = fs.readFileSync('js/content.js', 'utf8');
 
 test('saved themes render on setup and local changes, ignoring stale reads and preserving renames', () => {
@@ -26,9 +26,9 @@ test('saved themes render on setup and local changes, ignoring stale reads and p
             onChanged: { addListener: fn => { onChanged = fn; } }
         } }, UNSAVED_THEME_KEY: 'unsaved', getRelativeDate: () => ({ time: '1 min' })
     });
-    vm.runInContext(popup.slice(popup.indexOf('function setupSavedThemes()'), popup.indexOf('async function importTheme(')), context);
+    vm.runInContext(settings.slice(settings.indexOf('function setupSavedThemes()'), settings.indexOf('async function importTheme(')), context);
     const state = name => ({ saved_themes: { 123: { custom_cards: [] } }, saved_theme_names: { 123: name } });
-    const name = () => target.children[0].children[0].children[0].textContent;
+    const name = () => target.children[0].children[1].children[0].textContent;
     context.setupSavedThemes();
     assert.equal(reads.length, 1, 'initial load reads saved themes');
     reads.shift()(state('My Kirby'));

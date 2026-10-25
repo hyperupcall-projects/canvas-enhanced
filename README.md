@@ -29,7 +29,7 @@ all-sites host access, including optional permissions.
 For a custom Canvas domain in a locally loaded copy, add its exact HTTPS match
 pattern (for example, `https://canvas.school.edu/*`) to
 `content_scripts[0].matches` in `manifest.json`, reload the extension, and
-refresh Canvas. A popup setting cannot extend the manifest's allowed sites.
+refresh Canvas. A settings-page option cannot extend the manifest's allowed sites.
 
 ## Notes
 

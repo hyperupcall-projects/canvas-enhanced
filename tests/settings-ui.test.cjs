@@ -33,7 +33,7 @@ test('settings appearance follows saved modes and live OS changes', () => {
 });
 
 test('settings and theme exports contain separate fields and keep personal data out', async () => {
-    const popup = fs.readFileSync('js/popup.js', 'utf8');
+    const settings = fs.readFileSync('js/settings.js', 'utf8');
     const elements = new Map();
     function element(id) {
         if (!elements.has(id)) elements.set(id, { id, value: '', textContent: id, checked: false, listeners: {}, addEventListener(type, fn) { this.listeners[type] = fn; } });
@@ -52,12 +52,12 @@ test('settings and theme exports contain separate fields and keep personal data 
         chrome: { storage: { sync: { get: async keys => Object.fromEntries(keys.filter(key => key in stored).map(key => [key, stored[key]])) } } },
         sendFromPopup: async () => null, setTimeout, navigator: {}, displayAlert: () => {}
     });
-    vm.runInContext(popup.slice(0, popup.indexOf('const apiurl')), context);
-    vm.runInContext(popup.slice(popup.indexOf('// Settings exports omit'), popup.indexOf('const trackedThemeOptions')), context);
+    vm.runInContext(settings.slice(0, settings.indexOf('const apiurl')), context);
+    vm.runInContext(settings.slice(settings.indexOf('// Settings exports omit'), settings.indexOf('const trackedThemeOptions')), context);
     context.setupExports();
     await element('settings-export').listeners.click();
-    const settings = JSON.parse(element('settings-export-output').value);
-    assert.deepEqual(settings, { assignments_due: true, better_todo: false, gpa_calc_bounds: stored.gpa_calc_bounds });
+    const exportedSettings = JSON.parse(element('settings-export-output').value);
+    assert.deepEqual(exportedSettings, { assignments_due: true, better_todo: false, gpa_calc_bounds: stored.gpa_calc_bounds });
     await new Promise(resolve => setImmediate(resolve));
     const theme = JSON.parse(element('export-output').value);
     assert.deepEqual(theme, {
@@ -68,7 +68,7 @@ test('settings and theme exports contain separate fields and keep personal data 
 });
 
 test('card assignment and grade sub-options stay visible and disable when the parent toggle is off', () => {
-    const popup = fs.readFileSync('js/popup.js', 'utf8');
+    const settings = fs.readFileSync('js/settings.js', 'utf8');
     const inputs = [
         { id: 'assignment_date_format', disabled: false },
         { id: 'card_overdues', disabled: false },
@@ -92,7 +92,7 @@ test('card assignment and grade sub-options stay visible and disable when the pa
             }
         }
     });
-    vm.runInContext(popup.slice(popup.indexOf('function setSubOptionsDisabled'), popup.indexOf('function setup()')), context);
+    vm.runInContext(settings.slice(settings.indexOf('function setSubOptionsDisabled'), settings.indexOf('function setup()')), context);
     context.toggleSubOptionsVisibility('assignments_due', false);
     assert.equal(subOptions.style.display, '', 'card assignment options stay visible');
     assert.equal(inputs.every(el => el.disabled), true);
@@ -108,13 +108,13 @@ test('card assignment and grade sub-options stay visible and disable when the pa
 });
 
 test('course list is a visibility table and no longer renames courses', async () => {
-    const popup = fs.readFileSync('js/popup.js', 'utf8');
-    const html = fs.readFileSync('html/popup.html', 'utf8');
+    const settings = fs.readFileSync('js/settings.js', 'utf8');
+    const html = fs.readFileSync('html/settings.html', 'utf8');
     const content = fs.readFileSync('js/content.js', 'utf8');
     const cardsPanel = html.slice(html.indexOf('id="cards-panel"'), html.indexOf('id="todo-panel"'));
     assert.match(cardsPanel, /id="course-visibility"/);
     assert.doesNotMatch(cardsPanel, /id="card-grid"|id="card-edit-menu"/);
-    assert.doesNotMatch(popup, /card-name-input|card-code-input|Custom Name|Custom Code|showCardEditMenu/);
+    assert.doesNotMatch(settings, /card-name-input|card-code-input|Custom Name|Custom Code|showCardEditMenu/);
     const customize = content.slice(content.indexOf('function customizeCards'), content.indexOf('function calculateGPA2'));
     assert.doesNotMatch(customize, /cardOptions\.name|cardOptions\.code/);
     const created = content.match(/cards\[id\] = \{[^}]+\}/g);
@@ -145,7 +145,7 @@ test('course list is a visibility table and no longer renames courses', async ()
         } } },
         sendFromPopup: async () => null,
     });
-    vm.runInContext(popup.slice(popup.indexOf('let cardWrite'), popup.indexOf('// customization tab')), context);
+    vm.runInContext(settings.slice(settings.indexOf('let cardWrite'), settings.indexOf('// customization tab')), context);
     await context.displayAdvancedCards();
     const table = host.children[0];
     assert.equal(table.tagName, 'TABLE');
@@ -185,7 +185,7 @@ test('course list is a visibility table and no longer renames courses', async ()
 });
 
 test('dashboard card method uses the same switch markup as other options', () => {
-    const html = fs.readFileSync('html/popup.html', 'utf8');
+    const html = fs.readFileSync('html/settings.html', 'utf8');
     const cardsPanel = html.slice(html.indexOf('id="cards-panel"'), html.indexOf('id="todo-panel"'));
     const option = cardsPanel.match(/<div class="option" id="card_method_dashboard">[\s\S]*?<\/div>/);
     assert.ok(option, 'Cards tab should include a card_method_dashboard option');
@@ -193,7 +193,7 @@ test('dashboard card method uses the same switch markup as other options', () =>
     assert.match(option[0], /<input type="radio" id="on" name="card_method_dashboard">/);
     assert.match(option[0], /class="slider"/);
     assert.doesNotMatch(cardsPanel, /<input type="checkbox" id="card_method_dashboard"/);
-    const popup = fs.readFileSync('js/popup.js', 'utf8');
-    const switches = popup.match(/const syncedSwitches = \[([^\]]+)\]/)[1];
+    const settings = fs.readFileSync('js/settings.js', 'utf8');
+    const switches = settings.match(/const syncedSwitches = \[([^\]]+)\]/)[1];
     assert.match(switches, /'card_method_dashboard'/);
 });

@@ -187,7 +187,8 @@ chrome.storage.onChanged.addListener((changes) => {
 
 function displayErrors() {
     chrome.storage.local.get("errors", storage => {
-        storage["errors"].forEach(e => {
+        const errors = Array.isArray(storage.errors) ? storage.errors : [];
+        errors.forEach(e => {
             document.querySelector("#error_log_output").value += (e + "\n\n");
         })
     });
@@ -260,7 +261,7 @@ function setupProgressRingsSelect(initial) {
 }
 
 // Collapsible "More options" section for the Better Todo List sub-options.
-// Persists whether it's expanded so the popup reopens in the same state.
+// Persists whether it's expanded so the settings page reopens in the same state.
 function setupTodoMoreOptions(initial) {
     const wrap = document.getElementById("todo-more-options");
     const toggle = document.getElementById("todo-more-toggle");
@@ -318,29 +319,6 @@ function setupAppearanceMode() {
     });
     media.addEventListener("change", refresh);
     refresh();
-}
-
-function setupCardLimitInput(initial) {
-    const el = document.querySelector("#card_limit");
-    const toCount = (raw) => {
-        const n = parseInt(raw, 10);
-        if (!Number.isFinite(n)) return null;
-        return Math.min(40, Math.max(5, n));
-    };
-    let current = toCount(initial) ?? defaultOptions.sync.card_limit;
-    el.value = current;
-    // Changing the limit wipes saved cards, so only write when the number
-    // actually changes (on blur or Enter), not on every keystroke.
-    el.addEventListener("change", function () {
-        const next = toCount(this.value);
-        if (next == null || next === current) {
-            el.value = current;
-            return;
-        }
-        current = next;
-        el.value = next;
-        chrome.storage.sync.set({ "custom_cards": {}, "custom_cards_2": {}, "custom_cards_3": {}, "card_limit": next });
-    });
 }
 
 // Custom card style inputs (border, margin, width, height) fire `chrome.storage.sync.set` on every keystroke/arrow press.
@@ -512,11 +490,6 @@ function setup() {
 			},
 
 			{
-				identifier: "card_limit",
-				setup: (initial) => setupCardLimitInput(initial),
-			},
-
-			{
 				identifier: "cardRoundness",
 				setup: (initial) => setupCardRoundnessInput(initial),
 			},
@@ -610,6 +583,7 @@ function setup() {
 
     setupAppearanceMode();
     setupSavedThemes();
+    setupEditThemeDialog();
 
     // Keep category navigation visible while switching the panel below it.
     const tabButtons = Array.from(document.querySelectorAll('.more-options-container [role="tab"]'));
@@ -648,11 +622,6 @@ function setup() {
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const msg = chrome.i18n.getMessage(el.dataset.i18nTitle);
         if (msg) el.title = msg;
-    });
-
-    // activate dark mode inspector button
-    document.querySelector("#inspector-btn").addEventListener("click", async function () {
-        document.querySelector("#inspector-output").textContent = (await sendFromPopup("inspect"))["selectors"];
     });
 
     // activate storage dump button
@@ -792,39 +761,6 @@ function setup() {
     // TODO: maybe fix this at some point, idk what is causing the error here
     document.querySelectorAll(".preset-button.customization-button").forEach(btn => btn.addEventListener("click", changeToPresetCSS));
 
-    // Preview while dragging/typing; persist to Canvas when the edit completes.
-    const applyCardColors = async (gradient, preview) => {
-        let colors = [document.querySelector("#singleColorInput").value];
-        if (gradient) {
-            const sync = await chrome.storage.sync.get("custom_cards");
-            const count = Math.max(2, Object.values(sync.custom_cards || {}).filter(card => !card.hidden).length);
-            const from = document.querySelector("#gradientColorFrom").value;
-            const to = document.querySelector("#gradientColorTo").value;
-            colors = Array.from({ length: count }, (_, i) => getColorInGradient(i / (count - 1), from, to));
-        }
-        noteThemeEdit({ card_colors: colors });
-        if (!preview) chrome.storage.sync.set({ card_colors: colors });
-        sendFromPopup(preview ? "preview-card-colors" : "setcolors", colors);
-    };
-    [
-        ["singleColorInput", "singleColorText", false],
-        ["gradientColorFrom", "gradientColorFromText", true],
-        ["gradientColorTo", "gradientColorToText", true],
-    ].forEach(([pickerId, textId, gradient]) => {
-        const picker = document.getElementById(pickerId);
-        const text = document.getElementById(textId);
-        [picker, text].forEach(input => {
-            input.addEventListener("input", () => {
-                if (!/^#[a-f\d]{6}$/i.test(input.value)) return;
-                picker.value = text.value = input.value;
-                applyCardColors(gradient, true);
-            });
-            input.addEventListener("change", () => {
-                if (/^#[a-f\d]{6}$/i.test(input.value)) applyCardColors(gradient, false);
-            });
-        });
-    });
-
     // activate revert to original card colors button
     document.querySelector("#revert-colors").addEventListener("click", () => {
         chrome.storage.local.get("previous_colors", local => {
@@ -832,6 +768,14 @@ function setup() {
             // Guard against unset/expired-shape entries and the empty lists
             // old list-mode runs stored — sending [] would be a silent no-op.
             if (prev && Array.isArray(prev.colors) && prev.colors.length > 0) {
+                if (themeEditDraft) {
+                    themeEditDraft.card_colors = prev.colors;
+                    refreshPaletteSelection(prev.colors);
+                    refreshCardColors(prev.colors);
+                    sendFromPopup("preview-card-colors", prev.colors);
+                    updateEditThemeExport(true);
+                    return;
+                }
                 noteThemeEdit({ card_colors: prev.colors });
                 chrome.storage.sync.set({ card_colors: prev.colors });
                 sendFromPopup("setcolors", prev.colors);
@@ -850,6 +794,14 @@ function setup() {
             colors = local.saved_themes?.[activeThemeSource.key]?.card_colors;
         }
         if (!Array.isArray(colors) || colors.length === 0) return;
+        if (themeEditDraft) {
+            themeEditDraft.card_colors = colors;
+            refreshPaletteSelection(colors);
+            refreshCardColors(colors);
+            sendFromPopup("preview-card-colors", colors);
+            updateEditThemeExport(true);
+            return;
+        }
         noteThemeEdit({ card_colors: colors });
         chrome.storage.sync.set({ card_colors: colors });
         sendFromPopup("setcolors", colors);
@@ -864,6 +816,14 @@ function setup() {
             div.style.background = color;
         });
         btn.addEventListener("click", () => {
+            if (themeEditDraft) {
+                themeEditDraft.card_colors = colors;
+                refreshPaletteSelection(colors);
+                refreshCardColors(colors);
+                sendFromPopup("preview-card-colors", colors);
+                updateEditThemeExport(true);
+                return;
+            }
             noteThemeEdit({ card_colors: colors });
             chrome.storage.sync.set({ card_colors: colors });
             sendFromPopup("setcolors", colors);
@@ -1117,6 +1077,29 @@ function persistUnsavedTheme() {
     return operation;
 }
 
+let draftUnsavedTimer = null;
+
+// The edit popup previews changes on the live page, so mirror the edited theme
+// as an "Unsaved Theme" draft entry until the edit is saved or discarded.
+function scheduleDraftUnsaved() {
+    if (!themeEditDraft) return;
+    clearTimeout(draftUnsavedTimer);
+    draftUnsavedTimer = setTimeout(persistDraftUnsaved, 300);
+}
+
+function persistDraftUnsaved() {
+    clearTimeout(draftUnsavedTimer);
+    draftUnsavedTimer = null;
+    if (!themeEditDraft) return;
+    const snapshot = JSON.parse(JSON.stringify(themeEditDraft));
+    updateSavedThemes(state => {
+        state.saved_themes[UNSAVED_THEME_KEY] = snapshot;
+        state.saved_theme_names[UNSAVED_THEME_KEY] = "Unsaved Theme";
+        state.saved_theme_updated_at[UNSAVED_THEME_KEY] = Date.now();
+    }).then(() => displaySavedThemes())
+        .catch(error => console.warn("Canvas Enhanced: unable to save draft", error));
+}
+
 function themeSettingValue(key, value) {
     // Course discovery, grades, and course names are not theme edits.
     return key === "custom_cards"
@@ -1340,31 +1323,41 @@ function displaySavedThemes(force = false) {
         Object.entries(local.saved_themes || {}).forEach(([key, theme], index) => {
             const unsaved = key === UNSAVED_THEME_KEY;
             const name = unsaved ? "Unsaved Theme" : local.saved_theme_names?.[key] || `Theme ${index + 1}`;
-            const btn = makeElement("div", target, { className: "saved-theme" });
-            const select = makeElement("button", btn, { type: "button", className: "saved-theme-select", title: "Apply " + name });
-            makeElement("p", select, { className: "theme-button-title", textContent: name });
+            const row = makeElement("div", target, { className: "saved-theme" });
+            const thumb = makeElement("button", row, { type: "button", className: "saved-theme-thumb", title: "Apply " + name });
+            thumb.setAttribute("aria-label", "Apply " + name);
+            thumb.style.backgroundImage = `linear-gradient(#00000070, #00000070), url(${theme.custom_cards?.[0] || ""})`;
+            const info = makeElement("div", row, { className: "saved-theme-info" });
+            const title = makeElement("button", info, { type: "button", className: "saved-theme-title", textContent: name, title: "Rename " + name });
             const updated = new Date(unsaved ? local.saved_theme_updated_at?.[key] || Date.now() : Number(key));
-            makeElement("p", select, { className: "theme-button-creator", textContent: `${getRelativeDate(updated).time} ago` });
-            const actions = makeElement("div", btn, { className: "saved-theme-actions" });
-            const rename = makeElement("button", actions, { type: "button", className: "saved-theme-action", textContent: unsaved ? "Save as…" : "Rename" });
+            makeElement("p", info, { className: "theme-button-creator", textContent: `${getRelativeDate(updated).time} ago` });
+            const actions = makeElement("div", row, { className: "saved-theme-actions" });
+            const edit = makeElement("button", actions, { type: "button", className: "saved-theme-action", textContent: "Edit", title: "Edit " + name });
             const remove = makeElement("button", actions, { type: "button", className: "saved-theme-action", textContent: "Delete", title: "Delete " + name });
-            const form = makeElement("form", btn, { className: "saved-theme-rename", hidden: true });
+            const form = makeElement("form", row, { className: "saved-theme-rename", hidden: true });
             const input = makeElement("input", form, { type: "text", className: "card-input", value: unsaved ? "" : name, maxLength: 100, required: true });
             input.setAttribute("aria-label", "Theme name");
             makeElement("button", form, { type: "submit", className: "saved-theme-action", textContent: "Save" });
             const cancel = makeElement("button", form, { type: "button", className: "saved-theme-action", textContent: "Cancel" });
-            btn.style.backgroundImage = `linear-gradient(#00000070, #00000070), url(${theme.custom_cards?.[0] || ""})`;
-            select.addEventListener("click", () => importTheme(theme, { type: unsaved ? "unsaved" : "saved", key }));
-            rename.addEventListener("click", () => {
+
+            const apply = () => importTheme(theme, { type: unsaved ? "unsaved" : "saved", key });
+            thumb.addEventListener("click", event => { event.stopPropagation(); apply(); });
+            row.addEventListener("click", event => {
+                if (event.target.closest(".saved-theme-title, .saved-theme-actions, .saved-theme-rename")) return;
+                apply();
+            });
+
+            const startRename = () => {
                 form.hidden = false;
-                select.hidden = actions.hidden = true;
+                info.hidden = actions.hidden = true;
                 input.focus();
                 input.select();
-            });
+            };
+            title.addEventListener("click", event => { event.stopPropagation(); startRename(); });
             const cancelRename = () => {
                 form.hidden = true;
-                select.hidden = actions.hidden = false;
-                rename.focus();
+                info.hidden = actions.hidden = false;
+                title.focus();
             };
             cancel.addEventListener("click", cancelRename);
             input.addEventListener("keydown", event => {
@@ -1376,7 +1369,12 @@ function displaySavedThemes(force = false) {
                 try { await renameSavedTheme(key, input.value); }
                 catch (error) { displayAlert(true, "Unable to rename this theme. Please try again."); }
             });
-            remove.addEventListener("click", async () => {
+            edit.addEventListener("click", event => {
+                event.stopPropagation();
+                openEditThemeDialog(key, theme, name);
+            });
+            remove.addEventListener("click", async event => {
+                event.stopPropagation();
                 try {
                     await persistUnsavedTheme();
                     await updateSavedThemes(state => {
@@ -1392,6 +1390,119 @@ function displaySavedThemes(force = false) {
                 } catch (error) { displayAlert(true, "Unable to delete this theme. Please try again."); }
             });
         });
+    });
+}
+
+let editingThemeKey = null;
+let editingThemeDraft = null;
+// While a saved theme is open in the editor, the Theme Values controls write to
+// this draft instead of the live theme.
+let themeEditDraft = null;
+
+function openEditThemeDialog(key, theme, name) {
+    const dialog = document.getElementById("edit-theme-dialog");
+    if (!dialog) return;
+    // Persist any pending edit to the live theme before switching to the draft.
+    if (presetChangeTimeout) saveThemeValues();
+    editingThemeKey = key;
+    editingThemeDraft = JSON.parse(JSON.stringify(theme || {}));
+    themeEditDraft = editingThemeDraft;
+    const heading = document.getElementById("edit-theme-heading");
+    if (heading) heading.textContent = "Edit " + name;
+    const error = document.getElementById("edit-theme-error");
+    if (error) error.textContent = "";
+    themeValues = readThemeValues(editingThemeDraft.dark_preset);
+    refreshThemeInputs();
+    refreshPaletteSelection(editingThemeDraft.card_colors);
+    refreshCardColors(editingThemeDraft.card_colors);
+    updateEditThemeExport();
+    dialog.showModal();
+}
+
+function updateEditThemeExport(markUnsaved = false) {
+    const output = document.getElementById("export-output");
+    if (output) output.value = JSON.stringify(editingThemeDraft);
+    if (markUnsaved) scheduleDraftUnsaved();
+}
+
+// Highlight the palette that matches the theme's current card colors.
+function refreshPaletteSelection(colors) {
+    const list = Array.isArray(colors) ? colors : [];
+    document.querySelectorAll(".preset-button.colors-button").forEach(btn => {
+        const palette = getPalette(btn.querySelector("p").textContent);
+        const selected = palette.length === list.length &&
+            palette.every((color, i) => color.toLowerCase() === String(list[i]).toLowerCase());
+        btn.classList.toggle("selected", selected);
+    });
+}
+
+// Show the per-class card colors the palette applied, so they are editable in
+// the Theme Values list alongside the other palette colors.
+function refreshCardColors(colors) {
+    const host = document.getElementById("theme-card-color-list");
+    if (!host) return;
+    host.textContent = "";
+    const list = Array.isArray(colors) ? colors : [];
+    if (list.length === 0) {
+        makeElement("span", host, { className: "sub-text", textContent: "No card colors yet \u2014 pick a palette above." });
+        return;
+    }
+    list.forEach((color, index) => {
+        const input = makeElement("input", host, { type: "color", className: "card-input", value: color });
+        input.title = color;
+        input.addEventListener("input", () => {
+            if (!themeEditDraft) return;
+            if (!Array.isArray(themeEditDraft.card_colors)) themeEditDraft.card_colors = [...list];
+            themeEditDraft.card_colors[index] = input.value;
+            input.title = input.value;
+            refreshPaletteSelection(themeEditDraft.card_colors);
+            sendFromPopup("preview-card-colors", themeEditDraft.card_colors);
+            updateEditThemeExport(true);
+        });
+    });
+}
+
+function setupEditThemeDialog() {
+    const dialog = document.getElementById("edit-theme-dialog");
+    if (!dialog) return;
+    document.getElementById("cancel-edit-theme").addEventListener("click", () => dialog.close());
+    document.getElementById("close-edit-theme").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("close", () => {
+        themeEditDraft = null;
+        editingThemeKey = null;
+        editingThemeDraft = null;
+        // Reload the live theme so later edits do not write the draft's values,
+        // and undo any live preview the draft pushed to the Canvas tab.
+        chrome.storage.sync.get(["dark_preset", "card_colors"], storage => {
+            if (presetChangeTimeout) return;
+            themeValues = readThemeValues(storage.dark_preset);
+            refreshThemeInputs();
+            sendFromPopup("preview-theme-values", themeValues);
+            if (Array.isArray(storage.card_colors)) sendFromPopup("preview-card-colors", storage.card_colors);
+        });
+    });
+    document.getElementById("save-edit-theme").addEventListener("click", async () => {
+        if (!editingThemeKey || !editingThemeDraft) return;
+        const key = editingThemeKey;
+        const draft = editingThemeDraft;
+        try {
+            await updateSavedThemes(state => {
+                if (!state.saved_themes[key]) return;
+                state.saved_themes[key] = draft;
+                // The edit is now saved into its theme, so the draft entry that
+                // the live preview created is no longer needed.
+                if (key !== UNSAVED_THEME_KEY) {
+                    delete state.saved_themes[UNSAVED_THEME_KEY];
+                    delete state.saved_theme_names[UNSAVED_THEME_KEY];
+                    delete state.saved_theme_updated_at[UNSAVED_THEME_KEY];
+                }
+            });
+            if (activeThemeSource?.key === key) await importTheme(draft, activeThemeSource);
+            displaySavedThemes(true);
+            dialog.close();
+        } catch (error) {
+            document.getElementById("edit-theme-error").textContent = "Unable to save this theme. Please try again.";
+        }
     });
 }
 
@@ -1672,21 +1783,6 @@ function getPalette(name) {
     return colors[name] || [];
 }
 
-function componentToHex(c) {
-    var hex = c.toString(16);
-    return hex.length == 1 ? "0" + hex : hex;
-}
-
-function getColorInGradient(d, from, to) {
-    let pat = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
-    var exec1 = pat.exec(from);
-    var exec2 = pat.exec(to);
-    let a1 = [parseInt(exec1[1], 16), parseInt(exec1[2], 16), parseInt(exec1[3], 16)];
-    let a2 = [parseInt(exec2[1], 16), parseInt(exec2[2], 16), parseInt(exec2[3], 16)];
-    let rgb = a1.map((x, i) => Math.floor(a1[i] + d * (a2[i] - a1[i])));
-    return "#" + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
-}
-
 function setThemeValueInput(input, value) {
     input.value = value || "";
     input.title = value || "No override — Canvas controls this value";
@@ -1739,6 +1835,11 @@ let presetChangeTimeout = null;
 function saveThemeValues() {
     clearTimeout(presetChangeTimeout);
     presetChangeTimeout = null;
+    if (themeEditDraft) {
+        themeEditDraft.dark_preset = { ...themeValues };
+        updateEditThemeExport();
+        return;
+    }
     if (themeValues) return chrome.storage.sync.set({ dark_preset: { ...themeValues } });
 }
 
@@ -1829,6 +1930,12 @@ function refreshColors() {
 
 function changeCSS(name, color) {
     themeValues[name] = color;
+    if (themeEditDraft) {
+        themeEditDraft.dark_preset = { ...themeValues };
+        sendFromPopup("preview-theme-values", { ...themeValues });
+        updateEditThemeExport(true);
+        return;
+    }
     noteThemeEdit({ dark_preset: { ...themeValues } });
     sendFromPopup("preview-theme-values", { ...themeValues });
     clearTimeout(presetChangeTimeout);
@@ -1860,6 +1967,12 @@ function applyPreset(preset) {
     clearTimeout(presetChangeTimeout);
     presetChangeTimeout = null;
     themeValues = readThemeValues(preset);
+    if (themeEditDraft) {
+        themeEditDraft.dark_preset = { ...themeValues };
+        sendFromPopup("preview-theme-values", themeValues);
+        updateEditThemeExport(true);
+        return;
+    }
     noteThemeEdit({ dark_preset: { ...themeValues } });
     sendFromPopup("preview-theme-values", themeValues);
     chrome.storage.sync.set({ "dark_preset": themeValues }).then(() => refreshColors());
@@ -1875,19 +1988,22 @@ function makeElement(element, location, options) {
 }
 
 async function sendFromPopup(message, options = {}) {
-
-    let response = new Promise((resolve, reject) => {
-        chrome.tabs.query({ currentWindow: true }).then(async tabs => {
-            for (let i = 0; i < tabs.length; i++) {
-                try {
-                    let res = await chrome.tabs.sendMessage(tabs[i].id, { "message": message, "options": options });
-                    if (res) resolve(res);
-                } catch (e) {
-                }
+    const sendTo = async query => {
+        const tabs = await chrome.tabs.query(query);
+        let response = null;
+        for (const tab of tabs) {
+            try {
+                const res = await chrome.tabs.sendMessage(tab.id, { "message": message, "options": options });
+                if (res && response === null) response = res;
+            } catch (e) {
+                // This tab is not running the content script.
             }
-            resolve(null);
-        });
-    })
-
-    return await response;
+        }
+        return response;
+    };
+    // Prefer a Canvas tab in the settings window, but fall back to any window so
+    // the settings page still reaches Canvas when it lives in its own window.
+    const sameWindow = await sendTo({ currentWindow: true });
+    if (sameWindow !== null) return sameWindow;
+    return await sendTo({});
 }

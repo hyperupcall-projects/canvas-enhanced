@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const popup = fs.readFileSync('js/popup.js', 'utf8');
+const settings = fs.readFileSync('js/settings.js', 'utf8');
 const content = fs.readFileSync('js/content.js', 'utf8');
 
 test('No Theme resets appearance defaults and images while preserving course data and feature preferences', async () => {
@@ -28,9 +28,9 @@ test('No Theme resets appearance defaults and images while preserving course dat
         sendFromPopup: (...args) => messages.push(args), refreshThemeInputs: () => {},
         displayAlert: (_, text) => assert.fail(text),
     });
-    vm.runInContext(popup.slice(0, popup.indexOf('sendFromPopup("getCards")')), context);
-    vm.runInContext(popup.slice(popup.indexOf('function emptyThemeValues()'), popup.indexOf('let highContrastWarningRequest')), context);
-    vm.runInContext(popup.slice(popup.indexOf('async function importTheme('), popup.indexOf('function updateCards(')), context);
+    vm.runInContext(settings.slice(0, settings.indexOf('sendFromPopup("getCards")')), context);
+    vm.runInContext(settings.slice(settings.indexOf('function emptyThemeValues()'), settings.indexOf('let highContrastWarningRequest')), context);
+    vm.runInContext(settings.slice(settings.indexOf('async function importTheme('), settings.indexOf('function updateCards(')), context);
     await context.importTheme(context.noThemeSettings(), { type: 'builtin', key: 'No Theme' });
     assert.equal(stored.cardWidth, 262);
     assert.equal(stored.cardHeight, 146);

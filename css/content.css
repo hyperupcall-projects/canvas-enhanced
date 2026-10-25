@@ -129,12 +129,7 @@
 .canvasrefined-gpa-header {font-size:16px;font-weight: bold;padding: 0;margin: 0;}
 .canvasrefined-gpa-card {width: 262px; box-shadow: none;border-radius:4px;margin: 36px 0 0 36px;display: inline-block;padding: 18px;box-sizing: border-box;vertical-align: top;}
 .canvasrefined-gpa-card p {margin: 0;}
-/* Dashboard header: summary sits just left of the ⋮ options button. */
-.ic-Dashboard-header:has(.canvasrefined-gpa-header-mount),
-.ic-Dashboard-header__layout:has(.canvasrefined-gpa-header-mount),
-.ic-Dashboard-header__actions:has(.canvasrefined-gpa-header-mount) {
-    overflow: visible;
-}
+/* Keep the compact GPA entry point beside the dashboard options. */
 .ic-Dashboard-header__actions:has(.canvasrefined-gpa-header-mount) {
     display: flex;
     align-items: center;
@@ -145,66 +140,113 @@
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
-    position: relative;
-    vertical-align: middle;
-    /* Eat leftover space on the left so the pill stays against the ⋮ button. */
     margin-left: auto;
     margin-right: 8px;
 }
-.canvasrefined-gpa-header-mount .canvasrefined-gpa-card {
-    width: auto;
+.canvasrefined-gpa-header-mount[hidden], .canvasrefined-gpa-view-btn[hidden] {
+    display: none;
+}
+.canvasrefined-gpa-view-btn {
+    margin: 36px 0 0 36px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.canvasrefined-gpa-header-mount .canvasrefined-gpa-view-btn {
     margin: 0;
-    padding: 6px 14px;
+}
+.canvasrefined-gpa-customize-btn {
+    display: inline-flex;
+    align-items: center;
+    margin: 36px 8px 0 8px;
+    padding: 6px 12px;
+    border: 1px solid var(--bcborders, #c7cdd1);
+    border-radius: 6px;
+    background: var(--bcbackground-2, #f5f7f8);
+    color: var(--bctext-0, #2d3b45);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    line-height: 1;
+    white-space: nowrap;
+    vertical-align: top;
+    box-sizing: border-box;
+}
+.ic-Dashboard-header .canvasrefined-gpa-customize-btn {
+    margin: 0 8px 0 0;
+}
+.canvasrefined-gpa-customize-btn:hover {
+    background: var(--bcbackground-1, #ececec);
+    border-color: var(--bctext-2, #9aa3ab);
+}
+/* Native dialog supplies Escape, focus trapping, and focus restoration. */
+.canvasrefined-gpa-dialog {
+    width: 760px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - 48px);
+    box-sizing: border-box;
+    margin: auto;
+    padding: 24px;
+    overflow: auto;
+    border: 1px solid var(--bcborders, #c7cdd1);
+    border-radius: 8px;
+    background: var(--bcbackground-0, #fff);
+    color: var(--bctext-0, #2d3b45);
+    font-family: inherit;
+    font-size: 14px;
+}
+.canvasrefined-gpa-dialog::backdrop {
+    background: rgb(0 0 0 / 45%);
+}
+.canvasrefined-gpa-dialog-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 16px;
-    white-space: nowrap;
-    vertical-align: middle;
+    margin-bottom: 20px;
 }
-.canvasrefined-gpa-header-mount .canvasrefined-gpa-card > div {
-    display: flex;
-    align-items: baseline;
-    gap: 14px;
-}
-.canvasrefined-gpa-header-mount .canvasrefined-gpa-card > div > div p {
-    display: inline;
-}
-.canvasrefined-gpa-header-mount .canvasrefined-gpa-card > div > div p + p {
-    margin-left: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--bctext-1, #5b6770);
-}
-.canvasrefined-gpa-header-mount #canvasrefined-gpa-unweighted,
-.canvasrefined-gpa-header-mount #canvasrefined-gpa-weighted,
-.canvasrefined-gpa-header-mount #canvasrefined-gpa-cumulative {
-    font-size: 16px;
-    margin-top: 0;
-}
-.canvasrefined-gpa-header-mount .canvasrefined-gpa-edit-btn {
-    width: auto;
-    margin-top: 0;
-    padding: 4px 10px;
-    white-space: nowrap;
-    flex: 0 0 auto;
-}
-.canvasrefined-gpa-header-mount .canvasrefined-gpa {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
-    z-index: 30;
+.canvasrefined-gpa-dialog-header h2 {
     margin: 0;
-    width: max-content;
-    max-width: min(760px, calc(100vw - 32px));
-    max-height: min(70vh, 560px);
-    overflow: auto;
-    background: var(--bcbackground-1, #fff);
-    color: var(--bctext-0, #2d3b45);
-    box-shadow: none !important;
+    color: inherit;
+    font-size: 22px;
+    line-height: 1.3;
 }
-.canvasrefined-gpa-header-mount .canvasrefined-gpa-courses {
-    min-width: 0;
+.canvasrefined-gpa-dialog .canvasrefined-gpa-card {
+    display: block;
+    width: 100%;
+    margin: 0 0 24px;
+    padding: 16px;
+}
+.canvasrefined-gpa-dialog .canvasrefined-gpa-card > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 32px;
+}
+.canvasrefined-gpa-dialog .canvasrefined-gpa {
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: visible;
+}
+.canvasrefined-gpa-dialog .canvasrefined-gpa-courses-container {
+    overflow-x: auto;
+    margin-top: 12px;
+}
+.canvasrefined-gpa-dialog .canvasrefined-gpa-courses {
+    min-width: 100%;
     width: max-content;
+}
+.canvasrefined-gpa-dialog .canvasrefined-gpa-course,
+.canvasrefined-gpa-dialog #canvasrefined-cumulative-gpa {
+    gap: 4px;
+}
+.canvasrefined-gpa-dialog .canvasrefined-gpa-name {
+    flex-shrink: 0;
 }
 #cumulative-gpa .canvasrefined-gpa-name {font-weight:bold;}
 #canvasrefined-gpa-unweighted, #canvasrefined-gpa-weighted, #canvasrefined-gpa-cumulative {font-size: 24px; font-weight: bold;margin-top: 10px}
@@ -591,6 +633,7 @@
 }
 :root.canvasrefined-theme-active:has(.ic-app-header) :is(.btn, .Button):not(.ic-DashboardCard__header-button):hover,
 .canvasrefined-custom-btn:hover, .canvasrefined-gpa-edit-btn:hover,
+.canvasrefined-gpa-customize-btn:hover,
 .extension-linkpreview:hover {
     background-color: var(--bcbackground-2, #dcdcdc) !important;
 }
@@ -635,11 +678,11 @@
 
 /* Theme-aware hover feedback for Canvas controls and extension surfaces. */
 :root.canvasrefined-theme-active:has(.ic-app-header) :is(.btn, .Button, .ic-DashboardCard):not(.ic-DashboardCard__header-button):not(:disabled):not([aria-disabled="true"]):hover,
-:is(.canvasrefined-custom-btn, .canvasrefined-gpa-edit-btn,
+:is(.canvasrefined-custom-btn, .canvasrefined-gpa-edit-btn, .canvasrefined-gpa-customize-btn,
 .canvasrefined-todo-label-btn, .extension-linkpreview, .canvasrefined-gpa-card):not(:disabled):hover {
     border-color: color-mix(in srgb, var(--bcborders, #ccc) 70%, var(--bctext-0, #333)) !important;
 }
-:is(.canvasrefined-custom-btn, .canvasrefined-gpa-edit-btn,
+:is(.canvasrefined-custom-btn, .canvasrefined-gpa-edit-btn, .canvasrefined-gpa-customize-btn,
 .canvasrefined-todo-label-btn, .extension-linkpreview):not(:disabled):hover {
     box-shadow: 0 2px 5px rgb(0 0 0 / 18%) !important;
 }

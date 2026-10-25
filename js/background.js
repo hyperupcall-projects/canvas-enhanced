@@ -1,3 +1,19 @@
+// The toolbar button has no popup, so clicking it opens the settings page in a
+// tab. The in-page "Customize" button asks for the same over runtime messaging.
+function openSettingsPage() {
+    chrome.tabs.create({ url: chrome.runtime.getURL("html/settings.html") });
+}
+
+chrome.action.onClicked.addListener(openSettingsPage);
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request && request.message === "canvasrefined:open-settings") {
+        openSettingsPage();
+        sendResponse(true);
+    }
+    return false;
+});
+
 chrome.runtime.onInstalled.addListener(function () {
 
     let default_options = {

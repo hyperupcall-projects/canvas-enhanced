@@ -61,7 +61,7 @@ input::placeholder, textarea::placeholder {color: var(--settings-muted); opacity
 
 .cr-info-bubble-text {border-color: var(--settings-border);}
 
-/* Pure-inspired shared foundation for the popup and welcome page. */
+/* Pure-inspired shared foundation for the settings page and welcome page. */
 :root {
     --settings-button: #e6e6e6;
     --settings-primary: #0078e7;

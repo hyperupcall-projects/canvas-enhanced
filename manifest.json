@@ -14,7 +14,6 @@
       "19": "icon/icon-19.png",
       "38": "icon/icon-38.png"
     },
-    "default_popup": "html/popup.html",
     "default_title": "Canvas Enhanced"
   },
   "background": {

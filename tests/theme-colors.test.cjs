@@ -97,7 +97,7 @@ test('sidebar URL fragments are not interpreted as palette colors', () => {
 });
 
 test('selecting a built-in theme preserves Light / Dark / System', async () => {
-    const popup = fs.readFileSync('js/popup.js', 'utf8');
+    const settings = fs.readFileSync('js/settings.js', 'utf8');
     let saved;
     const imports = vm.createContext({
         persistUnsavedTheme: async () => {}, themeSourceReady: Promise.resolve(),
@@ -110,7 +110,7 @@ test('selecting a built-in theme preserves Light / Dark / System', async () => {
         readThemeValues: preset => ({ ...preset }), sendFromPopup: () => {},
         refreshThemeInputs: () => {}, displayAlert: () => { throw new Error('Import failed'); }
     });
-    vm.runInContext(popup.slice(popup.indexOf('async function importTheme('), popup.indexOf('function updateCards(')), imports);
+    vm.runInContext(settings.slice(settings.indexOf('async function importTheme('), settings.indexOf('function updateCards(')), imports);
     await imports.importTheme(api.themes[0].exports, { type: 'builtin' });
     assert.ok(!Object.hasOwn(saved, 'dark_mode'));
     assert.ok(!Object.hasOwn(saved, 'device_dark'));
