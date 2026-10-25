@@ -32,6 +32,9 @@
   "condensed_cards": {
     "message": "Cartões condensados"
   },
+  "card_method_dashboard": {
+    "message": "Obter cartões ativos do painel"
+  },
   "disable_color": {
     "message": "Desativar sobreposição de cores"
   },
@@ -70,9 +73,6 @@
   },
   "grade_hover": {
     "message": "Mostrar apenas ao passar o mouse"
-  },
-  "card_letter": {
-    "message": "Mostrar nota em letra"
   },
   "due": {
     "message": "Devido"

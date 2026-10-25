@@ -32,6 +32,9 @@
   "condensed_cards": {
     "message": "浓缩卡"
   },
+  "card_method_dashboard": {
+    "message": "从仪表板获取活动卡片"
+  },
   "disable_color": {
     "message": "禁用颜色叠加"
   },
@@ -70,9 +73,6 @@
   },
   "grade_hover": {
     "message": "仅在悬停时显示"
-  },
-  "card_letter": {
-    "message": "显示字母成绩"
   },
   "due": {
     "message": "到期的"

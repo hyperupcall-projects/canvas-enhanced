@@ -32,6 +32,9 @@
   "condensed_cards": {
     "message": "凝縮カード"
   },
+  "card_method_dashboard": {
+    "message": "ダッシュボードからアクティブなカードを取得"
+  },
   "disable_color": {
     "message": "カラーオーバーレイを無効にする"
   },
@@ -70,9 +73,6 @@
   },
   "grade_hover": {
     "message": "ホバー時のみ表示"
-  },
-  "card_letter": {
-    "message": "成績をアルファベットで表示"
   },
   "due": {
     "message": "期限"

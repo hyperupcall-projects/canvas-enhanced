@@ -1,4 +1,6 @@
 *.zip
+*.png
+*.mp4
 .vscode
 /dist/
 *.crx

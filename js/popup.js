@@ -1,4 +1,4 @@
-const syncedSwitches = ['remind', 'tab_icons', 'remlogo', 'full_width', 'assignments_due', 'gpa_calc', 'dashboard_grades', 'dashboard_notes', 'better_todo', 'bold_sidebar_text', 'condensed_cards', 'hide_new_canvas', 'hide_sequence_footer', 'quiz_safe_mode', 'global_search', 'grade_analytics', 'hide_personal_details'];
+const syncedSwitches = ['remind', 'tab_icons', 'remlogo', 'full_width', 'assignments_due', 'gpa_calc', 'dashboard_grades', 'dashboard_notes', 'better_todo', 'bold_sidebar_text', 'condensed_cards', 'card_method_dashboard', 'hide_new_canvas', 'hide_sequence_footer', 'quiz_safe_mode', 'global_search', 'grade_analytics', 'hide_personal_details'];
 const syncedSubOptions = [
 	"grade_analytics_zones",
 	"hide_course_images",
@@ -29,7 +29,6 @@ const syncedSubOptions = [
 	"todo_remove_icons",
 	"todo_show_scores",
 	"grade_hover",
-	"card_letter",
 	"auto_detect_disabled",
 	// "hide_completed",
 	"num_todo_items",
@@ -120,7 +119,6 @@ const defaultOptions = {
         "custom_assignments": [],
         "custom_assignments_overflow": ["custom_assignments"],
         "grade_hover": false,
-        "card_letter": true,
         // "hide_completed": false,
         "num_todo_items": 10,
         "hover_preview": true,
@@ -197,23 +195,51 @@ function displayErrors() {
 
 document.addEventListener("DOMContentLoaded", setup);
 
-function setupAssignmentsSlider(initial) {
-    let el = document.querySelector('#numAssignmentsSlider');
-    el.value = initial;
-    document.querySelector('#numAssignments').textContent = initial;
+function setupAssignmentsInput(initial) {
+    const el = document.querySelector('#numAssignments');
+    const toCount = (raw) => {
+        const n = parseInt(raw, 10);
+        if (!Number.isFinite(n)) return defaultOptions.sync.num_assignments;
+        return Math.min(10, Math.max(0, n));
+    };
+    const persist = (raw) => {
+        const next = toCount(raw);
+        el.value = next;
+        chrome.storage.sync.set({ "num_assignments": next });
+    };
+    el.value = toCount(initial);
     el.addEventListener('input', function () {
-        document.querySelector('#numAssignments').textContent = this.value;
-        chrome.storage.sync.set({ "num_assignments": this.value });
+        if (this.value === '') return;
+        const n = parseInt(this.value, 10);
+        if (!Number.isFinite(n) || n < 0 || n > 10) return;
+        chrome.storage.sync.set({ "num_assignments": n });
+    });
+    el.addEventListener('change', function () {
+        persist(this.value);
     });
 }
 
-function setupTodoSlider(initial) {
-    let el = document.querySelector('#numTodoItemsSlider');
-    el.value = initial;
-    document.querySelector('#numTodoItems').textContent = initial;
-    document.querySelector('#numTodoItemsSlider').addEventListener('input', function () {
-        document.querySelector('#numTodoItems').textContent = this.value;
-        chrome.storage.sync.set({ "num_todo_items": this.value });
+function setupTodoItemsInput(initial) {
+    const el = document.querySelector('#numTodoItems');
+    const toCount = (raw) => {
+        const n = parseInt(raw, 10);
+        if (!Number.isFinite(n)) return defaultOptions.sync.num_todo_items;
+        return Math.min(12, Math.max(1, n));
+    };
+    const persist = (raw) => {
+        const next = toCount(raw);
+        el.value = next;
+        chrome.storage.sync.set({ "num_todo_items": next });
+    };
+    el.value = toCount(initial);
+    el.addEventListener('input', function () {
+        if (this.value === '') return;
+        const n = parseInt(this.value, 10);
+        if (!Number.isFinite(n) || n < 1 || n > 12) return;
+        chrome.storage.sync.set({ "num_todo_items": n });
+    });
+    el.addEventListener('change', function () {
+        persist(this.value);
     });
 }
 
@@ -294,24 +320,26 @@ function setupAppearanceMode() {
     refresh();
 }
 
-function setupCardLimitSlider(initial) {
-    let el = document.querySelector("#card_limit");
-    el.value = initial;
-    document.querySelector("#card_limit_num").textContent = initial;
-    el.addEventListener("change", (e) => {
-        chrome.storage.sync.set({ "custom_cards": {}, "custom_cards_2": {}, "custom_cards_3": {}, "card_limit": parseInt(e.target.value)});
-    });
-    el.addEventListener("input", (e) => {
-        document.querySelector("#card_limit_num").textContent = e.target.value;
-    })
-}
-
-function setupDashboardMethod(initial) {
-    const el = document.getElementById("card_method_dashboard");
-    el.checked = initial === true ? true : false;
-
-    el.addEventListener("change", (e) => {
-        chrome.storage.sync.set({ "custom_cards": {}, "custom_cards_2": {}, "custom_cards_3": {}, "card_method_dashboard": e.target.checked });
+function setupCardLimitInput(initial) {
+    const el = document.querySelector("#card_limit");
+    const toCount = (raw) => {
+        const n = parseInt(raw, 10);
+        if (!Number.isFinite(n)) return null;
+        return Math.min(40, Math.max(5, n));
+    };
+    let current = toCount(initial) ?? defaultOptions.sync.card_limit;
+    el.value = current;
+    // Changing the limit wipes saved cards, so only write when the number
+    // actually changes (on blur or Enter), not on every keystroke.
+    el.addEventListener("change", function () {
+        const next = toCount(this.value);
+        if (next == null || next === current) {
+            el.value = current;
+            return;
+        }
+        current = next;
+        el.value = next;
+        chrome.storage.sync.set({ "custom_cards": {}, "custom_cards_2": {}, "custom_cards_3": {}, "card_limit": next });
     });
 }
 
@@ -389,14 +417,28 @@ function toggleAlternateColorsVisibility(darkModeOn) {
     if (wrap) wrap.style.display = darkModeOn ? "none" : "";
 }
 
-// Hide a toggle's sub-options when it's off.
+// Hide a toggle's sub-options when it's off. Card assignments and card grades
+// keep them visible and set disabled on the inputs so their values stay on screen.
+function setSubOptionsDisabled(subOptions, disabled) {
+    subOptions.querySelectorAll("input, select, textarea, button").forEach(el => {
+        el.disabled = disabled;
+    });
+}
+
 function toggleSubOptionsVisibility(option, isOn) {
-    const togglesWithSubOptions = ["gpa_calc", "assignments_due", "better_todo", "grade_analytics", "hide_personal_details"];
-    if (!togglesWithSubOptions.includes(option)) return;
+    const hideWhenOff = ["gpa_calc", "better_todo", "grade_analytics", "hide_personal_details"];
+    const disableWhenOff = ["assignments_due", "dashboard_grades"];
+    if (!hideWhenOff.includes(option) && !disableWhenOff.includes(option)) return;
     const optionEl = document.getElementById(option);
     if (!optionEl) return;
     const subOptions = optionEl.parentElement.querySelector(":scope > .sub-options");
     if (!subOptions) return;
+    if (disableWhenOff.includes(option)) {
+        subOptions.style.display = "";
+        setSubOptionsDisabled(subOptions, !isOn);
+        return;
+    }
+    setSubOptionsDisabled(subOptions, false);
     subOptions.style.display = isOn ? "" : "none";
 }
 
@@ -419,7 +461,6 @@ function setup() {
 			"hide_completed_cards",
 			"equal_height_cards",
 			// "todo_overdues",
-			"gpa_calc_prepend",
 
 			"assignment_date_format",
 			"todo_hr24",
@@ -430,7 +471,6 @@ function setup() {
 			"todo_remove_icons",
 			"todo_show_scores",
 			"grade_hover",
-			"card_letter",
 			"auto_detect_disabled",
 			"hide_course_images",
 			// "hide_completed",
@@ -464,20 +504,16 @@ function setup() {
 		special: [
 			{
 				identifier: "num_assignments",
-				setup: (initial) => setupAssignmentsSlider(initial),
+				setup: (initial) => setupAssignmentsInput(initial),
 			},
 			{
 				identifier: "num_todo_items",
-				setup: (initial) => setupTodoSlider(initial),
+				setup: (initial) => setupTodoItemsInput(initial),
 			},
 
 			{
 				identifier: "card_limit",
-				setup: (initial) => setupCardLimitSlider(initial),
-			},
-			{
-				identifier: "card_method_dashboard",
-				setup: (initial) => setupDashboardMethod(initial),
+				setup: (initial) => setupCardLimitInput(initial),
 			},
 
 			{
@@ -524,7 +560,11 @@ function setup() {
                 optionSwitch.querySelector("#on").checked = status;
                 optionSwitch.querySelector("#on").classList.toggle("checked");
                 optionSwitch.querySelector("#off").classList.toggle("checked");
-                chrome.storage.sync.set({ [option]: status });
+                if (option === "card_method_dashboard") {
+                    chrome.storage.sync.set({ "custom_cards": {}, "custom_cards_2": {}, "custom_cards_3": {}, "card_method_dashboard": status });
+                } else {
+                    chrome.storage.sync.set({ [option]: status });
+                }
                 if (option === "hide_personal_details" && status === false) {
                     // "Temporarily remove all course images" is a sub-option of
                     // the privacy mode: switching the mode off restores the
@@ -537,7 +577,7 @@ function setup() {
                 toggleSubOptionsVisibility(option, status);
             });
         });
-        ["gpa_calc", "assignments_due", "better_todo", "grade_analytics", "hide_personal_details"].forEach(opt => {
+        ["gpa_calc", "assignments_due", "dashboard_grades", "better_todo", "grade_analytics", "hide_personal_details"].forEach(opt => {
             toggleSubOptionsVisibility(opt, sync[opt] === true);
         });
 
@@ -799,6 +839,22 @@ function setup() {
         })
     })
 
+    // activate theme defaults button: restore the active theme's own card colors
+    document.querySelector("#theme-defaults-colors").addEventListener("click", async () => {
+        await themeSourceReady;
+        let colors = null;
+        if (activeThemeSource?.type === "builtin") {
+            colors = themes.find(theme => theme.title === activeThemeSource.key)?.exports?.card_colors;
+        } else if (activeThemeSource?.type === "saved") {
+            const local = await chrome.storage.local.get("saved_themes");
+            colors = local.saved_themes?.[activeThemeSource.key]?.card_colors;
+        }
+        if (!Array.isArray(colors) || colors.length === 0) return;
+        noteThemeEdit({ card_colors: colors });
+        chrome.storage.sync.set({ card_colors: colors });
+        sendFromPopup("setcolors", colors);
+    });
+
     // activate every card color palette button
     document.querySelectorAll(".preset-button.colors-button").forEach(btn => {
         const colors = getPalette(btn.querySelector("p").textContent);
@@ -922,12 +978,10 @@ const settingsExportKeys = [...new Set([
     "card_method_dashboard", "card_method_date", "card_limit"
 ])].filter(key => ![...exportCardColorToggles, ...exportCardStyles].includes(key));
 
-const themeExportGroups = {
-    "export-dark": ["dark_preset", "dark_mode", "device_dark"],
-    "export-cards": ["custom_cards"],
-    "export-colors": ["card_colors", ...exportCardColorToggles],
-    "export-card-styles": exportCardStyles,
-};
+const themeExportKeys = [
+    "dark_preset", "dark_mode", "device_dark", "custom_cards", "card_colors",
+    ...exportCardColorToggles, ...exportCardStyles,
+];
 
 function setupExports() {
     function wireCopy(buttonId, outputId) {
@@ -959,22 +1013,10 @@ function setupExports() {
         document.getElementById("settings-export-output").value = JSON.stringify(storage);
     });
 
-    const checkboxes = [...document.querySelectorAll(".export-details input")];
-    let generation = 0;
-    async function refreshExport() {
-        const current = ++generation;
-        const keys = checkboxes.filter(input => input.checked).flatMap(input => themeExportGroups[input.id]);
-        const storage = await chrome.storage.sync.get(keys);
-        const result = await getExport(storage, keys);
-        if (current === generation) document.getElementById("export-output").value = JSON.stringify(result);
-    }
-    checkboxes.forEach(input => input.addEventListener("change", refreshExport));
-    for (const [id, checked] of [["export-check-all", true], ["export-check-none", false]]) {
-        document.getElementById(id).addEventListener("click", () => {
-            checkboxes.forEach(input => { input.checked = checked; });
-            refreshExport();
-        });
-    }
+    chrome.storage.sync.get(themeExportKeys).then(async storage => {
+        const result = await getExport(storage, themeExportKeys);
+        document.getElementById("export-output").value = JSON.stringify(result);
+    });
 }
 
 async function getExport(storage, options) {
@@ -1233,7 +1275,7 @@ function displayThemeList() {
     container.textContent = "";
     // Retain palette definitions for previously saved themes, but omit these
     // retired presets from the picker.
-    const listedThemes = themes.filter(theme => !["McDonalds", "Purple"].includes(theme.title));
+    const listedThemes = themes.filter(theme => !["AdvTime", "Kirby", "McDonalds", "Purple"].includes(theme.title));
     listedThemes.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
     const presets = [{
         title: "No Theme",
@@ -1405,14 +1447,26 @@ async function importTheme(theme, source = { type: "imported" }) {
     }
 }
 
+let cardWrite = Promise.resolve();
+
 function updateCards(key, value) {
-    chrome.storage.sync.get(["custom_cards"], result => {
-        chrome.storage.sync.set({ "custom_cards": { ...result["custom_cards"], [key]: { ...result["custom_cards"][key], ...value } } }, () => {
-            if (chrome.runtime.lastError) {
-                displayAlert(true, "The card settings exceed the storage limit and could not be saved. Try using shorter names or codes.");
-            }
-        })
-    });
+    cardWrite = cardWrite.catch(() => {}).then(() => new Promise(resolve => {
+        chrome.storage.sync.get(["custom_cards"], result => {
+            const cards = result.custom_cards || {};
+            chrome.storage.sync.set({
+                custom_cards: { ...cards, [key]: { ...cards[key], ...value } }
+            }, () => {
+                if (chrome.runtime?.lastError) {
+                    displayAlert(true, "The card settings exceed the storage limit and could not be saved.");
+                }
+                resolve();
+            });
+        });
+    }));
+}
+
+function courseDisplayName(courseId, course) {
+    return course.fullName || course.default || `Course ${courseId}`;
 }
 
 function displayGPABounds(selectedCourse) {
@@ -1427,7 +1481,7 @@ function displayGPABounds(selectedCourse) {
         document.getElementById("gpa-course-help").hidden = !perCourse;
         picker.textContent = "";
         Object.entries(storage.custom_cards || {}).forEach(([id, course]) => {
-            makeElement("option", picker, { value: id, textContent: course.name || course.fullName || course.default || `Class ${id}` });
+            makeElement("option", picker, { value: id, textContent: course.fullName || course.default || `Class ${id}` });
         });
         if (selectedCourse && Array.from(picker.options).some(option => option.value === selectedCourse)) picker.value = selectedCourse;
         const courseId = picker.value;
@@ -1499,197 +1553,92 @@ function displayAlert(bad, msg) {
 async function displayAdvancedCards() {
     // Sync from Canvas only when needed: when there are no cards yet (fresh
     // install) or when older cards predate the stored fullName field. Once
-    // every card has a fullName this is a no-op and the grid renders instantly.
+    // every card has a fullName this is a no-op and the table renders instantly.
     const needsSync = await new Promise(resolve => {
         chrome.storage.sync.get("custom_cards", s => {
             const c = s.custom_cards || {};
             const ids = Object.keys(c);
-            resolve(!ids.length || ids.some(id => !c[id].fullName));
+            resolve(!ids.length || ids.some(id => !c[id]?.fullName));
         });
     });
     if (needsSync) await sendFromPopup("getCards");
-    chrome.storage.sync.get(["custom_cards", "custom_cards_2"], storage => {
-
-		const cardGrid = document.getElementById("card-grid");
-        if (!cardGrid) {
-            console.error("Card grid element not found");
+    chrome.storage.sync.get(["custom_cards"], storage => {
+        const host = document.getElementById("course-visibility");
+        if (!host) {
+            console.error("Course list element not found");
             return;
         }
 
-        cardGrid.innerHTML = "";
-        const customCards = storage.custom_cards || {};
-        const customCards2 = storage.custom_cards_2 || {};
-		const allCards = {};
-		Object.keys(customCards).forEach((courseId) => {
-			allCards[courseId] = {
-				...customCards[courseId],
-				...(customCards2[courseId] || {}),
-			};
-		});
+        host.replaceChildren();
+        const allCards = storage.custom_cards || {};
+        const courseIds = Object.keys(allCards).filter(id => allCards[id] && typeof allCards[id] === "object");
 
-		Object.keys(customCards2).forEach((courseId) => {
-			if (!allCards[courseId]) {
-				allCards[courseId] = customCards2[courseId];
-			}
-		});
-
-        if (Object.keys(allCards).length === 0) {
-            cardGrid.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No course cards found. Visit your Canvas dashboard to load courses.</p>';
+        if (courseIds.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "course-visibility-empty";
+            empty.textContent = "No courses found. Visit your Canvas dashboard to load courses.";
+            host.appendChild(empty);
             return;
         }
 
-        Object.keys(allCards).forEach(courseId => {
-            const course = allCards[courseId];
-            if (course && typeof course === 'object') {
-                const courseButton = createCourseButton(courseId, course);
-                cardGrid.appendChild(courseButton);
-            }
+        const table = document.createElement("table");
+        table.className = "course-visibility-table";
+        table.setAttribute("aria-labelledby", "course-visibility-heading");
+
+        const thead = document.createElement("thead");
+        const headRow = document.createElement("tr");
+        [
+            ["Name", "Course name"],
+            ["Card grid", "Show this course on the dashboard card grid"],
+            ["Task list", "Show this course in the task list"],
+        ].forEach(([label, title], index) => {
+            const th = document.createElement("th");
+            th.scope = "col";
+            th.textContent = label;
+            th.title = title;
+            if (index > 0) th.className = "course-visibility-check";
+            headRow.appendChild(th);
         });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
 
-        // showCardEditMenu sets an inline display:none on the grid; clear it
-        // so reopening the menu shows the cards again (CSS default = grid).
-        cardGrid.style.display = "";
-        const editMenu = document.getElementById("card-edit-menu");
-        if (editMenu) {
-            editMenu.style.display = "none";
-        }
+        const tbody = document.createElement("tbody");
+        courseIds.forEach(courseId => {
+            const course = allCards[courseId];
+            const name = courseDisplayName(courseId, course);
+            const row = document.createElement("tr");
+            const nameCell = document.createElement("th");
+            nameCell.scope = "row";
+            nameCell.textContent = name;
+            nameCell.title = name;
+            row.appendChild(nameCell);
+            row.appendChild(courseVisibilityCell(courseId, name, "card", !(course.hidden || course.hide)));
+            row.appendChild(courseVisibilityCell(courseId, name, "todo", course.hide_todo !== true));
+            tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        host.appendChild(table);
     });
 }
 
-function createCourseButton(courseId, courseData) {
-	const button = document.createElement("button");
-	button.className = "course-card-button";
-	const displayName =
-		courseData.name ||
-		courseData.fullName ||
-		courseData.default ||
-		courseData.code ||
-		`Course ${courseId}`;
-	button.textContent = displayName;
-	button.dataset.courseId = courseId;
-
-	if (courseData.img || courseData.hidden || courseData.hide || courseData.hide_todo) {
-		button.classList.add("customized");
-	}
-
-	button.addEventListener("click", () => {
-		document.querySelectorAll(".course-card-button").forEach(btn => btn.classList.remove("active"));
-		button.classList.add("active");
-		showCardEditMenu(courseId, courseData);
-	});
-
-	return button;
-}
-
-function showCardEditMenu(courseId, courseData) {
-	const editMenu = document.getElementById("card-edit-menu");
-	const cardGrid = document.getElementById("card-grid");
-	if (cardGrid) cardGrid.style.display = "none";
-	editMenu.style.display = "block";
-
-	const displayName =
-		courseData.name ||
-		courseData.fullName ||
-		courseData.default ||
-		courseData.code ||
-		`Course ${courseId}`;
-
-	editMenu.innerHTML = `
-        <div class="card-edit-header">
-            <h3 class="card-edit-title">${displayName}</h3>
-            <button class="card-close-btn" id="card-close-btn">close</button>
-        </div>
-        
-        <div class="card-edit-section">
-            <label class="card-edit-label">Custom Name</label>
-            <input type="text" class="card-input" id="card-name-input" 
-                   value="${courseData.name || ""}" placeholder="Enter custom course name">
-        </div>
-        
-        <div class="card-edit-section">
-            <label class="card-edit-label">Custom Code</label>
-            <input type="text" class="card-input" id="card-code-input" 
-                   value="${courseData.code || ""}" placeholder="Enter custom course code">
-        </div>
-        
-        <div class="card-edit-section">
-            <label class="card-edit-label">Hide Card</label>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" id="card-hide-input" ${courseData.hidden || courseData.hide ? "checked" : ""}>
-                <span>Hide this card from dashboard</span>
-            </div>
-        </div>
-        
-        <div class="card-edit-section">
-            <label class="card-edit-label">Better Todo List</label>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" id="card-todo-hidden-input" ${courseData.hide_todo === true ? "checked" : ""}>
-                <span>Hide this course from the Better Todo list</span>
-            </div>
-        </div>
-        
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="big-button" id="save-card-btn">Save Changes</button>
-            <button class="customization-button" id="reset-card-btn">Reset to Default</button>
-        </div>
-    `;
-
-	document
-		.getElementById("card-close-btn")
-		.addEventListener("click", hideCardEditMenu);
-	document
-		.getElementById("save-card-btn")
-		.addEventListener("click", () => saveCardChanges(courseId));
-	document
-		.getElementById("reset-card-btn")
-		.addEventListener("click", () => resetCardToDefault(courseId));
-
-}
-
-function saveCardChanges(courseId) {
-	const nameInput = document.getElementById("card-name-input");
-	const codeInput = document.getElementById("card-code-input");
-	const hideInput = document.getElementById("card-hide-input");
-	const todoHiddenInput = document.getElementById("card-todo-hidden-input");
-
-	const updates = {
-		name: nameInput.value,
-		code: codeInput.value,
-		hidden: hideInput.checked,
-		hide: hideInput.checked,
-		hide_todo: todoHiddenInput.checked,
-	};
-
-	updateCards(courseId, updates);
-
-	displayAlert(false, "Card settings saved successfully!");
-
-	hideCardEditMenu();
-
-	setTimeout(() => {
-		displayAdvancedCards();
-	}, 500);
-}
-
-function resetCardToDefault(courseId) {
-	updateCards(courseId, { name: "", code: "", hidden: false, hide: false, hide_todo: false });
-	displayAlert(false, "Card reset to default settings!");
-
-	setTimeout(() => {
-		displayAdvancedCards();
-	}, 500);
-}
-
-function hideCardEditMenu() {
-	const editMenu = document.getElementById("card-edit-menu");
-	const cardGrid = document.getElementById("card-grid");
-
-	if (editMenu) editMenu.style.display = "none";
-	if (cardGrid) cardGrid.style.display = "grid";
-
-	document
-		.querySelectorAll(".course-card-button")
-		.forEach((btn) => btn.classList.remove("active"));
+function courseVisibilityCell(courseId, name, kind, shown) {
+    const cell = document.createElement("td");
+    cell.className = "course-visibility-check";
+    const label = document.createElement("label");
+    label.className = "course-visibility-toggle";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = shown;
+    const where = kind === "card" ? "card grid" : "task list";
+    input.setAttribute("aria-label", `Show ${name} in the ${where}`);
+    input.addEventListener("change", () => {
+        updateCards(courseId, kind === "card"
+            ? { hidden: !input.checked, hide: !input.checked }
+            : { hide_todo: !input.checked });
+    });
+    label.appendChild(input);
+    cell.appendChild(label);
+    return cell;
 }
 
 // customization tab
@@ -1702,7 +1651,7 @@ function getPalette(name) {
         "Candy": ["#cdb4db", "#ffc8dd", "#ffafcc", "#bde0fe", "#a2d2ff"],
         "Purples": ["#e0aaff", "#c77dff", "#9d4edd", "#7b2cbf", "#5a189a"],
         "Pastels": ["#fff1e6", "#fde2e4", "#fad2e1", "#bee1e6", "#cddafd"],
-        "Ocean": ["#22577a", "#38a3a5", "#57cc99", "#80ed99", "#c7f9cc"],
+        "Ocean": ["#050e20", "#082250", "#0d3470", "#144894", "#1b5fb8"],
         "Sunset": ["#eaac8b", "#e56b6f", "#b56576", "#6d597a", "#355070"],
         "Army": ["#6b705c", "#a5a58d", "#b7b7a4", "#ffe8d6", "#ddbea9", "#cb997e"],
         "Pinks": ["#ff0a54", "#ff5c8a", "#ff85a1", "#ff99ac", "#fbb1bd"],

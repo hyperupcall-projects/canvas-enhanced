@@ -59,6 +59,9 @@
     "condensed_cards": {
         "message": "Condensed Cards"
     },
+    "card_method_dashboard": {
+        "message": "Get Active Cards From Dashboard"
+    },
     "disable_color": {
         "message": "Disable Color Overlay"
     },
@@ -108,16 +111,13 @@
         "message": "Calculator Settings"
     },
     "todo_list": {
-        "message": "Todo List"
+        "message": "Task List"
     },
     "gpa_settings": {
         "message": "GPA Settings"
     },
     "grade_hover": {
         "message": "Show Only On Hover"
-    },
-    "card_letter": {
-        "message": "Show letter grade"
     },
     "due": {
         "message": "Due"

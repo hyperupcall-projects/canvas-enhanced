@@ -32,6 +32,9 @@
   "condensed_cards": {
     "message": "Tarjetas condensadas"
   },
+  "card_method_dashboard": {
+    "message": "Obtener tarjetas activas del panel"
+  },
   "disable_color": {
     "message": "Deshabilitar la superposición de colores"
   },
@@ -70,9 +73,6 @@
   },
   "grade_hover": {
     "message": "Mostrar solo al pasar el mouse"
-  },
-  "card_letter": {
-    "message": "Mostrar letra de la nota"
   },
   "due": {
     "message": "Pendiente"

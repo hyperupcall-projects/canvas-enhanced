@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const content = fs.readFileSync('js/content.js', 'utf8');
 const privacy = content.slice(content.indexOf('const FAKE_COURSES'), content.indexOf('/* \nDashboard grades'));
-const label = content.slice(content.indexOf('function courseRingLabel('), content.indexOf('// Planner items for courses'));
+const label = content.slice(content.indexOf('function courseRingLabel('), content.indexOf('// True when the course is hidden from the dashboard card grid'));
 const preview = content.slice(content.indexOf('function hideTodoPreview('), content.indexOf('async function showTodoPreview('));
 const lines = content.slice(content.indexOf('function renderProgressLines('), content.indexOf('// Mode "line":'));
 fs.writeFileSync(process.argv[2] || '/tmp/privacy-check.html', `<!doctype html>
@@ -19,7 +19,7 @@ fs.writeFileSync(process.argv[2] || '/tmp/privacy-check.html', `<!doctype html>
 <pre id="result">RUNNING</pre>
 <script>
 let options = {hide_personal_details:true, custom_cards:{42:{default:'Private course'}}};
-const logError = error => {throw error}; const percentToLetterGrade = () => 'B';
+const logError = error => {throw error};
 let todoPreviewToken = 0; ${preview}
 const courseRingColor = () => '#abcdef';
 const progressFilterDim = () => false; const attachProgressFilterClick = () => {};

@@ -749,7 +749,7 @@ function startExtension() {
 
         setupGlobalSearch();
 
-        
+
 
     });
 
@@ -797,7 +797,6 @@ function applyOptionsChanges(changes) {
 				break;
 			case "dashboard_grades":
 			case "grade_hover":
-			case "card_letter":
 				if (!grades) getGrades();
 				insertGrades();
 				break;
@@ -841,9 +840,6 @@ function applyOptionsChanges(changes) {
 					clearTodoList();
 					createTodoSections(document.querySelector("#canvasrefined-todo-list"));
 				}
-				break;
-			case "custom_cards_2":
-				customizeCards();
 				break;
 			case "custom_cards_3":
                 refreshCourseColorUI();
@@ -1075,6 +1071,10 @@ function checkDashboardReady() {
 
                 const c = document.querySelector("#DashboardCard_Container");
                 if (c) {
+                    const gpaCard = document.querySelector(".canvasrefined-gpa-card");
+                    const gpaPanel = document.querySelector(".canvasrefined-gpa");
+                    if (gpaCard && gpaPanel) placeGpaWidgets(gpaCard, gpaPanel);
+
                     let cards = document.querySelectorAll(".ic-DashboardCard");
                     // Build a cheap signature of the current card set. The setup
                     // pass below mutates the cards' internals (assignment rows,
@@ -1104,6 +1104,7 @@ function checkDashboardReady() {
                             break;
                         }
                     }
+                    updateCardContrast();
                     if (signature !== lastDashboardCardSignature || missingMarker) {
                         lastDashboardCardSignature = signature;
                         changeGradientCards();
@@ -1300,9 +1301,8 @@ function getCardsFromDashboard() {
     console.log("getting cards from dashboard")
     const dashboard_cards = document.querySelectorAll(".ic-DashboardCard");
     return new Promise(resolve => {
-    chrome.storage.sync.get(["custom_cards", "custom_cards_2", "custom_cards_3"], storage => {
+    chrome.storage.sync.get(["custom_cards", "custom_cards_3"], storage => {
         let cards = storage["custom_cards"] || {};
-        let cards_2 = storage["custom_cards_2"] || {};
         let cards_3 = storage["custom_cards_3"] || {};
         let newCards = false;
         let count = 0;
@@ -1313,14 +1313,8 @@ function getCardsFromDashboard() {
 
                 if (!cards[id]) {
                     newCards = true;
-                    cards[id] = { "default": card.querySelector(".ic-DashboardCard__header-subtitle").textContent.substring(0, 20), "fullName": card.querySelector(".ic-DashboardCard__header-title")?.textContent?.trim() || "", "name": "", "code": "", "img": "", "hidden": false, "weight": "regular", "credits": 1, "eid": 100000 - count, "gr": null };
-    
-                    let links = [];
-                    for (let i = 0; i < 4; i++) {
-                        links.push({ "path": "default", "is_default": true });
-                    }
-                    cards_2[id] = { "links": links };
-        
+                    cards[id] = { "default": card.querySelector(".ic-DashboardCard__header-subtitle").textContent.substring(0, 20), "fullName": card.querySelector(".ic-DashboardCard__header-title")?.textContent?.trim() || "", "img": "", "hidden": false, "weight": "regular", "credits": 1, "eid": 100000 - count, "gr": null };
+
                     cards_3[id] = { "url": domain };
                 } else {
                     // backfill full name for cards created before this field existed
@@ -1329,6 +1323,11 @@ function getCardsFromDashboard() {
                         cards[id].fullName = full;
                         newCards = true;
                     }
+                }
+                if ("name" in cards[id] || "code" in cards[id]) {
+                    delete cards[id].name;
+                    delete cards[id].code;
+                    newCards = true;
                 }
                 count++;
             });
@@ -1352,7 +1351,6 @@ function getCardsFromDashboard() {
                 if (found === false) {
                     console.log("Deleting " + key);
                     cards[key] && delete cards[key];
-                    cards_2[key] && delete cards_2[key];
                     cards_3[key] && delete cards_3[key];
                     newCards = true;
                 }
@@ -1365,7 +1363,7 @@ function getCardsFromDashboard() {
         } finally {
             if(newCards !== true) { resolve(); return; }
             console.log(newCards ? "new cards found" : "");
-            chrome.storage.sync.set({ "custom_cards": cards, "custom_cards_2": cards_2, "custom_cards_3": cards_3 }, () => resolve());
+            chrome.storage.sync.set({ "custom_cards": cards, "custom_cards_3": cards_3 }, () => resolve());
         }
     });
     });
@@ -1374,9 +1372,8 @@ function getCardsFromDashboard() {
 async function getCards(api = null) {
     let dashboard_cards = api ? api : await getData(`${domain}/api/v1/courses?${/*enrollment_state=active&*/""}per_page=100`);
     await new Promise(resolve => {
-    chrome.storage.sync.get(["custom_cards", "custom_cards_2", "custom_cards_3"], storage => {
+    chrome.storage.sync.get(["custom_cards", "custom_cards_3"], storage => {
         let cards = storage["custom_cards"] || {};
-        let cards_2 = storage["custom_cards_2"] || {};
         let cards_3 = storage["custom_cards_3"] || {};
         let newCards = false;
         let count = 0;
@@ -1392,25 +1389,15 @@ async function getCards(api = null) {
                 let id = card.id;
                 if (!cards || !cards[id]) {
                     newCards = true;
-                    cards[id] = { "default": card.course_code.substring(0, 20), "fullName": card.name || card.course_code || "", "name": "", "code": "", "img": "", "hidden": false, "weight": "regular", "credits": 1, "eid": card.enrollment_term_id || 0, "gr": null };
+                    cards[id] = { "default": card.course_code.substring(0, 20), "fullName": card.name || card.course_code || "", "img": "", "hidden": false, "weight": "regular", "credits": 1, "eid": card.enrollment_term_id || 0, "gr": null };
                 } else if (cards && cards[id]) {
                     newCards = true;
                     cards[id].default = card.course_code.substring(0, 20);
                     cards[id].fullName = card.name || card.course_code || cards[id].fullName || "";
                     cards[id].eid = card.enrollment_term_id || 0;
-                    if (!cards[id].code) cards[id].code = "";
+                    delete cards[id].name;
+                    delete cards[id].code;
                 }
-                if (!cards_2 || !cards_2[id]) {
-                    newCards = true;
-                    let links = [];
-
-                    for (let i = 0; i < 4; i++) {
-                        links.push({ "path": "default", "is_default": true });
-                    }
-
-                    cards_2[id] = { "links": links };
-                }
-
                 if (!cards_3 || !cards_3[id]) {
                     newCards = true;
                     cards_3[id] = { "url": domain };
@@ -1434,7 +1421,6 @@ async function getCards(api = null) {
                 if (found === false) {
                     console.log("Deleting " + key + " from custom_cards...", cards[key]);
                     cards[key] && delete cards[key];
-                    cards_2[key] && delete cards_2[key];
                     cards_3[key] && delete cards_3[key];
                     newCards = true;
                 }
@@ -1444,13 +1430,13 @@ async function getCards(api = null) {
         } catch (e) {
             console.log(e);
         } finally {
-            chrome.storage.sync.set(newCards ? { "custom_cards": cards, "custom_cards_2": cards_2, "custom_cards_3": cards_3 } : {}, () => resolve());
+            chrome.storage.sync.set(newCards ? { "custom_cards": cards, "custom_cards_3": cards_3 } : {}, () => resolve());
         }
     });
     });
 }
 
-/* 
+/*
 Better todo list
 */
 
@@ -1660,21 +1646,18 @@ function courseRingLabel(courseId) {
     return card?.default || `Course ${courseId}`;
 }
 
-// Planner items for courses the user has hidden from their dashboard should
-// not appear in the Better Todo list or its progress display. Personal
-// tasks (planner notes with no course) are always kept.
+// True when the course is hidden from the dashboard card grid.
 function isCourseHidden(courseId) {
     if (courseId === undefined || courseId === null) return false;
     const cards = options.custom_cards || {};
     const card = cards[String(courseId)] || cards[courseId];
-    return !!card && card.hidden === true;
+    return !!card && (card.hidden === true || card.hide === true);
 }
 
-// Courses the user ticked "Hide this course from the Better Todo list" in the
-// card edit menu are dropped from the todo list and its progress display.
-// This is independent of dashboard visibility (isCourseHidden), so a course
-// can stay on the dashboard while its items stay off the todo list, and
-// vice versa. Personal tasks (planner notes with no course) are always kept.
+// True when the course is hidden from the task list. Independent of the
+// dashboard card grid, so a course can stay on the dashboard while its items
+// stay off the task list, and the other way around. Personal tasks (planner
+// notes with no course) are always kept.
 function isCourseTodoHidden(courseId) {
     if (courseId === undefined || courseId === null) return false;
     const cards = options.custom_cards || {};
@@ -1685,12 +1668,12 @@ function isCourseTodoHidden(courseId) {
 function filterHiddenCourses(data) {
     return data.filter(item => {
         const cid = item.course_id || item.context_id || item?.plannable?.course_id;
-        return !isCourseHidden(cid) && !isCourseTodoHidden(cid);
+        return !isCourseTodoHidden(cid);
     });
 }
 
-// Build scoped data for the Better Todo list: drop hidden courses, then (on
-// a course page) restrict to the current course.
+// Build scoped data for the Better Todo list: drop courses hidden from the
+// task list, then (on a course page) restrict to the current course.
 function getTodoScopedData(data, courseId) {
     const visible = filterHiddenCourses(data);
     if (!courseId) return visible;
@@ -2552,7 +2535,7 @@ function fillTaskCourseOptions(courseSelect) {
     const currentCourseId = getCurrentCourseId();
     // Hidden courses should not be offered as a target for custom tasks.
     const entries = Object.entries(cards)
-        .filter(([, card]) => card?.hidden !== true)
+        .filter(([, card]) => card?.hidden !== true && card?.hide !== true)
         .map(([id, card]) => ({
             id,
             label: options.hide_personal_details === true ? fakeCourseLabel(id) : (card?.default || `Course ${id}`),
@@ -3178,6 +3161,40 @@ function clearTodoList() {
 // without a re-render.
 const TODO_ALT_ICON_COLOR = "#ffffff";
 let todoAltStyleEl = null;
+// Icons sit on a per-course colored strip. When that color is dark the themed
+// icon color (black in light mode) is unreadable, so use the theme's very light
+// color (--cr-todo-icon-light, set in applyTodoAlternateColors) for those strips.
+// Depends only on the course color, so it stays correct across theme switches.
+function todoIconStyleForColor(color) {
+    const rgb = themeRGB(color);
+    if (!rgb) return "";
+    // Below ~0.18 luminance white has more contrast than black.
+    return themeLuminance(rgb) < 0.18 ? "--cr-todo-icon:var(--cr-todo-icon-light);" : "";
+}
+
+// Dashboard card menu (three dots) and announcement badge sit on colored
+// circles. When the painted background is dark, give the glyph the same
+// theme-aware very light color. Writes are idempotent (no-ops when unchanged)
+// so this is safe to call from the dashboard mutation observer.
+function setOnColorGlyph(el, bgEl) {
+    if (!el || !bgEl) return;
+    const m = getComputedStyle(bgEl).backgroundColor.match(/[\d.]+/g);
+    const alpha = m && m.length > 3 ? parseFloat(m[3]) : 1;
+    const dark = m && m.length >= 3 && alpha > 0.5 && themeLuminance([+m[0], +m[1], +m[2]]) < 0.18;
+    const wanted = dark ? "var(--cr-todo-icon-light, #ffffff)" : "";
+    if (el.style.getPropertyValue("color") === wanted) return;
+    if (wanted) el.style.setProperty("color", wanted, "important");
+    else el.style.removeProperty("color");
+}
+
+function updateCardContrast() {
+    document.querySelectorAll(".ic-DashboardCard").forEach(card => {
+        const bg = card.querySelector(".ic-DashboardCard__header-button-bg");
+        setOnColorGlyph(card.querySelector(".ic-DashboardCard__header-button .icon-more"), bg);
+        card.querySelectorAll(".ic-DashboardCard__action-badge").forEach(b => setOnColorGlyph(b, b));
+    });
+}
+
 function applyTodoAlternateColors() {
     const altOn = options.todo_alternate_colors === true && !isDarkModeActive();
     const color = altOn ? TODO_ALT_ICON_COLOR : "var(--bctext-0)";
@@ -3186,7 +3203,11 @@ function applyTodoAlternateColors() {
         todoAltStyleEl.id = "crtodoaltcss";
         document.documentElement.append(todoAltStyleEl);
     }
-    todoAltStyleEl.textContent = `:root{--cr-todo-icon:${color};}`;
+    // Very light theme color: the light text color in dark themes, the lightest
+    // background in light themes (text-0 is near-black there).
+    const light = isDarkModeActive() ? "var(--bctext-0, #ffffff)" : "var(--bcbackground-0, #ffffff)";
+    todoAltStyleEl.textContent = `:root{--cr-todo-icon:${color};--cr-todo-icon-light:${light};}`;
+    updateCardContrast();
 }
 
 // --- Hover preview (Better Todo List: "Previews on hover") ---
@@ -3544,7 +3565,7 @@ function populateAssignments(iscompleted = false) {
 		assignment.style.overflowX = "hidden";
 		assignment.innerHTML = `
 		<div style="display:flex;align-items:center;gap:5px;width:100%;height:60px;background:var(--bcbackground-2);border-radius:5px;transition:all .4s ease;overflow:hidden;">
-			<div style="width:40px;display:flex;align-items:center;justify-content:center;background-color:${courseColor};height:100%;border-radius:5px 0 0 5px;">
+			<div style="width:40px;display:flex;align-items:center;justify-content:center;background-color:${courseColor};${todoIconStyleForColor(courseColor)}height:100%;border-radius:5px 0 0 5px;">
                 <div style="width:${iconSize}px;height:${iconSize}px;display:flex;margin-left:${iconLeftOffset}px;">
                     ${taskIcon}
 				</div>
@@ -3652,7 +3673,7 @@ function populateAnnouncements() {
 
 		announcement.innerHTML = `
 		<div style="display:flex;align-items:center;gap:5px;width:100%;height:60px;background:var(--bcbackground-2);border-radius:5px;${filter}">
-			<div style="width:40px;display:flex;align-items:center;justify-content:center;background-color:${courseColor};height:100%;border-radius:5px 0 0 5px;">
+			<div style="width:40px;display:flex;align-items:center;justify-content:center;background-color:${courseColor};${todoIconStyleForColor(courseColor)}height:100%;border-radius:5px 0 0 5px;">
 				<div style="width:23px;height:23px;display:flex;margin-left:0px;">
 					${removeIcons ? "" : `<svg fill="var(--cr-todo-icon)" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg" style="transition:all .3s ease;">
 						<g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -4564,6 +4585,11 @@ function teardownSubmissionTrayFixes() {
 function toggleDarkMode() {
     const css = generateDarkModeCSS();
     const darkOn = isDarkModeActive();
+    // "No Theme" (an empty palette) must also release the extension's own
+    // Canvas styling: content.css scopes those base control/surface rules
+    // under this class so Canvas regains its native look.
+    document.documentElement.classList.toggle("canvasrefined-theme-active",
+        Object.keys(sourceThemeValues()).length > 0);
     // Reuse the existing #darkcss style if present (never create a duplicate), so a
     // document_start dark-mode bootstrap and later updates stay on one element.
     let style = document.querySelector("#darkcss");
@@ -4698,13 +4724,11 @@ function fakeFeedbackScore(key) {
     return `${earned} out of 20`;
 }
 
-// Deterministic fake dashboard grade: a plausible percent plus the letter the
-// user's own GPA cutoffs would assign it (same scale their real grades show).
+// Deterministic fake dashboard grade: a plausible percent.
 function fakeGradeText(key) {
     const h = anonHash(String(key));
     const percent = Math.round((70 + (h % 300) / 10) * 10) / 10;
-    const letter = percentToLetterGrade(percent, key);
-    return (letter ? `${letter} ` : "") + `${percent}%`;
+    return `${percent}%`;
 }
 
 // Term strings look like "2026/2027 - Campolindo High School - Year": keep the
@@ -4897,7 +4921,8 @@ function applyPersonalDetailsPrivacyStyle() {
             content: url("${avatar}") !important;
             object-fit: cover !important;
         }
-        .canvasrefined-dashboard-notes, .canvasrefined-gpa-card, .canvasrefined-gpa,
+        .canvasrefined-dashboard-notes, .canvasrefined-gpa-header-mount,
+        .canvasrefined-gpa-card, .canvasrefined-gpa,
         #better-todo-add-task-menu, #better-todo-add-task-btn,
         #canvasrefined-global-search-header-btn, #canvasrefined-global-search-modal {
             display: none !important;
@@ -4918,7 +4943,6 @@ function applyCourseImageHiding() {
         style.textContent = `
             .ic-DashboardCard__header_image { background-image: none !important; }
             .ic-DashboardCard__header_image img { display: none !important; }
-            .canvasrefined-link-image { display: none !important; }
         `;
         (document.head || document.documentElement).append(style);
     } else if (!on && style) {
@@ -4960,8 +4984,8 @@ function setupPersonalDetailsHiding() {
     }
 }
 
-/* 
-Dashboard grades 
+/*
+Dashboard grades
 */
 
 // Map a percentage to a letter grade using the user's configurable GPA
@@ -5000,12 +5024,11 @@ function insertGrades() {
                     data.forEach(grade => {
                         if (course_id === grade.id) {
                             let gradepercent = grade.enrollments[0].has_grading_periods === true ? grade.enrollments[0].current_period_computed_current_score : grade.enrollments[0].computed_current_score;
-                            //let gradepercent = grade.enrollments[0].computed_current_score;
-                            let percent = (gradepercent || "--") + "%";
-                            if (options.card_letter === true) {
-                                const letter = percentToLetterGrade(gradepercent, course_id);
-                                if (letter) percent = `${letter} ${percent}`;
+                            if (gradepercent == null || gradepercent === "") {
+                                cards[i].querySelector(".canvasrefined-card-grade")?.remove();
+                                return;
                             }
+                            let percent = gradepercent + "%";
                             let gradeContainer = cards[i].querySelector(".canvasrefined-card-grade") || makeElement("a", cards[i].querySelector(".ic-DashboardCard__header"), { "className": "canvasrefined-card-grade" });
                             // "Hide personal details": show a deterministic fake grade instead.
                             gradeContainer.textContent = options.hide_personal_details === true ? fakeGradeText("id:" + course_id) : percent;
@@ -5252,14 +5275,14 @@ function applyCardImage(card, image) {
     const header = card.querySelector(".ic-DashboardCard__header");
     let container = card.querySelector(".ic-DashboardCard__header_image");
     if (!hero || !header) return;
-    if (image && !originalCardImages.has(card)) {
+    if (image && image !== "none" && !originalCardImages.has(card)) {
         originalCardImages.set(card, {
             container,
             backgroundImage: container?.style.backgroundImage || "",
             opacity: hero.style.opacity,
         });
     }
-    if (!image) {
+    if (!image || image === "none") {
         const original = originalCardImages.get(card);
         if (!original) return;
         if (original.container) {
@@ -5270,9 +5293,6 @@ function applyCardImage(card, image) {
         }
         hero.style.opacity = original.opacity;
         originalCardImages.delete(card);
-    } else if (image === "none") {
-        if (container) container.style.backgroundImage = "none";
-        hero.style.opacity = 1;
     } else {
         container ||= makeElement("div", card, { className: "ic-DashboardCard__header_image" });
         header.prepend(container);
@@ -5291,70 +5311,18 @@ function customizeCards(c = null) {
         cards.forEach(card => {
             const id = getCardId(card);
             let cardOptions = options["custom_cards"][id] || null;
-            let cardOptions_2 = options["custom_cards_2"][id] || null;
             if (!cardOptions) return;
             // hide card
-            card.style.display = cardOptions.hidden === true ? "none" : "inline-block";
+            card.style.display = (cardOptions.hidden === true || cardOptions.hide === true) ? "none" : "inline-block";
 
             // card image
             applyCardImage(card, cardOptions.img);
-
-            // card name
-            if (cardOptions.name !== "") {
-                card.querySelector(".ic-DashboardCard__header-title > span").textContent = cardOptions.name;
-            }
-
-            // card code
-            if (cardOptions.code !== "") {
-                card.querySelector(".ic-DashboardCard__header-subtitle").textContent = cardOptions.code;
-            }
-
-            // card links
-            let links = card.querySelectorAll(".ic-DashboardCard__action");
-            for (let i = links.length; i < 4; i++) {
-                makeElement("a", card.querySelector(".ic-DashboardCard__action-container"), { "className": "ic-DashboardCard__action" });
-            }
-            links = card.querySelectorAll(".ic-DashboardCard__action");
-            for (let i = 0; i < 4; i++) {
-                let img = links[i].querySelector(".canvasrefined-link-image") || makeElement("img", links[i], { "className": "canvasrefined-link-image" });
-                links[i].style.display = "inherit";
-                if (cardOptions_2.links[i].path === "none") {
-                    links[i].style.display = "none";
-                } else if (cardOptions_2.links[i].is_default === false) {
-                    links[i].href = cardOptions_2.links[i].path;
-                    img.src = getCustomLinkImage(cardOptions_2.links[i].path);
-                    if (links[i].querySelector(".ic-DashboardCard__action-layout")) links[i].querySelector(".ic-DashboardCard__action-layout").style.display = "none";
-                    img.style.display = "block";
-                } else {
-                    if (links[i].querySelector(".ic-DashboardCard__action-layout")) links[i].querySelector(".ic-DashboardCard__action-layout").style.display = "inherit";
-                    img.style.display = "none";
-                }
-                img.addEventListener("error", () => {
-                    img.src = "https://www.instructure.com/favicon.ico";
-                })
-            }
 
         });
 
 
     } catch (e) {
         logError(e);
-    }
-}
-
-function getCustomLinkImage(path) {
-    if (path.includes("webassign.net")) {
-        return "https://www.cengage.com/favicon.ico";
-    } else if (path.includes("docs.google")) {
-        return "https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico";
-    } else {
-        let url = { "hostname": "instructure.com/" };
-        try {
-            url = new URL(path);
-        } catch (e) {
-            logError(e);
-        }
-        return "https://" + url.hostname + "/favicon.ico";;
     }
 }
 
@@ -5417,11 +5385,14 @@ function createGPACalcCourse(location, course) {
         return;
         customs = { "name": course.name, "hidden": false, "weight": "regular", "credits": 1, "gr": null };
     }
-    if (customs.hidden === true) return;
+    if (customs.hidden === true || customs.hide === true) return;
 
     let courseContainer = makeElement("div", location, { "className": course.id === "cumulative" ? "canvasrefined-gpa-cumulative" : "canvasrefined-gpa-course", "innerHTML": '<div class="canvasrefined-gpa-letter-grade"></div>' });
     courseContainer.dataset.courseId = String(course.id);
-    let courseName = makeElement("p", courseContainer, { "className": "canvasrefined-gpa-name", "textContent": customs.name === "" ? course.course_code : customs.name });
+    const courseLabel = course.id === "cumulative"
+        ? (customs.name || "Cumulative GPA")
+        : (course.name || course.course_code || "");
+    let courseName = makeElement("p", courseContainer, { "className": "canvasrefined-gpa-name", "textContent": courseLabel });
     let changerContainer = makeElement("div", courseContainer, { "className": "canvasrefined-gpa-percent-container" });
 
     let credits = makeElement("div", courseContainer, { "className": "canvasrefined-course-credits", "innerHTML": '<input class="canvasrefined-course-credit" value="1"></input><span class="canvasrefined-course-percent-sign">cr</span>' });
@@ -5443,7 +5414,7 @@ function createGPACalcCourse(location, course) {
         let weightSelections = makeElement("form", courseContainer, { "className": "canvasrefined-course-weights" });
         weightSelections.innerHTML = '<select name="weight-selection" class="canvasrefined-course-weight"><option value="dnc">Do not count</option><option value="regular">Regular/College</option><option value="honors">Honors</option><option value="ap">AP/IB</option></select>';
         let weightChanger = weightSelections.querySelector(".canvasrefined-course-weight");
-        weightChanger.value = changer.value === "--" ? "dnc" : customs.weight;   
+        weightChanger.value = changer.value === "--" ? "dnc" : customs.weight;
         weightChanger.addEventListener('change', () => changeGPASettings(course.id, { "weight": weightSelections.querySelector(".canvasrefined-course-weight").value }));
 
         let useCustomGr = makeElement("input", courseContainer, { "className": "canvasrefined-course-customgr", "type": "checkbox", "checked": customs.gr !== null ? true : false });
@@ -5458,7 +5429,7 @@ function createGPACalcCourse(location, course) {
                 }
             }
         });
-    }   
+    }
 
     changer.addEventListener('input', (e) => {
         if (course.id === "cumulative" || (options["custom_cards"][course.id]["gr"] !== undefined && options["custom_cards"][course.id]["gr"] !== null)) {
@@ -5470,6 +5441,77 @@ function createGPACalcCourse(location, course) {
 
     credits.querySelector(".canvasrefined-course-credit").addEventListener('input', () => changeGPASettings(course.id, { "credits": credits.querySelector(".canvasrefined-course-credit").value }));
     return courseContainer;
+}
+
+function gpaIsOurControl(el) {
+    return !el || el.id === "canvasrefined-global-search-header-btn" || !!el.closest?.(".canvasrefined-gpa-header-mount, .canvasrefined-gpa-card, .canvasrefined-gpa");
+}
+
+// The ⋮ control, including when Canvas wraps the button in a menu span.
+function gpaHeaderAnchor() {
+    const root = document.querySelector(".ic-Dashboard-header")
+        || document.querySelector("#dashboard_header_container")
+        || document.querySelector("#DashboardHeaderContainer");
+    if (!root) return null;
+    const buttons = [...root.querySelectorAll("button")].filter(button => !gpaIsOurControl(button));
+    const labeled = buttons.find(button => /dashboard options|more options/i.test(
+        `${button.getAttribute("aria-label") || ""} ${button.getAttribute("title") || ""} ${button.textContent || ""}`
+    ));
+    const button = labeled || buttons.reduce((best, candidate) => {
+        if (!best) return candidate;
+        return candidate.getBoundingClientRect().right > best.getBoundingClientRect().right ? candidate : best;
+    }, null);
+    const row = (button && (button.closest(".ic-Dashboard-header__actions") || button.closest(".ic-Dashboard-header__layout")))
+        || root.querySelector(".ic-Dashboard-header__actions");
+    if (!row) return null;
+    let before = button || null;
+    while (before && before.parentElement && before.parentElement !== row) before = before.parentElement;
+    if (before && !row.contains(before)) before = null;
+    return { row, before };
+}
+
+// Keep the GPA summary and calculator immediately left of the ⋮ menu.
+// Without that header, fall back to the card grid.
+function placeGpaWidgets(card, calculator) {
+    if (!card || !calculator) return false;
+    const show = options.gpa_calc === true;
+    const anchor = gpaHeaderAnchor();
+    if (anchor) {
+        const { row, before } = anchor;
+        let mount = row.querySelector(":scope > .canvasrefined-gpa-header-mount");
+        if (!mount) {
+            mount = document.createElement("div");
+            mount.className = "canvasrefined-gpa-header-mount";
+        }
+        // Sit in front of the menu even when the header row spaces its children apart.
+        if (before && before !== mount) {
+            if (mount.nextElementSibling !== before) row.insertBefore(mount, before);
+            before.style.order = "2";
+        } else if (!mount.parentElement) {
+            row.appendChild(mount);
+        }
+        mount.style.order = "1";
+        if (card.parentElement !== mount) mount.appendChild(card);
+        if (calculator.parentElement !== mount) mount.appendChild(calculator);
+        mount.hidden = !show;
+        card.style.display = show ? "flex" : "none";
+        return true;
+    }
+
+    const sortableContainer = document.querySelector(".ic-DashboardCard__box__container");
+    const dashboardContainer = sortableContainer || document.querySelector("#DashboardCard_Container");
+    if (!dashboardContainer) return false;
+    card.style.display = show ? "inline-block" : "none";
+    if (options.gpa_calc_prepend === true) {
+        if (dashboardContainer.children[0] !== calculator || dashboardContainer.children[1] !== card) {
+            dashboardContainer.insertBefore(calculator, dashboardContainer.firstChild);
+            dashboardContainer.insertBefore(card, calculator.nextSibling);
+        }
+    } else if (dashboardContainer.lastElementChild !== calculator || card.nextElementSibling !== calculator) {
+        dashboardContainer.appendChild(card);
+        dashboardContainer.appendChild(calculator);
+    }
+    return false;
 }
 
 function setupGPACalc() {
@@ -5494,21 +5536,13 @@ function setupGPACalc() {
                 container.className = "canvasrefined-gpa";
             }
 
-            container2.style.display = options.gpa_calc === true ? "inline-block" : "none";
-
             if (!alreadyRendered) {
                 container2.innerHTML = `<h3 class="canvasrefined-gpa-header">GPA</h3><div><div><p id="canvasrefined-gpa-unweighted"></p><p>Current</p></div><div style="display:${options["gpa_calc_weighted"] ? "block" : "none"}"><p id="canvasrefined-gpa-weighted"></p><p>Weighted</p></div><div style="display:${options["gpa_calc_cumulative"] ? "block" : "none"}"><p id="canvasrefined-gpa-cumulative"></p><p>Cumulative</p></div></div>`;
                 let editBtn = makeElement("button", container2, { "className": "canvasrefined-gpa-edit-btn", "textContent": "Edit Calculator" });
 
                 container.innerHTML = '<h3 class="canvasrefined-gpa-header">GPA Calculator</h3><div class="canvasrefined-gpa-courses-container"><div class="canvasrefined-gpa-courses"></div></div>';
 
-                if (options.gpa_calc_prepend === true) {
-                    dashboardContainer.prepend(container2);
-                    dashboardContainer.prepend(container);
-                } else {
-                    dashboardContainer.appendChild(container2);
-                    dashboardContainer.appendChild(container);
-                }
+                placeGpaWidgets(container2, container);
 
                 let location = document.querySelector(".canvasrefined-gpa-courses");
                 if (!location) return;
@@ -5521,7 +5555,7 @@ function setupGPACalc() {
 
                 editBtn.addEventListener("click", () => {
                     if (container.style.display === "none") {
-                        container.style.display = "inline-block";
+                        container.style.display = "block";
                         editBtn.textContent = "Close Calculator";
                     } else {
                         container.style.display = "none";
@@ -5537,18 +5571,7 @@ function setupGPACalc() {
                 if (weighted) weighted.style.display = options.gpa_calc_weighted ? "block" : "none";
                 if (cumulative) cumulative.style.display = options.gpa_calc_cumulative ? "block" : "none";
 
-                const shouldPrepend = options.gpa_calc_prepend === true;
-                if (shouldPrepend) {
-                    if (dashboardContainer.children[0] !== container || dashboardContainer.children[1] !== container2) {
-                        dashboardContainer.insertBefore(container, dashboardContainer.firstChild);
-                        dashboardContainer.insertBefore(container2, container.nextSibling);
-                    }
-                } else {
-                    if (dashboardContainer.lastElementChild !== container || container2.nextElementSibling !== container) {
-                        dashboardContainer.appendChild(container2);
-                        dashboardContainer.appendChild(container);
-                    }
-                }
+                placeGpaWidgets(container2, container);
             }
 
             try {
@@ -5933,12 +5956,6 @@ function applyAestheticChanges() {
     if (options.cardPadding !== undefined && Number(options.cardPadding) > 0) {
         style.textContent += `.ic-DashboardCard {padding: ${options.cardPadding}px!important; box-sizing: content-box!important;}`;
     }
-
-    // Hiding the nav-toggle + breadcrumbs bar used to be hardcoded always-on;
-    // it is now opt-in via the popup toggle (off by default). Its left/right
-    // margins are always removed so the bar lines up with the content column
-    // edges (cosmetic, light and dark mode).
-    style.textContent += ".ic-app-nav-toggle-and-crumbs{margin-left:0!important;margin-right:0!important}";
     document.documentElement.appendChild(style);
 }
 
@@ -6700,6 +6717,8 @@ function changeGradientCards() {
         hero.style.backgroundImage = `linear-gradient(115deg, hsl(${h}deg,${s}%,${l}%) 5%, hsl(${newh}deg,${s}%,${l}%) 100%)`;
     });
 
+    updateCardContrast();
+
     // Clean up the legacy index-based stylesheet from older versions.
     const legacy = document.querySelector("#gradientcss");
     if (legacy) legacy.remove();
@@ -6735,7 +6754,7 @@ function readUpdate() {
 }
 
 /*
-Other functions 
+Other functions
 */
 
 function combineAssignments(data) {

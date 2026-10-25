@@ -32,6 +32,9 @@
   "condensed_cards": {
     "message": "Cartes condensées"
   },
+  "card_method_dashboard": {
+    "message": "Récupérer les cartes actives du tableau de bord"
+  },
   "disable_color": {
     "message": "Désactiver la superposition de couleurs"
   },
@@ -70,9 +73,6 @@
   },
   "grade_hover": {
     "message": "Afficher uniquement au survol"
-  },
-  "card_letter": {
-    "message": "Afficher la note en lettres"
   },
   "due": {
     "message": "Exigible"

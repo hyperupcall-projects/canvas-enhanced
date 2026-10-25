@@ -32,6 +32,9 @@
   "condensed_cards": {
     "message": "Сжатые карты"
   },
+  "card_method_dashboard": {
+    "message": "Получать активные карточки с панели"
+  },
   "disable_color": {
     "message": "Отключить наложение цвета"
   },
@@ -70,9 +73,6 @@
   },
   "grade_hover": {
     "message": "Показывать только при наведении"
-  },
-  "card_letter": {
-    "message": "Показывать буквенную оценку"
   },
   "due": {
     "message": "Должный"

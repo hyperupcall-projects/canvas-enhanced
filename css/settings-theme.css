@@ -84,7 +84,7 @@ button, input, select, textarea {font-family: inherit;}
 a {color: var(--settings-link);}
 a:hover {text-decoration: underline;}
 button {line-height: 1.4;}
-.big-button, .colors-button, .customization-button, .course-card-button,
+.big-button, .colors-button, .customization-button,
 .submit-tab-btn, .help-link {
     border: 1px solid transparent;
     border-radius: var(--settings-radius);
@@ -96,7 +96,7 @@ button {line-height: 1.4;}
     transition: background-color .15s, border-color .15s, box-shadow .15s;
 }
 .big-button:hover, .colors-button:hover, .customization-button:hover,
-.course-card-button:hover, .submit-tab-btn:hover, .help-link:hover {
+.submit-tab-btn:hover, .help-link:hover {
     background-color: var(--settings-hover);
     transform: none;
     text-decoration: none;
@@ -108,7 +108,7 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible {
     outline: 2px solid var(--settings-link);
     outline-offset: 2px;
 }
-.option-container, .card-edit-menu, .submitted-theme {
+.option-container, .submitted-theme {
     background: var(--settings-panel);
     border: 1px solid var(--settings-border);
     border-radius: var(--settings-radius);
@@ -139,7 +139,7 @@ h2, .customization-header {font-weight: 400;}
     box-shadow: 0 2px 8px #0002;
     backdrop-filter: none;
 }
-.course-card-button.active, .submit-tab-btn.active {
+.submit-tab-btn.active {
     background: var(--settings-primary);
     color: var(--settings-on-primary);
 }
@@ -167,7 +167,7 @@ input[type="checkbox"] {border-radius: 2px; flex-shrink: 0;}
 
 /* Keep hover feedback subtle, without changing control dimensions. */
 :root :is(.big-button, .colors-button, .customization-button,
-.course-card-button, .submit-tab-btn, .help-link, .saved-theme-action,
+.submit-tab-btn, .help-link, .saved-theme-action,
 .domain-remove, #updateCSS):not(:disabled):not([aria-disabled="true"]):hover {
     border-color: var(--settings-hover-border);
     box-shadow: var(--settings-hover-shadow);

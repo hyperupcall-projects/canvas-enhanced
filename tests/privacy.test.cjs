@@ -7,7 +7,7 @@ const content = fs.readFileSync('js/content.js', 'utf8');
 function context() {
     const ctx = vm.createContext({ options: { hide_personal_details: true, custom_cards: { 42: { default: 'Private course' } } } });
     vm.runInContext(content.slice(content.indexOf('const FAKE_COURSES'), content.indexOf('// Course image removal')), ctx);
-    vm.runInContext(content.slice(content.indexOf('function courseRingLabel('), content.indexOf('// Planner items for courses')), ctx);
+    vm.runInContext(content.slice(content.indexOf('function courseRingLabel('), content.indexOf('// True when the course is hidden from the dashboard card grid')), ctx);
     return ctx;
 }
 

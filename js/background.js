@@ -49,7 +49,6 @@ chrome.runtime.onInstalled.addListener(function () {
             "custom_assignments": [],
             "custom_assignments_overflow": ["custom_assignments"],
             "grade_hover": false,
-            "card_letter": true,
             // "hide_completed": false,
             "hide_completed_cards": false,
             "num_todo_items": 10,

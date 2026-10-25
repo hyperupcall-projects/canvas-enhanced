@@ -32,6 +32,9 @@
   "condensed_cards": {
     "message": "Kondenserade kort"
   },
+  "card_method_dashboard": {
+    "message": "Hämta aktiva kort från instrumentpanelen"
+  },
   "disable_color": {
     "message": "Inaktivera färgöverlägg"
   },
@@ -70,9 +73,6 @@
   },
   "grade_hover": {
     "message": "Visa endast vid svävning"
-  },
-  "card_letter": {
-    "message": "Visa bokstavsbetyg"
   },
   "due": {
     "message": "Förfaller"

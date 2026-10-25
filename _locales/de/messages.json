@@ -32,6 +32,9 @@
   "condensed_cards": {
     "message": "Verdichtete Karten"
   },
+  "card_method_dashboard": {
+    "message": "Aktive Karten vom Dashboard holen"
+  },
   "disable_color": {
     "message": "Farbüberlagerung deaktivieren"
   },
@@ -70,9 +73,6 @@
   },
   "grade_hover": {
     "message": "Nur beim Hover anzeigen"
-  },
-  "card_letter": {
-    "message": "Notenbuchstaben anzeigen"
   },
   "due": {
     "message": "Fällig"

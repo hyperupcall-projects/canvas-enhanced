@@ -1155,8 +1155,7 @@ input[type=color].ic-Input:focus,
 
 .extension-aldue:hover,
 .ic-DashboardCard,
-.navigation-tray-container,
-.canvasrefined-gpa-card {
+.navigation-tray-container {
     box-shadow:0 2px 5px #00000080!important
 }
 

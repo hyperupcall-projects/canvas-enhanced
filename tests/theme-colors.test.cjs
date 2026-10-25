@@ -162,3 +162,36 @@ test('built-in palette definitions load before the content script', () => {
         }
     }
 });
+
+test('an empty palette releases the extension base styling from Canvas', () => {
+    const classes = new Set();
+    const style = { id: '', textContent: '', className: '' };
+    const toggleContext = vm.createContext({
+        options: {},
+        document: {
+            querySelector: () => style,
+            createElement: () => style,
+            documentElement: {
+                classList: { toggle(name, force) { force ? classes.add(name) : classes.delete(name); } }
+            }
+        },
+        generateDarkModeCSS: () => 'palette css',
+        isDarkModeActive: () => false,
+        teardownSubmissionTrayFixes() {}, setupSubmissionTrayWatcher() {}, runiframeChecker() {},
+    });
+    vm.runInContext(content.slice(content.indexOf('const BC_LIGHT_DEFAULTS'), content.indexOf('function sourceThemeValues()')), toggleContext);
+    vm.runInContext(content.slice(content.indexOf('function sourceThemeValues()'), content.indexOf('function isDarkModeActive()')), toggleContext);
+    vm.runInContext(content.slice(content.indexOf('function toggleDarkMode()'), content.indexOf('let iframeObserver')), toggleContext);
+
+    toggleContext.options = { dark_preset: { links: '#809cb7' } };
+    toggleContext.toggleDarkMode();
+    assert.ok(classes.has('canvasrefined-theme-active'), 'active palettes keep the theme styling');
+    toggleContext.options = { dark_preset: { links: null } };
+    toggleContext.toggleDarkMode();
+    assert.ok(!classes.has('canvasrefined-theme-active'), 'No Theme removes the theme styling class');
+
+    const css = fs.readFileSync('css/content.css', 'utf8');
+    assert.match(css, /:root\.canvasrefined-theme-active:has\(\.ic-app-header\) body/);
+    assert.match(css, /:root\.canvasrefined-theme-active:has\(\.ic-app-header\) \.ic-DashboardCard/);
+    assert.doesNotMatch(css, /^\.ic-DashboardCard__header_hero \{border:0/m, 'the card chrome reset must be theme-scoped');
+});

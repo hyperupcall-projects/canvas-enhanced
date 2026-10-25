@@ -27,19 +27,18 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path></svg>
                     <span data-i18n="card_customization">Cards</span>
                 </button>
-
-                <button type="button" id="import-export-btn" class="big-button tab-btn" role="tab" aria-controls="themes-panel" aria-selected="false" tabindex="-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 21v-4a4 4 0 1 1 4 4h-4"></path><path d="M21 3a16 16 0 0 0 -12.8 10.2"></path><path d="M21 3a16 16 0 0 1 -10.2 12.8"></path><path d="M10.6 9a9 9 0 0 1 4.4 4.4"></path></svg>
-                    <span data-i18n="themes">Themes</span>
+                <button type="button" id="todo-settings-btn" class="big-button tab-btn" role="tab" aria-controls="todo-panel" aria-selected="false" tabindex="-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>
+                    <span data-i18n="todo_list">Task List</span>
                 </button>
 
                 <button type="button" id="gpa-bounds-btn" class="big-button tab-btn" role="tab" aria-controls="gpa-panel" aria-selected="false" tabindex="-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6"></path><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4"></path></svg>
                     <span data-i18n="gpa">GPA</span>
                 </button>
-                <button type="button" id="todo-settings-btn" class="big-button tab-btn" role="tab" aria-controls="todo-panel" aria-selected="false" tabindex="-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>
-                    <span data-i18n="todo_list">Todo List</span>
+                <button type="button" id="import-export-btn" class="big-button tab-btn" role="tab" aria-controls="themes-panel" aria-selected="false" tabindex="-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 21v-4a4 4 0 1 1 4 4h-4"></path><path d="M21 3a16 16 0 0 0 -12.8 10.2"></path><path d="M21 3a16 16 0 0 1 -10.2 12.8"></path><path d="M10.6 9a9 9 0 0 1 4.4 4.4"></path></svg>
+                    <span data-i18n="themes">Themes</span>
                 </button>
                 <button type="button" id="debug-btn" class="big-button tab-btn" role="tab" aria-controls="debug-panel" aria-selected="false" tabindex="-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 9v4"></path><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"></path><path d="M12 16h.01"></path></svg>
@@ -279,34 +278,6 @@
             <h3 class="header-small" id="theme-values-heading">Theme Values</h3>
             <div class="container">
                 <div class="option-container">
-                    <h3 class="header-small">Color Presets</h3>
-                    <div class="options-presets">
-                        <button id="dark-lighter" class="preset-button customization-button" style="background:#272727;border:1px solid #454545;color:#f5f5f5" data-i18n="dark_lighter">Lighter</button>
-                        <button id="dark-light" class="preset-button customization-button" style="background:#202020;border:1px solid #404040;color:#f5f5f5" data-i18n="dark_light">Light</button>
-                        <button id="dark-default" class="preset-button customization-button" style="background:#161616;border:1px solid #3c3c3c;color:#f5f5f5" data-i18n="dark_default">Default</button>
-                        <button id="dark-dark" class="preset-button customization-button" style="background:#101010;border:1px solid #272727;color:#f5f5f5" data-i18n="dark_dark">Dark</button>
-                        <button id="dark-darker" class="preset-button customization-button" style="background:#000000;border:1px solid #000000;color:#c5c5c5" data-i18n="dark_darker">Darker</button>
-                        <button id="dark-mint" class="preset-button customization-button" style="background:#0f0f0f;border:1px solid #1e1e1e;color:#7CF3CB" data-i18n="dark_mint">Mint</button>
-                        <button id="dark-blue" class="preset-button customization-button" style="background:#14181d;border:1px solid #2e3943;color:#f5f5f5" data-i18n="dark_blue">Blue Tint</button>
-                        <button id="dark-burn" class="preset-button customization-button" style="background:#ffffff;border:1px solid #cccccc;color:#9d9a9a" data-i18n="dark_burn">Eyeball Burn</button>
-                        <button id="dark-unicorn" class="preset-button customization-button" style="background:#ff6090;border:1px solid #00C1FF;color:#FFFF00" data-i18n="dark_unicorn">Unicorn</button>
-                        <button id="dark-lightmode" class="preset-button customization-button" style="background:#fff;border:1px solid #c7cdd1;color:#2d3b45" data-i18n="dark_lightmode">Lightmode</button>
-                        <button id="dark-catppuccin" class="preset-button customization-button" style="background:#11111b!important;border:1px solid #4f5463;color:#f5c2e7;" data-i18n="dark_catppuccin">Catppuccin<br />by Angel</button>
-                        <button id="dark-sage" class="preset-button customization-button" style="background:#2f3e46!important;border:1px solid #84a98c;color:#d8f5c7;" data-i18n="dark_sage">Sage<br />by LivDoesDevStuf</button>
-                        <button id="dark-pink" class="preset-button customization-button" style="background:#ffe0ed!important;border:1px solid #ff007b;color:#ff0088;" data-i18n="dark_pink">Pink<br />by Sayde</button>
-                        <button id="dark-coral" class="preset-button customization-button" style="background:#131c26!important;border:1px solid #0e1721;color:#f88379;" data-i18n="dark_coral">Coral<br />by Superchido</button>
-                        <button style="opacity: 0">placeholder</button>
-                        <button style="opacity: 0">placeholder</button>
-                        <!--
-                        <button id="preset-placeholder1" class="preset-button customization-button" style="opacity: 0;">button</button>
-                        <button id="preset-placeholder2" class="preset-button customization-button" style="opacity: 0;">button</button>
-                        <button id="preset-placeholder3" class="preset-button customization-button" style="opacity: 0;">button</button>
-                        -->
-                    </div>
-                </div>
-            </div>
-            <div class="container">
-                <div class="option-container">
                     <div class="changer">
                         <div class="changer-container" id="dp_sidebar-text">
                             <h3 class="color-type-header" data-i18n="dp_sidebar_text">Sidebar Text</h3>
@@ -411,6 +382,7 @@
                 <h4 class="header-small">Color Palettes</h4>
                 <div class="options-presets">
                     <button id="revert-colors" class="colors-button">Revert to original</button>
+                    <button id="theme-defaults-colors" class="colors-button">Theme Defaults</button>
                     <button class="preset-button colors-button">
                         <p>Reds</p>
                         <div class="colors-preview"></div>
@@ -576,37 +548,9 @@
             </div>
         </div>
         <div class="export-details option-container">
-            <h3 class="header-small" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                <span>Export Theme</span>
-                <span style="display:flex;gap:6px;">
-                    <button type="button" id="export-check-all" class="customization-button" style="padding:4px 10px;font-size:11px;">Check all</button>
-                    <button type="button" id="export-check-none" class="customization-button" style="padding:4px 10px;font-size:11px;">Check none</button>
-                </span>
-            </h3>
-            <div style="display:flex;gap:30px;">
-                <div class="export-inputs">
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-dark" />
-                        <span>Colors and appearance</span>
-                    </div>
-                    <div  class="sub-option">
-                        <input type="checkbox" id="export-cards" />
-                        <span>Card images</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-colors" />
-                        <span>Card colors</span>
-                    </div>
-                    <div class="sub-option">
-                        <input type="checkbox" id="export-card-styles" />
-                        <span>Card styles</span>
-                    </div>
-                </div>
-                <div style="flex: 1">
-                    <textarea class="card-input" id="export-output" placeholder="Output"></textarea>
-                    <button type="button" id="export-copy" class="customization-button" style="display:block;margin-top:8px;width:100%;">Copy</button>
-                </div>
-            </div>
+            <h3 class="header-small">Export Theme</h3>
+            <textarea class="card-input" id="export-output" aria-label="Exported theme" placeholder="Theme JSON" readonly></textarea>
+            <button type="button" id="export-copy" class="customization-button">Copy</button>
         </div>
         <dialog id="import-theme-dialog" aria-labelledby="import-theme-heading">
             <form id="import-theme-form">
@@ -672,10 +616,9 @@
                     <input type="checkbox" id="equal_height_cards" name="equal_height_cards">
                     <label for="equal_height_cards" class="sub-text" data-i18n="equal_height_cards">Equal height</label>
                 </div>
-                <div style="margin-top: 5px">
-                    <span class="sub-text" data-i18n="max_items">Max items to show: </span><span
-                        id="numAssignments"></span>
-                    <input type="range" min="1" max="10" id="numAssignmentsSlider">
+                <div class="sub-option" style="margin-top:5px;align-items:center">
+                    <label for="numAssignments" class="sub-text" data-i18n="max_items">Max items to show: </label>
+                    <input type="number" id="numAssignments" class="card-input" min="0" max="10" step="1" value="4" style="width:80px;">
                 </div>
             </div>
         </div>
@@ -694,10 +637,6 @@
                     <input type="checkbox" id="grade_hover" name="grade_hover">
                     <label for="grade_hover" class="sub-text" data-i18n="grade_hover">Show only when hovering</label>
                 </div>
-                <div class="sub-option" style="margin-top:5px">
-                    <input type="checkbox" id="card_letter" name="card_letter">
-                    <label for="card_letter" class="sub-text" data-i18n="card_letter">Show letter grade</label>
-                </div>
             </div>
         </div>
         <div class="option-container card-display-settings">
@@ -709,27 +648,16 @@
                     <div class="sliderbg"></div>
                 </div><span class="option-name" data-i18n="condensed_cards">Condensed Cards</span>
             </div>
-            <h3 class="header-small">Missing cards?</h3>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="checkbox" id="card_method_dashboard"></input>
-                <span>Get Active Cards From Dashboard</span>
+            <div class="option" id="card_method_dashboard">
+                <input type="radio" id="off" name="card_method_dashboard">
+                <input type="radio" id="on" name="card_method_dashboard">
+                <div class="slider">
+                    <div class="sliderknob"></div>
+                    <div class="sliderbg"></div>
+                </div>
+                <span class="option-name" data-i18n="card_method_dashboard">Get Active Cards From Dashboard</span>
             </div>
         </div>
-
-        <p class="option-container sub-text" style="margin: 5px 0">Enter <b>"none"</b> to hide images and links.<br>You may need to refresh the page to see some changes.</p>
-        <!-- <div class="advanced-cards">
-            <div id="advanced-current"></div>
-            <div id="advanced-past"></div>
-        </div> -->
-		<div class="advanced-cards">
-			<div class="card-grid" id="card-grid">
-
-			</div>
-			<div class="card-edit-menu" id="card-edit-menu" style="display:none;">
-
-			</div>
-		</div>
-
 
         <div class="option-container">
             <h3 class="header-small">More Card Styles</h3>
@@ -765,11 +693,20 @@
             </div>
             <button type="button" id="reset-card-styles" class="customization-button" style="margin-top:12px;">Reset style numbers</button>
         </div>
+
+        <!-- <div class="advanced-cards">
+            <div id="advanced-current"></div>
+            <div id="advanced-past"></div>
+        </div> -->
+		<div class="advanced-cards">
+			<h3 class="header-small" id="course-visibility-heading">Courses</h3>
+			<div id="course-visibility"></div>
+		</div>
     </div>
 
     <div id="todo-panel" class="todo-settings-container tab" role="tabpanel" aria-labelledby="todo-settings-btn" tabindex="0" hidden>
         <div class="tab-header">
-            <h2 style="margin-top: 0" data-i18n="todo_list">Todo List</h2>
+            <h2 style="margin-top: 0" data-i18n="todo_list">Task List</h2>
         </div>
         <div class="option-container">
             <div class="option" id="better_todo">
@@ -815,10 +752,9 @@
                     <input type="checkbox" id="todo_hide_read" name="todo_hide_read">
                     <label for="todo_hide_read" class="sub-text">Hide read announcements</label>
                 </div>
-                <div style="margin-top: 5px">
-                    <span class="sub-text" data-i18n="max_items">Max items to show: </span><span
-                        id="numTodoItems"></span>
-                    <input type="range" min="1" max="12" id="numTodoItemsSlider">
+                <div class="sub-option" style="margin-top:5px;align-items:center">
+                    <label for="numTodoItems" class="sub-text" data-i18n="max_items">Max items to show: </label>
+                    <input type="number" id="numTodoItems" class="card-input" min="1" max="12" step="1" value="10" style="width:80px;">
                 </div>
                 <div class="todo-more-options" id="todo-more-options">
                     <div class="todo-more-toggle" id="todo-more-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="todo-more-items">
@@ -892,10 +828,6 @@
             </div>
             <div class="sub-options">
                 <div class="sub-option" style="margin-top:5px">
-                    <input type="checkbox" id="gpa_calc_prepend" name="gpa_calc_prepend">
-                    <label for="gpa_calc_prepend" class="sub-text" data-i18n="move_top">Move to top</label>
-                </div>
-                <div class="sub-option" style="margin-top:5px">
                     <input type="checkbox" id="gpa_calc_cumulative" name="gpa_calc_cumulative">
                     <label for="gpa_calc_cumulative" class="sub-text" data-i18n="gpa_calc_cumulative">Show cumulative GPA</label>
                 </div>
@@ -950,7 +882,7 @@
                     <div class="sliderbg"></div>
                 </div><span class="option-name">Hide personal details</span>
             </div>
-            <p class="sub-text" style="margin-top:6px;">Replaces the profile picture, course names, grades and assignment titles on dashboard cards, the Better Todo List, progress bars, recent feedback and reminders. Temporarily hides private notes, the GPA calculator, task editing and global search. Turn it off to restore everything (no refresh needed). Course images can be hidden separately below.</p>
+            <p class="sub-text" style="margin-top:6px;">Replaces user-data with mock data to protect privacy.</p>
             <div class="sub-options">
                 <div class="sub-option">
                     <input type="checkbox" id="hide_course_images" name="hide_course_images">
@@ -1005,12 +937,8 @@
         <div class="option-container">
             <h3 class="header-small">Card limit</h3>
             <div style="display: flex; gap: 10px; align-items: center;width:100%">
-                <div>
-                    <input type="range" max="40" min="5" id="card_limit"></input>
-                    <p style="text-align: center" id="card_limit_num"></p>
-                </div>
+                <input type="number" id="card_limit" class="card-input" min="5" max="40" step="1" value="25" style="width:80px;" aria-label="Card limit">
                 <p><b style="font-weight:600">This is an experimental feature.</b> Adjusting this number will reset your cards and could cause storage issues.</p>
-
             </div>
 
         </div>

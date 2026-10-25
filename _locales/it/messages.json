@@ -32,6 +32,9 @@
   "condensed_cards": {
     "message": "Carte condensate"
   },
+  "card_method_dashboard": {
+    "message": "Ottieni le carte attive dalla dashboard"
+  },
   "disable_color": {
     "message": "Disabilita sovrapposizione colore"
   },
@@ -70,9 +73,6 @@
   },
   "grade_hover": {
     "message": "Mostra solo al passaggio del mouse"
-  },
-  "card_letter": {
-    "message": "Mostra voto in lettere"
   },
   "due": {
     "message": "Dovuto"

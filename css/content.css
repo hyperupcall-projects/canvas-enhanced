@@ -4,7 +4,9 @@
 .hypodivcalc{display: flex;min-width:calc(33.33% - 50px);box-shadow: #9da5ab80 0px 2px 5px;align-items:center;background-color:#eee;border-radius:7px;margin:10px 5px 0;padding:20px;width:calc(33.33% - 50px);}
 #grade-summary-content ~ .extension-calcgpa{font-size:1.2em;font-weight:700;}
 .hypocalcform span{font-weight:700;min-width:50%;}
-.ic-DashboardCard__header_hero {border:0!important}
+/* The card-image border reset is part of the extension's visual theme. Scope
+   it to an active palette so "No Theme" restores Canvas's own card chrome. */
+.canvasrefined-theme-active .ic-DashboardCard__header_hero {border:0!important}
 .canvasrefined-completed{text-decoration:line-through;}
 .canvasrefined-completed a{text-decoration:line-through;}
 .extension-embed-hidden {display: none!important}
@@ -44,7 +46,6 @@
     border-radius: 4px;
     font-size: 13px;
     padding: 18px;
-    box-shadow: 0 1px 5px #000!important;
 }
 .canvasrefined-add-assignment {max-height: 0; overflow:hidden;transition: .3s max-height;}
 .canvasrefined-custom-open {max-height: 250px}
@@ -125,11 +126,86 @@
 .canvasrefined-preview-text {text-overflow: ellipsis;color: var(--bctext-0, #000);}
 .canvasrefined-preview-title {font-weight:bold;font-size:14px;color: var(--bctext-0, #000);}
 .canvasrefined-hover-preview::after {content:'';position:absolute;width:100%;height: 18px;bottom:0;left:0;background:linear-gradient(0deg, var(--bcbackground-0, #fff) 50%, transparent)}
-.canvasrefined-link-image {height: 21px; width: 21px;padding: 0px}
-.canvasrefined-link-image:hover {filter: brightness(66%)}
 .canvasrefined-gpa-header {font-size:16px;font-weight: bold;padding: 0;margin: 0;}
-.canvasrefined-gpa-card {width: 262px; box-shadow: 0 2px 5px rgba(0,0,0,.3);border-radius:4px;margin: 36px 0 0 36px;display: inline-block;padding: 18px;box-sizing: border-box;vertical-align: top;}
+.canvasrefined-gpa-card {width: 262px; box-shadow: none;border-radius:4px;margin: 36px 0 0 36px;display: inline-block;padding: 18px;box-sizing: border-box;vertical-align: top;}
 .canvasrefined-gpa-card p {margin: 0;}
+/* Dashboard header: summary sits just left of the ⋮ options button. */
+.ic-Dashboard-header:has(.canvasrefined-gpa-header-mount),
+.ic-Dashboard-header__layout:has(.canvasrefined-gpa-header-mount),
+.ic-Dashboard-header__actions:has(.canvasrefined-gpa-header-mount) {
+    overflow: visible;
+}
+.ic-Dashboard-header__actions:has(.canvasrefined-gpa-header-mount) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0;
+}
+.canvasrefined-gpa-header-mount {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    position: relative;
+    vertical-align: middle;
+    /* Eat leftover space on the left so the pill stays against the ⋮ button. */
+    margin-left: auto;
+    margin-right: 8px;
+}
+.canvasrefined-gpa-header-mount .canvasrefined-gpa-card {
+    width: auto;
+    margin: 0;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.canvasrefined-gpa-header-mount .canvasrefined-gpa-card > div {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+}
+.canvasrefined-gpa-header-mount .canvasrefined-gpa-card > div > div p {
+    display: inline;
+}
+.canvasrefined-gpa-header-mount .canvasrefined-gpa-card > div > div p + p {
+    margin-left: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--bctext-1, #5b6770);
+}
+.canvasrefined-gpa-header-mount #canvasrefined-gpa-unweighted,
+.canvasrefined-gpa-header-mount #canvasrefined-gpa-weighted,
+.canvasrefined-gpa-header-mount #canvasrefined-gpa-cumulative {
+    font-size: 16px;
+    margin-top: 0;
+}
+.canvasrefined-gpa-header-mount .canvasrefined-gpa-edit-btn {
+    width: auto;
+    margin-top: 0;
+    padding: 4px 10px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+.canvasrefined-gpa-header-mount .canvasrefined-gpa {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 30;
+    margin: 0;
+    width: max-content;
+    max-width: min(760px, calc(100vw - 32px));
+    max-height: min(70vh, 560px);
+    overflow: auto;
+    background: var(--bcbackground-1, #fff);
+    color: var(--bctext-0, #2d3b45);
+    box-shadow: none !important;
+}
+.canvasrefined-gpa-header-mount .canvasrefined-gpa-courses {
+    min-width: 0;
+    width: max-content;
+}
 #cumulative-gpa .canvasrefined-gpa-name {font-weight:bold;}
 #canvasrefined-gpa-unweighted, #canvasrefined-gpa-weighted, #canvasrefined-gpa-cumulative {font-size: 24px; font-weight: bold;margin-top: 10px}
 .canvasrefined-gpa-edit-btn {background: #f5f5f5; border: 1px solid #c7cdd1; border-radius:6px; width: 100%; padding: 5px 0px; color: #000;margin-top: 10px}
@@ -427,10 +503,11 @@
     margin-bottom: 0 !important;
 }
 
-/* Let the dashboard cards use the full width of their container. */
-#DashboardCard_Container,
-#DashboardCard_Container .ic-DashboardCard__box,
-#DashboardCard_Container .ic-DashboardCard__box__container {
+/* Let the dashboard cards use the full width of their container. Scoped to
+   an active theme so "No Theme" restores Canvas's own card layout as well. */
+.canvasrefined-theme-active #DashboardCard_Container,
+.canvasrefined-theme-active #DashboardCard_Container .ic-DashboardCard__box,
+.canvasrefined-theme-active #DashboardCard_Container .ic-DashboardCard__box__container {
     box-sizing: border-box;
     padding-inline: 0 !important;
     margin-inline: 0;
@@ -439,25 +516,35 @@
 /* Canvas gives every dashboard card a leading margin, including the first
    column. Put the gutter after each card so the grid starts at the heading's
    left edge; the card-spacing setting can still override the trailing gap. */
-#DashboardCard_Container .ic-DashboardCard {
+.canvasrefined-theme-active #DashboardCard_Container .ic-DashboardCard {
     margin-left: 0 !important;
     margin-right: 36px;
 }
-#courseMenuToggle {
+.canvasrefined-theme-active #courseMenuToggle {
     margin-left: 16px !important;
 }
 
-#breadcrumbs {
+.canvasrefined-theme-active #breadcrumbs {
     padding-top: 3px !important;
 }
 
+/* Remove the nav-toggle/breadcrumbs bar's side margins so it lines up with the
+   content column. Part of the extension's visual theme, not a Canvas fix. */
+.canvasrefined-theme-active .ic-app-nav-toggle-and-crumbs {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
 /* Pure-inspired controls and surfaces, scoped to Canvas and our own UI.
-   Keep palette variables so custom themes and both appearances still apply. */
-:root:has(.ic-app-header) body {
+   Keep palette variables so custom themes and both appearances still apply.
+   Rules that restyle Canvas itself are scoped to .canvasrefined-theme-active:
+   selecting "No Theme" drops that class, so Canvas's native controls, inputs
+   and cards come back instead of keeping the extension's styling. */
+:root.canvasrefined-theme-active:has(.ic-app-header) body {
     font-family: Arial, Helvetica, sans-serif;
     line-height: 1.5;
 }
-:root:has(.ic-app-header) :is(.btn, .Button),
+:root.canvasrefined-theme-active:has(.ic-app-header) :is(.btn, .Button):not(.ic-DashboardCard__header-button),
 .canvasrefined-custom-btn, .canvasrefined-gpa-edit-btn,
 .canvasrefined-todo-label-btn, .extension-linkpreview {
     border: 1px solid var(--bcborders, #ccc);
@@ -469,25 +556,58 @@
     text-shadow: none;
     box-shadow: none;
 }
-:root:has(.ic-app-header) :is(.btn, .Button):hover,
+/* Canvas paints this circle separately from the menu button. Keep their
+   boxes identical and center the icon without relying on button padding
+   or the icon font's inline baseline. */
+.canvasrefined-theme-active .ic-DashboardCard__header-button,
+.canvasrefined-theme-active .ic-DashboardCard__header-button-bg {
+    position: absolute !important;
+    top: 12px !important;
+    bottom: auto !important;
+    inset-inline-start: auto !important;
+    inset-inline-end: 12px !important;
+    width: 36px !important;
+    height: 36px !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+}
+.canvasrefined-theme-active .ic-DashboardCard__header-button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+}
+.canvasrefined-theme-active .ic-DashboardCard__header-button .icon-more,
+.canvasrefined-theme-active .ic-DashboardCard__header-button .icon-more::before {
+    display: block !important;
+    width: 24px !important;
+    height: 24px !important;
+    margin: 0 !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
+}
+:root.canvasrefined-theme-active:has(.ic-app-header) :is(.btn, .Button):not(.ic-DashboardCard__header-button):hover,
 .canvasrefined-custom-btn:hover, .canvasrefined-gpa-edit-btn:hover,
 .extension-linkpreview:hover {
     background-color: var(--bcbackground-2, #dcdcdc) !important;
 }
-:root:has(.ic-app-header) :is(.btn-primary, .Button--primary) {
+:root.canvasrefined-theme-active:has(.ic-app-header) :is(.btn-primary, .Button--primary) {
     background-color: var(--bclinks, #0078e7) !important;
     color: var(--bclink-text, #fff) !important;
 }
-:root:has(.ic-app-header) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]), select, textarea) {
+:root.canvasrefined-theme-active:has(.ic-app-header) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]), select, textarea) {
     border: 1px solid var(--bcborders, #ccc);
     border-radius: 4px;
     box-shadow: inset 0 1px 3px #00000012;
 }
-:root:has(.ic-app-header) :is(button, a, input, select, textarea):focus-visible {
+:root.canvasrefined-theme-active:has(.ic-app-header) :is(button, a, input, select, textarea):focus-visible {
     outline: 2px solid var(--bclinks, #0078e7);
     outline-offset: 2px;
 }
-:root:has(.ic-app-header) .ic-DashboardCard,
+:root.canvasrefined-theme-active:has(.ic-app-header) .ic-DashboardCard,
 .canvasrefined-gpa-card, .canvasrefined-dashboard-notes,
 .canvasrefined-gs-modal, .canvasrefined-hover-preview, .hypodivcalc {
     border: 1px solid var(--bcborders, #ccc);
@@ -509,18 +629,27 @@
 .canvasrefined-card-grade, .canvasrefined-gs-row {border-radius: 2px;}
 .canvasrefined-assignment-dueat:hover {box-shadow: none !important;}
 
-:root:has(.ic-app-header) :is(.btn-primary, .Button--primary):hover {
+:root.canvasrefined-theme-active:has(.ic-app-header) :is(.btn-primary, .Button--primary):hover {
     background-color: color-mix(in srgb, var(--bclinks, #0078e7) 88%, #000) !important;
 }
 
 /* Theme-aware hover feedback for Canvas controls and extension surfaces. */
-:root:has(.ic-app-header) :is(.btn, .Button, .ic-DashboardCard):not(:disabled):not([aria-disabled="true"]):hover,
+:root.canvasrefined-theme-active:has(.ic-app-header) :is(.btn, .Button, .ic-DashboardCard):not(.ic-DashboardCard__header-button):not(:disabled):not([aria-disabled="true"]):hover,
 :is(.canvasrefined-custom-btn, .canvasrefined-gpa-edit-btn,
 .canvasrefined-todo-label-btn, .extension-linkpreview, .canvasrefined-gpa-card):not(:disabled):hover {
     border-color: color-mix(in srgb, var(--bcborders, #ccc) 70%, var(--bctext-0, #333)) !important;
+}
+:is(.canvasrefined-custom-btn, .canvasrefined-gpa-edit-btn,
+.canvasrefined-todo-label-btn, .extension-linkpreview):not(:disabled):hover {
     box-shadow: 0 2px 5px rgb(0 0 0 / 18%) !important;
 }
-:root:has(.ic-app-header) :is(input:not([type="hidden"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]), select, textarea):not(:disabled):not(:focus):hover {
+.canvasrefined-gpa-card,
+.canvasrefined-gpa-card:hover,
+.canvasrefined-gpa,
+.canvasrefined-gpa:hover {
+    box-shadow: none !important;
+}
+:root.canvasrefined-theme-active:has(.ic-app-header) :is(input:not([type="hidden"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]), select, textarea):not(:disabled):not(:focus):hover {
     border-color: color-mix(in srgb, var(--bcborders, #ccc) 70%, var(--bctext-0, #333)) !important;
     box-shadow: inset 0 1px 3px #00000012, 0 2px 5px rgb(0 0 0 / 18%);
 }
