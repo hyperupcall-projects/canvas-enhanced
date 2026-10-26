@@ -50,15 +50,12 @@ chrome.runtime.onInstalled.addListener(function () {
             "assignments_done": [],
             "dashboard_grades": true,
             "assignment_date_format": false,
-            "dashboard_notes": false,
-            "dashboard_notes_text": "",
-            "dashboard_notes_mode": "edit",
             "better_todo": true,
             "todo_hr24": false,
 			"todo_separate_scrollbar": false,
-            "todo_show_scrollbar": false,
-            "bold_sidebar_text": false,
             "condensed_cards": false,
+            "course_nickname_font_size": "small",
+            "course_id_font_size": "medium",
             "custom_cards": {},
             "custom_cards_2": {},
             "custom_cards_3": {},
@@ -90,9 +87,9 @@ chrome.runtime.onInstalled.addListener(function () {
             },
             // "todo_overdues": false,
             "card_overdues": false,
+            "card_future_dues": true,
             "card_overdue_always_red": false,
             "relative_dues": false,
-            "equal_height_cards": false,
             "hide_new_canvas": true,
             "hide_sequence_footer": false,
             "quiz_safe_mode": false,
@@ -104,7 +101,6 @@ chrome.runtime.onInstalled.addListener(function () {
             "todo_confetti": true,
             "todo_show_scores": false,
             "device_dark": false,
-            "cumulative_gpa": { "name": "Cumulative GPA", "hidden": false, "weight": "dnc", "credits": 999, "gr": 3.21 },
             // "show_updates": false,
             "card_method_date": false,
             "card_method_dashboard": true,
@@ -115,20 +111,13 @@ chrome.runtime.onInstalled.addListener(function () {
             "multi_remind": false,
             "id": "",
             "new_browser": null,
-            "gpa_calc_cumulative": false,
-            "gpa_calc_weighted": true,
             "imageSize": 100,
-            "cardRoundness": 5,
-            'cardSpacing': 0,
+            "cardMargin": 36,
             "cardWidth": 262,
-            "cardHeight": 146,
-            "global_search": false,
-            "grade_analytics": true,
-            "grade_analytics_zones": false,
         }
     };
 
-    const updateMsg = "Canvas Enhanced was just updated!\nThis version added new themes, cumulative GPA into the GPA calculator, and a new sorting function for themes.";
+    const updateMsg = "Canvas Enhanced was just updated!\nThis version added new themes and a new sorting function for themes.";
 
     // The Styles feature (custom fonts, custom CSS, custom backgrounds and the
     // opacity/blur sliders) was removed. Its settings are no longer read by
@@ -136,6 +125,13 @@ chrome.runtime.onInstalled.addListener(function () {
     // values behind — a long custom stylesheet in particular would otherwise
     // sit in storage.sync forever, eating into the sync quota.
     const removedOptions = [
+        "gpa_calc_cumulative",
+        "cumulative_gpa",
+        "gpa_calc_weighted",
+        "equal_height_cards", // Card heights are always equal.
+        "bold_sidebar_text",
+        "global_search", // Search is always available from its buttons.
+        "grade_analytics", // Grade Analytics now always runs on Grades pages.
         "custom_font",
         "custom_font_skip_p",
         "custom_styles",
@@ -154,6 +150,8 @@ chrome.runtime.onInstalled.addListener(function () {
         "card_opacity",
         "card_blur",
         "card_transparency",
+        "cardRoundness",
+        "cardHeight",
         "imageRoundness",
         "card_grid",
         "card_grid_columns",
@@ -177,8 +175,22 @@ chrome.runtime.onInstalled.addListener(function () {
         chrome.storage.sync.get(null, async sync => {
             let newSyncOptions = {"update_msg": updateMsg};
             let newLocalOptions = {};
+            // Retired single-bar progress modes now use per-course lines.
+            if (["line", "combined", "segmented"].includes(sync.todo_progress_rings)) {
+                newSyncOptions.todo_progress_rings = "lines";
+            }
+            // Preserve the former emphasis toggle as independent font sizes.
+            if (sync.emphasize_course_name === true) {
+                if (sync.course_nickname_font_size === undefined) newSyncOptions.course_nickname_font_size = "medium";
+                if (sync.course_id_font_size === undefined) newSyncOptions.course_id_font_size = "small";
+            }
+            // Preserve older custom margins; zero used to mean Canvas's native spacing.
+            if (sync.cardMargin === undefined && sync.cardSpacing !== undefined) {
+                const legacyMargin = sync.cardSpacing === 0 ? 36 : Number(sync.cardSpacing) / 2;
+                newSyncOptions.cardMargin = Number.isFinite(legacyMargin) && legacyMargin >= 0 ? legacyMargin : 36;
+            }
             Object.keys(default_options["sync"]).forEach(option => {
-                if (sync[option] !== undefined) return;
+                if (sync[option] !== undefined || newSyncOptions[option] !== undefined) return;
                 newSyncOptions[option] = default_options["sync"][option];
             });
             Object.keys(default_options["local"]).forEach(option => {
@@ -192,6 +204,8 @@ chrome.runtime.onInstalled.addListener(function () {
 
             if (Object.keys(newSyncOptions).length > 0) {
                 chrome.storage.sync.set(newSyncOptions).then(() => {
+                    chrome.storage.sync.remove(["cardSpacing", "emphasize_course_name"]);
+                    chrome.storage.local.remove("cardSpacing");
                     console.log(newSyncOptions);
                     if (newSyncOptions.new_install === true) {
                         chrome.runtime.openOptionsPage();

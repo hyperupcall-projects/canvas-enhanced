@@ -62,9 +62,6 @@
   "24hrformat": {
     "message": "Utiliser le format 24 heures"
   },
-  "dashboard_notes": {
-    "message": "Notes du tableau de bord"
-  },
   "gpa_calculator": {
     "message": "Calculateur de GPA"
   },
@@ -113,9 +110,6 @@
   "relative_due_dates": {
     "message": "Dates d'échéance relatives"
   },
-  "equal_height_cards": {
-    "message": "Hauteur égale"
-  },
   "enter_multiple": {
     "message": "(Entrez plusieurs avec une virgule)"
   },
@@ -133,12 +127,6 @@
   },
   "todo_colors": {
     "message": "Utiliser les couleurs des cartes"
-  },
-  "gpa_calc_cumulative": {
-    "message": "Afficher la moyenne cumulative"
-  },
-  "gpa_calc_weighted": {
-    "message": "Afficher la moyenne pondérée"
   },
   "device_dark": {
     "message": "Utiliser les paramètres du mode sombre de l'appareil"

@@ -62,9 +62,6 @@
   "24hrformat": {
     "message": "Использовать 24-часовой формат"
   },
-  "dashboard_notes": {
-    "message": "Заметки на панели инструментов"
-  },
   "gpa_calculator": {
     "message": "Калькулятор среднего балла"
   },
@@ -113,9 +110,6 @@
   "relative_due_dates": {
     "message": "Относительные сроки выполнения"
   },
-  "equal_height_cards": {
-    "message": "Одинаковая высота"
-  },
   "enter_multiple": {
     "message": "(Введите несколько через запятую)"
   },
@@ -133,12 +127,6 @@
   },
   "todo_colors": {
     "message": "Используйте цвета карт"
-  },
-  "gpa_calc_cumulative": {
-    "message": "Показать накопленный средний балл"
-  },
-  "gpa_calc_weighted": {
-    "message": "Показать взвешенный средний балл"
   },
   "device_dark": {
     "message": "Использовать настройки темного режима устройства"

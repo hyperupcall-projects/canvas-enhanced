@@ -40,11 +40,13 @@ test('settings and theme exports contain separate fields and keep personal data 
         return elements.get(id);
     }
     const stored = {
+        bold_sidebar_text: true,
+        gpa_calc_cumulative: true, cumulative_gpa: { gr: 3.21, credits: 999 }, gpa_calc_weighted: false,
         assignments_due: true, better_todo: false, gpa_calc_bounds: { A: { cutoff: 90, gpa: 4 } },
         dark_mode: false, device_dark: true, dark_preset: { links: '#123456' },
-        cardRoundness: 7, gradient_cards: true,
+        cardRoundness: 7, cardHeight: 200, cardMargin: 24, gradient_cards: true,
         card_colors: ['#123456'], custom_cards: { 42: { img: 'https://example.com/card.png', name: 'Private course' } },
-        dashboard_notes_text: 'Private notes', custom_assignments: ['Private task'], assignment_states: { 123: true },
+        custom_assignments: ['Private task'], assignment_states: { 123: true },
         custom_domain: ['private.example.com']
     };
     const context = vm.createContext({
@@ -63,48 +65,53 @@ test('settings and theme exports contain separate fields and keep personal data 
     assert.deepEqual(theme, {
         dark_preset: stored.dark_preset, dark_mode: false, device_dark: true,
         custom_cards: ['https://example.com/card.png'], card_colors: stored.card_colors,
-        gradient_cards: true, cardRoundness: 7
+        gradient_cards: true, cardMargin: 24
     });
 });
 
-test('card assignment and grade sub-options stay visible and disable when the parent toggle is off', () => {
+test('every dependent section stays visible and dims as a whole when its parent toggle is off', () => {
     const settings = fs.readFileSync('js/settings.js', 'utf8');
-    const inputs = [
-        { id: 'assignment_date_format', disabled: false },
-        { id: 'card_overdues', disabled: false },
-        { id: 'numAssignments', disabled: false },
-    ];
-    const subOptions = {
-        style: { display: '' },
-        querySelectorAll() { return inputs; }
-    };
-    const gradeInputs = [{ id: 'grade_hover', disabled: false }];
-    const gradeSub = { style: { display: '' }, querySelectorAll() { return gradeInputs; } };
-    const gpaSub = { style: { display: '' }, querySelectorAll() { return []; } };
-    const option = sub => ({ parentElement: { querySelector(sel) { return sel === ':scope > .sub-options' ? sub : null; } } });
+    const sections = new Map();
+    for (const id of ['assignments_due', 'dashboard_grades', 'gpa_calc', 'better_todo', 'hide_personal_details']) {
+        const controls = ['input', 'select', 'textarea', 'button'].map(tag => ({ tag, disabled: false, value: 'saved value', checked: true }));
+        const classes = new Set();
+        const attributes = {};
+        sections.set(id, {
+            controls, attributes, classes,
+            style: { display: '' },
+            inert: false,
+            classList: { toggle(name, on) { if (on) classes.add(name); else classes.delete(name); } },
+            setAttribute(name, value) { attributes[name] = value; },
+            querySelectorAll(selector) {
+                assert.equal(selector, 'input, select, textarea, button');
+                return controls;
+            }
+        });
+    }
     const context = vm.createContext({
         document: {
             getElementById(id) {
-                if (id === 'assignments_due') return option(subOptions);
-                if (id === 'dashboard_grades') return option(gradeSub);
-                if (id === 'gpa_calc') return option(gpaSub);
-                return null;
+                const sub = sections.get(id);
+                return sub ? { parentElement: { querySelector(selector) {
+                    assert.equal(selector, ':scope > .sub-options');
+                    return sub;
+                } } } : null;
             }
         }
     });
     vm.runInContext(settings.slice(settings.indexOf('function setSubOptionsDisabled'), settings.indexOf('function setup()')), context);
-    context.toggleSubOptionsVisibility('assignments_due', false);
-    assert.equal(subOptions.style.display, '', 'card assignment options stay visible');
-    assert.equal(inputs.every(el => el.disabled), true);
-    context.toggleSubOptionsVisibility('assignments_due', true);
-    assert.equal(inputs.every(el => el.disabled), false);
-    context.toggleSubOptionsVisibility('dashboard_grades', false);
-    assert.equal(gradeSub.style.display, '', 'card grade options stay visible');
-    assert.equal(gradeInputs.every(el => el.disabled), true);
-    context.toggleSubOptionsVisibility('dashboard_grades', true);
-    assert.equal(gradeInputs.every(el => el.disabled), false);
-    context.toggleSubOptionsVisibility('gpa_calc', false);
-    assert.equal(gpaSub.style.display, 'none', 'other toggles still hide their sub-options');
+    for (const [id, section] of sections) {
+        for (const isOn of [false, true, false, true]) {
+            context.updateSubOptionsState(id, isOn);
+            assert.equal(section.style.display, '', `${id} stays visible`);
+            assert.equal(section.classes.has('section-disabled'), !isOn, `${id} dims the whole section`);
+            assert.equal(section.inert, !isOn, `${id} blocks all interactions, including custom disclosure controls`);
+            assert.equal(section.attributes['aria-disabled'], String(!isOn));
+            assert.ok(section.controls.every(el => el.disabled === !isOn));
+            assert.ok(section.controls.every(el => el.value === 'saved value' && el.checked), 'saved child values survive toggling');
+        }
+    }
+    context.updateSubOptionsState('unknown_option', false);
 });
 
 test('course list is a visibility table and no longer renames courses', async () => {
@@ -149,7 +156,7 @@ test('course list is a visibility table and no longer renames courses', async ()
     await context.displayAdvancedCards();
     const table = host.children[0];
     assert.equal(table.tagName, 'TABLE');
-    assert.deepEqual(table.children[0].children[0].children.map(cell => cell.textContent), ['Name', 'Card grid', 'Task list']);
+    assert.deepEqual(table.children[0].children[0].children.map(cell => cell.textContent), ['Name', 'Card grid', 'Todo list']);
     const rows = table.children[1].children;
     // Numeric course ids come back from Object.keys in ascending order.
     assert.equal(rows[0].children[0].textContent, 'ALG');

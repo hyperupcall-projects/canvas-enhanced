@@ -51,3 +51,43 @@ test('anonymization survives Canvas rewriting existing text and attributes, and 
     ctx.restoreAnonymized({ querySelectorAll: () => [el] });
     assert.equal(text, 'Updated private course'); assert.equal(attrs.title, 'Updated private tooltip');
 });
+
+test('dashboard scans save original course names and repair cached privacy placeholders', async () => {
+    const ctx = context();
+    const subtitle = { textContent: 'Physics — Jensen', dataset: { crAnonOrig: 'Calculus BC' } };
+    const title = { textContent: 'Physics — Jensen', dataset: { crAnonOrig: 'Calculus BC — Fall' } };
+    const card = { querySelector: selector => {
+        if (selector === '.ic-DashboardCard__link') return { href: 'https://canvas.example/courses/42' };
+        if (selector === '.ic-DashboardCard__header-subtitle') return subtitle;
+        return title;
+    } };
+    const stored = { custom_cards: {}, custom_cards_3: {} };
+    Object.assign(ctx, {
+        domain: 'https://canvas.example', console: { log() {} },
+        document: { querySelectorAll: () => [card] },
+        logError: error => { throw error; },
+        chrome: { storage: { sync: {
+            get: (_, callback) => callback(structuredClone(stored)),
+            set: (values, callback) => { Object.assign(stored, structuredClone(values)); callback(); },
+        } } },
+    });
+    vm.runInContext(content.slice(content.indexOf('function getCardsFromDashboard()'), content.indexOf('async function getCards(')), ctx);
+    await ctx.getCardsFromDashboard();
+    assert.equal(stored.custom_cards[42].default, 'Calculus BC');
+    assert.equal(stored.custom_cards[42].fullName, 'Calculus BC — Fall');
+
+    // An older scan may already have saved the fake name. Turning privacy
+    // off and scanning the real dashboard must repair it without losing settings.
+    stored.custom_cards[42] = { ...stored.custom_cards[42], default: 'Physics — Jensen', fullName: 'Physics — Jensen', credits: 4, hide_todo: true };
+    ctx.options.hide_personal_details = false;
+    subtitle.textContent = subtitle.dataset.crAnonOrig;
+    title.textContent = title.dataset.crAnonOrig;
+    delete subtitle.dataset.crAnonOrig;
+    delete title.dataset.crAnonOrig;
+    await ctx.getCardsFromDashboard();
+    ctx.options.custom_cards = stored.custom_cards;
+    assert.equal(ctx.courseRingLabel(42), 'Calculus BC — Fall');
+    assert.equal(stored.custom_cards[42].fullName, 'Calculus BC — Fall');
+    assert.equal(stored.custom_cards[42].credits, 4);
+    assert.equal(stored.custom_cards[42].hide_todo, true);
+});

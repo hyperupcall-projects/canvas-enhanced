@@ -1,10 +1,10 @@
 // Browser regression: node tests/render-privacy-fixture.cjs /tmp/privacy-check.html
 const fs = require('node:fs');
 const content = fs.readFileSync('js/content.js', 'utf8');
-const privacy = content.slice(content.indexOf('const FAKE_COURSES'), content.indexOf('/* \nDashboard grades'));
+const privacy = content.slice(content.indexOf('const FAKE_COURSES'), content.indexOf('/*\nDashboard grades'));
 const label = content.slice(content.indexOf('function courseRingLabel('), content.indexOf('// True when the course is hidden from the dashboard card grid'));
 const preview = content.slice(content.indexOf('function hideTodoPreview('), content.indexOf('async function showTodoPreview('));
-const lines = content.slice(content.indexOf('function renderProgressLines('), content.indexOf('// Mode "line":'));
+const lines = content.slice(content.indexOf('function renderProgressLines('), content.indexOf('function renderProgressRings(container, scopedData)'));
 fs.writeFileSync(process.argv[2] || '/tmp/privacy-check.html', `<!doctype html>
 <style>.ic-avatar{display:block;width:48px;height:48px;background-image:url(private-avatar.png)}img{width:48px;height:48px}</style>
 <a id="global_nav_profile_link" title="Private user" aria-label="Private user account"><span class="ic-avatar"><img src="private-avatar.png" srcset="private-avatar-2x.png 2x" alt="Private user"></span></a>
@@ -15,7 +15,7 @@ fs.writeFileSync(process.argv[2] || '/tmp/privacy-check.html', `<!doctype html>
 <span class="screenreader-only">Visit Private course</span>
 </div>
 <div class="recent_feedback"><a href="/courses/42/assignments/84"><div class="event-details"><span class="event-details__context">Private course</span><span class="recent_feedback_title">Private assignment</span><p><strong>99 out of 100</strong></p><p>Private teacher comment</p></div></a></div>
-<div id="canvasrefined-global-search-modal">Private search query and results</div><div id="canvasrefined-todo-preview" style="display:block">Private preview</div><a class="canvasrefined-reminder-content" href="/courses/42/assignments/84"><h2 class="canvasrefined-reminder-title">Private assignment</h2></a><div id="progress"></div><div class="canvasrefined-dashboard-notes">Private notes</div><div class="canvasrefined-gpa-card">Real GPA</div><div class="canvasrefined-gpa">Private grades</div><div id="better-todo-add-task-menu">Private task details</div>
+<div id="canvasrefined-global-search-modal">Private search query and results</div><div id="canvasrefined-todo-preview" style="display:block">Private preview</div><a class="canvasrefined-reminder-content" href="/courses/42/assignments/84"><h2 class="canvasrefined-reminder-title">Private assignment</h2></a><div id="progress"></div><div class="canvasrefined-gpa-card">Real GPA</div><div class="canvasrefined-gpa">Private grades</div><div id="better-todo-add-task-menu">Private task details</div>
 <pre id="result">RUNNING</pre>
 <script>
 let options = {hide_personal_details:true, custom_cards:{42:{default:'Private course'}}};
@@ -41,7 +41,7 @@ ${privacy}\n${label}\n${lines}
  check(getComputedStyle(el('#global_nav_profile_link img')).content.includes('data:image/svg+xml'), 'avatar image masked');
  check(getComputedStyle(el('.ic-avatar')).backgroundImage.includes('data:image/svg+xml'), 'background avatar masked');
  check(el('#global_nav_profile_link img').alt === 'Anonymous user', 'avatar accessible name masked');
- for (const s of ['.canvasrefined-dashboard-notes','.canvasrefined-gpa-card','.canvasrefined-gpa','#better-todo-add-task-menu']) check(getComputedStyle(el(s)).display === 'none', s + ' hidden');
+ for (const s of ['.canvasrefined-gpa-card','.canvasrefined-gpa','#better-todo-add-task-menu']) check(getComputedStyle(el(s)).display === 'none', s + ' hidden');
  await wait();
  // Canvas rewrites an existing marked node, including attributes only.
  el('.ic-DashboardCard__header-title span').firstChild.data = 'Private course';
@@ -66,7 +66,6 @@ ${privacy}\n${label}\n${lines}
  check(el('.recent_feedback').outerHTML === originals[1], 'feedback restored exactly');
  check(el('#global_nav_profile_link img').alt === 'New private user', 'latest avatar alt restored');
  check(!document.getElementById('canvasrefined-personal-details-privacy'), 'privacy stylesheet removed');
- check(getComputedStyle(el('.canvasrefined-dashboard-notes')).display !== 'none', 'notes restored');
  check(el('#global_nav_profile_link img').getAttribute('src') === 'private-avatar.png', 'avatar source preserved');
  document.querySelector('#result').textContent = errors.length ? 'FAIL: ' + errors.join('; ') : 'PASS: avatar, consistent course labels, private widgets, overlays, reminders, late rendering, node rewrites, observer settling, restoration';
 })().catch(error => document.querySelector('#result').textContent = 'FAIL: ' + error.stack);

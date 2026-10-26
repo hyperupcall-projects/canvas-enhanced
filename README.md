@@ -12,7 +12,6 @@ Canvas LMS leaves much to be desired. The most popular extension providing addit
 	- Add custom themes
 - Improved dashboard view
 	- Show course grades
-	- Dashboard notes
 	- Overdue assignments shown for each class card
 	- Custom styling of cards
 - GPA calculator

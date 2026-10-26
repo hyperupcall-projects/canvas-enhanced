@@ -1,6 +1,5 @@
-const syncedSwitches = ['remind', 'tab_icons', 'remlogo', 'full_width', 'assignments_due', 'gpa_calc', 'dashboard_grades', 'dashboard_notes', 'better_todo', 'bold_sidebar_text', 'condensed_cards', 'card_method_dashboard', 'hide_new_canvas', 'hide_sequence_footer', 'quiz_safe_mode', 'global_search', 'grade_analytics', 'hide_personal_details'];
+const syncedSwitches = ['remind', 'tab_icons', 'remlogo', 'full_width', 'assignments_due', 'gpa_calc', 'dashboard_grades', 'better_todo', 'condensed_cards', 'card_method_dashboard', 'hide_new_canvas', 'hide_sequence_footer', 'quiz_safe_mode', 'hide_personal_details'];
 const syncedSubOptions = [
-	"grade_analytics_zones",
 	"hide_course_images",
 	"todo_hide_feedback",
 	"todo_hide_read",
@@ -11,22 +10,19 @@ const syncedSubOptions = [
 
 	"relative_dues",
 	"card_overdues",
+	"card_future_dues",
 	"card_overdue_always_red",
 	"hide_completed_cards",
-	"equal_height_cards",
+	"course_nickname_font_size",
+	"course_id_font_size",
 	// "todo_overdues",
 	"gpa_calc_prepend",
-	"gpa_calc_cumulative",
-	"gpa_calc_weighted",
 
 	"num_assignments",
 	"assignment_date_format",
 	"todo_hr24",
 	"todo_separate_scrollbar",
-	"todo_show_scrollbar",
 	"todo_alternate_colors",
-	"todo_ignore_card_colors",
-	"todo_remove_icons",
 	"todo_show_scores",
 	"grade_hover",
 	"auto_detect_disabled",
@@ -34,16 +30,21 @@ const syncedSubOptions = [
 	"num_todo_items",
 	"hover_preview",
 	"imageSize",
-	"cardRoundness",
-	"cardSpacing",
+	"cardMargin",
 	"cardWidth",
-	"cardHeight",
 	"cardPadding",
 ];
 const localSwitches = [];
 
 // Ignore obsolete settings in older exports and saved themes.
 const removedStyleOptions = new Set([
+    "todo_show_scrollbar", "todo_ignore_card_colors", "todo_remove_icons",
+    "gpa_calc_cumulative", "cumulative_gpa", "gpa_calc_weighted",
+    "equal_height_cards",
+    "global_search",
+    "grade_analytics",
+    "bold_sidebar_text",
+    "emphasize_course_name",
     "better_sidebar", "sidebar_scale", "hide_navbar",
     "auto_dark", "auto_dark_start", "auto_dark_end",
     "custom_font", "custom_font_skip_p", "custom_styles", "customCardStyles",
@@ -51,16 +52,16 @@ const removedStyleOptions = new Set([
     "customBackgroundNasaDaily", "nasaInfoOverlay", "fitImageToScreen",
     "nasaFitToScreen", "bg_opacity", "sidebar_opacity", "bg_blur",
     "sidebar_blur", "card_opacity", "card_blur", "card_transparency",
+    "cardRoundness", "cardHeight", "cardSpacing",
     "imageRoundness", "card_grid", "card_grid_columns", "card_grid_rows", "card_grid_column_gap", "card_grid_row_gap", "card_grid_center_rows", "card_grid_flex",
 ]);
 
 // Theme export only carries visual settings, never personal productivity data.
 const exportCardColorToggles = ["gradient_cards", "disable_color_overlay"];
-const exportCardStyles = ["imageSize", "cardRoundness", "cardSpacing", "cardWidth", "cardHeight", "cardPadding"];
-const exportLayout = ["full_width", "center_cards", "condensed_cards", "equal_height_cards", "remlogo", "hide_new_canvas", "tab_icons"];
-const exportSidebar = ["bold_sidebar_text"];
-const exportTodo = ["better_todo", "todo_hide_feedback", "todo_hide_read", "todo_full_height", "todo_confetti", "todo_progress_rings", "todo_timeframe", "todo_hr24", "todo_separate_scrollbar", "todo_show_scrollbar", "todo_alternate_colors", "todo_ignore_card_colors", "todo_remove_icons", "todo_show_scores", "hover_preview"];
-const exportGpa = ["gpa_calc", "gpa_calc_prepend", "gpa_calc_cumulative", "gpa_calc_weighted", "gpa_threshold_mode", "gpa_course_bounds"];
+const exportCardStyles = ["course_nickname_font_size", "course_id_font_size", "imageSize", "cardMargin", "cardWidth", "cardPadding"];
+const exportLayout = ["full_width", "center_cards", "condensed_cards", "remlogo", "hide_new_canvas", "tab_icons"];
+const exportTodo = ["better_todo", "todo_hide_feedback", "todo_hide_read", "todo_full_height", "todo_confetti", "todo_progress_rings", "todo_timeframe", "todo_hr24", "todo_separate_scrollbar", "todo_alternate_colors", "todo_show_scores", "hover_preview"];
+const exportGpa = ["gpa_calc", "gpa_calc_prepend", "gpa_threshold_mode", "gpa_course_bounds"];
 
 const apiurl = "none";
 
@@ -98,20 +99,15 @@ const defaultOptions = {
         "assignments_done": [],
         "dashboard_grades": false,
         "assignment_date_format": false,
-        "dashboard_notes": false,
-        "dashboard_notes_text": "",
-        "dashboard_notes_mode": "edit",
         "better_todo": true,
-        "bold_sidebar_text": false,
         "todo_hr24": false,
 		"todo_separate_scrollbar": false,
-        "todo_show_scrollbar": false,
 		"todo_alternate_colors": false,
-		"todo_ignore_card_colors": false,
-		"todo_remove_icons": false,
 		"todo_show_scores": false,
         "todo_hide_read": true,
         "condensed_cards": false,
+        "course_nickname_font_size": "small",
+        "course_id_font_size": "medium",
         "center_cards": false,
         "custom_cards": {},
         "custom_cards_2": {},
@@ -143,13 +139,12 @@ const defaultOptions = {
         },
         // "todo_overdues": false,
         "card_overdues": false,
+        "card_future_dues": true,
         "card_overdue_always_red": false,
         "hide_completed_cards": false,
         "relative_dues": false,
-        "equal_height_cards": false,
         "hide_new_canvas": true,
         "hide_sequence_footer": false,
-        "grade_analytics_zones": false,
         "quiz_safe_mode": false,
         "assignment_states": {},
         "tab_icons": false,
@@ -160,16 +155,13 @@ const defaultOptions = {
 		"todo_more_expanded": false,
 		"todo_confetti": true,
         "device_dark": false,
-        "cumulative_gpa": { "name": "Cumulative GPA", "hidden": false, "weight": "dnc", "credits": 999, "gr": 3.21 },
         // "show_updates": false,
         "card_method_date": false,
         "card_method_dashboard": true,
         "card_limit": 25,
         "imageSize": 100,
-        "cardRoundness": 5,
-        "cardSpacing": 0,
+        "cardMargin": 36,
         "cardWidth": 262,
-        "cardHeight": 146,
         "cardPadding": 0,
     }
 };
@@ -244,19 +236,41 @@ function setupTodoItemsInput(initial) {
     });
 }
 
-// Progress display dropdown. Normalizes legacy boolean values:
-// true -> rings, false/undefined -> none.
+// Keep saved settings, imports, and exports within the supported progress modes.
+function normalizeProgressRingMode(value) {
+    if (value === false) return "none";
+    // Retired single-bar modes now use the per-course lines display.
+    if (["line", "combined", "segmented"].includes(value)) return "lines";
+    return ["none", "rings", "rainbow", "lines"].includes(value) ? value : "rings";
+}
+
 function setupProgressRingsSelect(initial) {
     const el = document.querySelector("#todo_progress_rings");
     if (!el) return;
-    let value = initial;
-    if (value === true) value = "rings";
-    else if (value === false || value === undefined || value === null) value = "none";
-    const allowed = ["none", "rings", "rainbow", "lines", "line"];
-    if (!allowed.includes(value)) value = "rings";
+    const value = normalizeProgressRingMode(initial);
     el.value = value;
+    if (initial !== undefined && initial !== value) {
+        chrome.storage.sync.set({ "todo_progress_rings": value });
+    }
     el.addEventListener("change", function () {
-        chrome.storage.sync.set({ "todo_progress_rings": this.value });
+        chrome.storage.sync.set({ "todo_progress_rings": normalizeProgressRingMode(this.value) });
+    });
+}
+
+function setupCourseFontSizeSelects() {
+    const keys = ["course_nickname_font_size", "course_id_font_size"];
+    const allowed = ["small", "medium", "large", "extra_large"];
+    chrome.storage.sync.get([...keys, "emphasize_course_name"], sync => {
+        keys.forEach(key => {
+            const select = document.getElementById(key);
+            const fallback = sync.emphasize_course_name === true
+                ? (key === "course_nickname_font_size" ? "medium" : "small")
+                : defaultOptions.sync[key];
+            select.value = allowed.includes(sync[key]) ? sync[key] : fallback;
+            select.addEventListener("change", () => {
+                chrome.storage.sync.set({ [key]: select.value });
+            });
+        });
     });
 }
 
@@ -298,6 +312,20 @@ function setupTimeframeSelect(initial) {
     });
 }
 
+function setupCardDateFormatSelect() {
+    const select = document.getElementById("card_date_format");
+    // Retain the existing keys so saved preferences and older exports still work.
+    chrome.storage.sync.get(["assignment_date_format", "relative_dues"], sync => {
+        select.value = sync.relative_dues === true ? "relative" : sync.assignment_date_format === true ? "dd/mm" : "mm/dd";
+    });
+    select.addEventListener("change", () => {
+        chrome.storage.sync.set({
+            assignment_date_format: select.value === "dd/mm",
+            relative_dues: select.value === "relative",
+        });
+    });
+}
+
 // Keep the existing storage keys compatible with saved themes.
 function setupAppearanceMode() {
     const select = document.getElementById("appearance-mode");
@@ -321,7 +349,7 @@ function setupAppearanceMode() {
     refresh();
 }
 
-// Custom card style inputs (border, margin, width, height) fire `chrome.storage.sync.set` on every keystroke/arrow press.
+// Custom card style inputs (margin, width) fire `chrome.storage.sync.set` on every keystroke/arrow press.
 // chrome.storage.sync caps writes at MAX_WRITE_OPERATIONS_PER_MINUTE (120/min),
 // so rapidly adjusting these number inputs used to hit the quota and surface
 // a "quota exceeded" error. Coalesce rapid edits into a single write with a
@@ -335,18 +363,10 @@ function debouncedCardStyleSet(key, value, delay = 200) {
     }, delay);
 }
 
-function setupCardRoundnessInput(initial) {
-    const el = document.querySelector("#cardRoundness");
-    el.value = initial;
-    el.addEventListener("input", e => {
-        debouncedCardStyleSet("cardRoundness", e.target.value);
-    });
-}
-
 function setupCardStyleReset() {
     const button = document.getElementById("reset-card-styles");
     button.addEventListener("click", async () => {
-        const keys = ["cardRoundness", "cardSpacing", "cardWidth", "cardHeight"];
+        const keys = ["cardMargin", "cardWidth"];
         const defaults = Object.fromEntries(keys.map(key => [key, defaultOptions.sync[key]]));
         button.disabled = true;
         keys.forEach(key => {
@@ -364,11 +384,11 @@ function setupCardStyleReset() {
     });
 }
 
-function setupCardSpacingInput(initial) {
-    let el = document.querySelector("#cardSpacing");
+function setupCardMarginInput(initial) {
+    let el = document.querySelector("#cardMargin");
     el.value = initial;
     el.addEventListener("input", (e) => {
-        debouncedCardStyleSet("cardSpacing", e.target.value);
+        debouncedCardStyleSet("cardMargin", e.target.value);
     });
 }
 
@@ -380,14 +400,6 @@ function setupCardWidthInput(initial) {
     });
 }
 
-function setupCardHeightInput(initial) {
-	let el = document.querySelector("#cardHeight");
-	el.value = initial;
-	el.addEventListener("input", (e) => {
-		debouncedCardStyleSet("cardHeight", e.target.value);
-	});
-}
-
 // "Alternate colors" (Better Todo List sub-option) only makes sense in light
 // mode, so hide its checkbox whenever dark mode is on.
 function toggleAlternateColorsVisibility(darkModeOn) {
@@ -395,29 +407,24 @@ function toggleAlternateColorsVisibility(darkModeOn) {
     if (wrap) wrap.style.display = darkModeOn ? "none" : "";
 }
 
-// Hide a toggle's sub-options when it's off. Card assignments and card grades
-// keep them visible and set disabled on the inputs so their values stay on screen.
+// Keep dependent sections visible and dim the whole area when their toggle is off.
 function setSubOptionsDisabled(subOptions, disabled) {
+    subOptions.classList.toggle("section-disabled", disabled);
+    subOptions.inert = disabled;
+    subOptions.setAttribute("aria-disabled", String(disabled));
     subOptions.querySelectorAll("input, select, textarea, button").forEach(el => {
         el.disabled = disabled;
     });
 }
 
-function toggleSubOptionsVisibility(option, isOn) {
-    const hideWhenOff = ["gpa_calc", "better_todo", "grade_analytics", "hide_personal_details"];
-    const disableWhenOff = ["assignments_due", "dashboard_grades"];
-    if (!hideWhenOff.includes(option) && !disableWhenOff.includes(option)) return;
+function updateSubOptionsState(option, isOn) {
+    const dependentOptions = ["gpa_calc", "assignments_due", "dashboard_grades", "better_todo", "hide_personal_details"];
+    if (!dependentOptions.includes(option)) return;
     const optionEl = document.getElementById(option);
     if (!optionEl) return;
     const subOptions = optionEl.parentElement.querySelector(":scope > .sub-options");
     if (!subOptions) return;
-    if (disableWhenOff.includes(option)) {
-        subOptions.style.display = "";
-        setSubOptionsDisabled(subOptions, !isOn);
-        return;
-    }
-    setSubOptionsDisabled(subOptions, false);
-    subOptions.style.display = isOn ? "" : "none";
+    setSubOptionsDisabled(subOptions, !isOn);
 }
 
 function setup() {
@@ -425,35 +432,27 @@ function setup() {
     const menu = {
 		switches: syncedSwitches,
 		checkboxes: [
-			"gpa_calc_weighted",
-			"gpa_calc_cumulative",
 			// /*'card_method_date',*/ "show_updates",
             "todo_hide_feedback",
             "todo_hide_read",
 
 			"todo_full_height",
 
-			"relative_dues",
 			"card_overdues",
+			"card_future_dues",
 	"card_overdue_always_red",
 			"hide_completed_cards",
-			"equal_height_cards",
 			// "todo_overdues",
 
-			"assignment_date_format",
 			"todo_hr24",
 			"todo_separate_scrollbar",
-			"todo_show_scrollbar",
 			"todo_alternate_colors",
-			"todo_ignore_card_colors",
-			"todo_remove_icons",
 			"todo_show_scores",
 			"grade_hover",
 			"auto_detect_disabled",
 			"hide_course_images",
 			// "hide_completed",
 			"hover_preview",
-			"grade_analytics_zones",
 		],
 		tabs: {
             "home-settings": { setup: null, tab: ".home-settings" },
@@ -490,20 +489,12 @@ function setup() {
 			},
 
 			{
-				identifier: "cardRoundness",
-				setup: (initial) => setupCardRoundnessInput(initial),
-			},
-			{
-				identifier: "cardSpacing",
-				setup: (initial) => setupCardSpacingInput(initial),
+				identifier: "cardMargin",
+				setup: (initial) => setupCardMarginInput(initial),
 			},
 			{
 				identifier: "cardWidth",
 				setup: (initial) => setupCardWidthInput(initial),
-			},
-			{
-				identifier: "cardHeight",
-				setup: (initial) => setupCardHeightInput(initial),
 			},
 
 			{
@@ -547,11 +538,9 @@ function setup() {
                     if (imgCheckbox) imgCheckbox.checked = false;
                     chrome.storage.sync.set({ "hide_course_images": false });
                 }
-                toggleSubOptionsVisibility(option, status);
+                updateSubOptionsState(option, status);
             });
-        });
-        ["gpa_calc", "assignments_due", "dashboard_grades", "better_todo", "grade_analytics", "hide_personal_details"].forEach(opt => {
-            toggleSubOptionsVisibility(opt, sync[opt] === true);
+            updateSubOptionsState(option, sync[option] === true);
         });
 
     });
@@ -581,6 +570,8 @@ function setup() {
         });
     })
 
+    setupCardDateFormatSelect();
+    setupCourseFontSizeSelects();
     setupAppearanceMode();
     setupSavedThemes();
     setupEditThemeDialog();
@@ -902,9 +893,7 @@ function setup() {
         });
     });
 
-    // Note: the card-style number inputs (cardSpacing, cardWidth,
-    // cardHeight) are wired
-    // via their setup*Input
+    // The card-style number inputs (cardMargin, cardWidth) are wired via setup*Input
     // handlers in menu.special above, which debounce the storage writes. The
     // duplicate listeners that used to live here referenced nonexistent
     // #*Value spans (threw on every input) and double-wrote to storage, which
@@ -933,7 +922,7 @@ function displayThemeSubmissionForm() {
 
 // Settings exports omit theme visuals, saved themes, notes, and task data.
 const settingsExportKeys = [...new Set([
-    ...syncedSwitches, ...syncedSubOptions, ...exportLayout, ...exportSidebar,
+    ...syncedSwitches, ...syncedSubOptions, ...exportLayout,
     ...exportTodo, ...exportGpa, "gpa_calc_bounds",
     "card_method_dashboard", "card_method_date", "card_limit"
 ])].filter(key => ![...exportCardColorToggles, ...exportCardStyles].includes(key));
@@ -970,6 +959,9 @@ function setupExports() {
     wireCopy("settings-export-copy", "settings-export-output");
     document.getElementById("settings-export").addEventListener("click", async () => {
         const storage = await chrome.storage.sync.get(settingsExportKeys);
+        if (storage.todo_progress_rings !== undefined) {
+            storage.todo_progress_rings = normalizeProgressRingMode(storage.todo_progress_rings);
+        }
         document.getElementById("settings-export-output").value = JSON.stringify(storage);
     });
 
@@ -983,6 +975,9 @@ async function getExport(storage, options) {
     let final = {};
     for (const option of options) {
         switch (option) {
+            case "todo_progress_rings":
+                final[option] = normalizeProgressRingMode(storage[option]);
+                break;
             case "custom_cards":
                 let arr = [];
                 Object.keys(storage["custom_cards"] || {}).forEach(key => {
@@ -1009,7 +1004,7 @@ async function getExport(storage, options) {
 
 const UNSAVED_THEME_KEY = "unsaved";
 const trackedThemeOptions = ["dark_mode", "device_dark", "dark_preset", "custom_cards", "card_colors"]
-    .concat(exportCardColorToggles, exportCardStyles, exportSidebar, exportTodo);
+    .concat(exportCardColorToggles, exportCardStyles, exportTodo);
 let activeThemeSource = null;
 let themeImportInProgress = false;
 let expectedThemeChanges = {};
@@ -1204,7 +1199,7 @@ function readThemeValues(preset) {
 function noThemeSettings() {
     // Reset appearance controls as well as the palette. Keep feature choices
     // and personal course data separate from removing a theme.
-    const keys = [...exportCardColorToggles, ...exportCardStyles, ...exportSidebar];
+    const keys = [...exportCardColorToggles, ...exportCardStyles];
     return {
         ...Object.fromEntries(keys.map(key => [key, defaultOptions.sync[key] ?? false])),
         dark_preset: emptyThemeValues(),
@@ -1216,7 +1211,10 @@ function noThemeSettings() {
 function refreshAppliedThemeControls(values) {
     exportCardStyles.forEach(key => {
         const input = document.getElementById(key);
-        if (input && Object.hasOwn(values, key)) input.value = values[key];
+        if (input && Object.hasOwn(values, key)) {
+            if (input.type === "checkbox") input.checked = values[key] === true;
+            else input.value = values[key];
+        }
     });
     syncedSwitches.forEach(key => {
         if (!Object.hasOwn(values, key)) return;
@@ -1229,7 +1227,7 @@ function refreshAppliedThemeControls(values) {
         off.checked = !on.checked;
         on.classList.toggle('checked', on.checked);
         off.classList.toggle('checked', off.checked);
-        toggleSubOptionsVisibility(key, on.checked);
+        updateSubOptionsState(key, on.checked);
     });
 }
 
@@ -1525,10 +1523,22 @@ async function importTheme(theme, source = { type: "imported" }) {
         const keys = Object.keys(theme).filter(key => !removedStyleOptions.has(key) &&
             !(keepAppearance && (key === "dark_mode" || key === "device_dark")));
         const final = {};
+        // Convert the former size swap when applying an older saved theme.
+        if (typeof theme.emphasize_course_name === "boolean") {
+            if (theme.course_nickname_font_size === undefined) final.course_nickname_font_size = theme.emphasize_course_name ? "medium" : "small";
+            if (theme.course_id_font_size === undefined) final.course_id_font_size = theme.emphasize_course_name ? "small" : "medium";
+        }
+        // Older themes stored twice the CSS margin, with numeric zero meaning native spacing.
+        if (theme.cardMargin === undefined && theme.cardSpacing !== undefined) {
+            const legacyMargin = theme.cardSpacing === 0 ? 36 : Number(theme.cardSpacing) / 2;
+            if (Number.isFinite(legacyMargin) && legacyMargin >= 0) final.cardMargin = legacyMargin;
+        }
         if (!keepAppearance && typeof theme.dark_mode === "boolean" && theme.device_dark === undefined) final.device_dark = false;
         const sync = await chrome.storage.sync.get("custom_cards");
         keys.forEach(key => {
-            if (key === "dark_preset") {
+            if (key === "todo_progress_rings") {
+                final[key] = normalizeProgressRingMode(theme[key]);
+            } else if (key === "dark_preset") {
                 themeValues = readThemeValues(theme.dark_preset);
                 final.dark_preset = { ...themeValues };
                 sendFromPopup("preview-theme-values", themeValues);
@@ -1701,7 +1711,7 @@ async function displayAdvancedCards() {
         [
             ["Name", "Course name"],
             ["Card grid", "Show this course on the dashboard card grid"],
-            ["Task list", "Show this course in the task list"],
+            ["Todo list", "Show this course in the todo list"],
         ].forEach(([label, title], index) => {
             const th = document.createElement("th");
             th.scope = "col";
@@ -1740,7 +1750,7 @@ function courseVisibilityCell(courseId, name, kind, shown) {
     const input = document.createElement("input");
     input.type = "checkbox";
     input.checked = shown;
-    const where = kind === "card" ? "card grid" : "task list";
+    const where = kind === "card" ? "card grid" : "todo list";
     input.setAttribute("aria-label", `Show ${name} in the ${where}`);
     input.addEventListener("change", () => {
         updateCards(courseId, kind === "card"

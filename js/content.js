@@ -731,7 +731,6 @@ function startExtension() {
 
     chrome.storage.sync.get(null, result => {
         options = { ...options, ...result };
-        applyBoldSidebarText();
         applyTodoAlternateColors();
         // toggleScheduledReminders();
         getApiData();
@@ -777,9 +776,8 @@ function applyOptionsChanges(changes) {
 			case "device_dark":
 				toggleDarkMode();
 				applyTodoAlternateColors();
-				// "Ignore card colors" picks black vs. theme text color based on dark
-				// mode, so re-render the Better Todo list to keep it in sync.
-				if (options.todo_ignore_card_colors && options.better_todo && document.getElementById("better-todo-main")) {
+				// Todo course names follow the active text color, so re-render on theme changes.
+				if (options.better_todo && document.getElementById("better-todo-main")) {
 					clearTodoList();
 					createTodoSections(document.querySelector("#canvasrefined-todo-list"));
 				}
@@ -789,11 +787,6 @@ function applyOptionsChanges(changes) {
 				break;
 			case "gradient_cards":
 				changeGradientCards();
-				break;
-			case "dashboard_notes":
-			case "dashboard_notes_text":
-			case "dashboard_notes_mode":
-				loadDashboardNotes();
 				break;
 			case "dashboard_grades":
 			case "grade_hover":
@@ -822,11 +815,8 @@ function applyOptionsChanges(changes) {
 				cardAssignments = preloadAssignmentEls();
 				loadCardAssignments();
 				break;
-			case "equal_height_cards":
-				// Stretch or reset card heights in place instead of rebuilding rows.
-				equalizeCardHeights();
-				break;
 			case "hide_completed_cards":
+			case "card_future_dues":
 				// Assignment elements are already preloaded; just re-filter the render.
 				loadCardAssignments();
 				break;
@@ -845,7 +835,6 @@ function applyOptionsChanges(changes) {
                 refreshCourseColorUI();
                 break;
             case "todo_separate_scrollbar":
-            case "todo_show_scrollbar":
             case "todo_full_height":
                 if (options.better_todo && document.getElementById("better-todo-main")) applyTodoSidebarLayout();
                 break;
@@ -856,8 +845,6 @@ function applyOptionsChanges(changes) {
 			// case "todo_overdues":
 			case "todo_hide_feedback":
 			case "todo_hide_read":
-			case "todo_ignore_card_colors":
-			case "todo_remove_icons":
 			case "todo_show_scores":
 				if (options.better_todo && document.getElementById("better-todo-main")) {
 					moreAnnouncementCount = 0;
@@ -890,23 +877,25 @@ function applyOptionsChanges(changes) {
 				break;
 			case "gpa_calc":
 			case "gpa_calc_prepend":
-			case "gpa_calc_weighted":
-			case "gpa_calc_cumulative":
 				if (!grades) getGrades();
 				setupGPACalc();
+				break;
+			case "gpa_what_if":
+				refreshGpaWhatIfMode();
 				break;
 			case "gpa_calc_bounds":
 			case "gpa_threshold_mode":
 			case "gpa_course_bounds":
-				if (document.querySelector("#canvasrefined-gpa-unweighted")) calculateGPA2();
+				if (document.querySelector("#canvasrefined-gpa-weighted")) calculateGPA2();
 				insertGrades();
+				if (gradeAnalyticsActive() && gaOpen && gaData) renderGradeAnalytics();
 				break;
-			case "bold_sidebar_text":
-                applyBoldSidebarText();
-                break;
 			case "remlogo":
 			case "disable_color_overlay":
 			case "condensed_cards":
+			case "emphasize_course_name": // Compatibility until the update migration runs.
+			case "course_nickname_font_size":
+			case "course_id_font_size":
 			case "full_width":
 			case "center_cards":
 				applyAestheticChanges();
@@ -917,21 +906,12 @@ function applyOptionsChanges(changes) {
 			case "hide_sequence_footer":
 				watchSequenceFooter();
 				break;
-			case "global_search":
-				if (options.global_search) {
-					setupGlobalSearch();
-				} else {
-					removeGlobalSearch();
-				}
-				break;
 			case "remind":
 				showExampleReminder();
 				break;
 			case "imageSize":
-			case "cardRoundness":
-			case "cardSpacing":
+			case "cardMargin":
 			case "cardWidth":
-			case "cardHeight":
 			case "cardPadding":
 				// Coalesce rapid card-style edits (e.g. holding the arrow keys on a
 			// number input) into a single applyAestheticChanges() call. Each
@@ -964,13 +944,6 @@ function applyOptionsChanges(changes) {
                     }
                     break;
                 }
-            case "grade_analytics":
-                watchGradeAnalytics();
-                break;
-            case "grade_analytics_zones":
-                // Colored 10% zones on the line chart — just redraw the charts.
-                if (gradeAnalyticsActive() && gaOpen && gaData) renderGradeAnalytics();
-                break;
             case "quiz_safe_mode":
                 // Toggling safe mode changes which features run on quiz pages; reload
                 // so the gating is applied cleanly.
@@ -978,65 +951,6 @@ function applyOptionsChanges(changes) {
                 break;
 		}
     });
-}
-
-// Wrap text nodes rather than bolding links: links may also contain icon fonts
-// or SVGs, whose weight and appearance must remain untouched.
-let boldSidebarObserver = null;
-function applyBoldSidebarText() {
-    const id = "canvasrefined-bold-sidebar-text";
-    const labelClass = "canvasrefined-sidebar-text";
-    const existing = document.getElementById(id);
-    if (options.bold_sidebar_text !== true) {
-        boldSidebarObserver?.disconnect();
-        boldSidebarObserver = null;
-        existing?.remove();
-        document.querySelectorAll(`.${labelClass}`).forEach(label => {
-            label.replaceWith(...label.childNodes);
-        });
-        return;
-    }
-
-    const wrapLabels = () => {
-        const roots = document.querySelectorAll(
-            '.ic-app-header .menu-item__text, #menu .menu-item__text, #section-tabs a'
-        );
-        roots.forEach(root => {
-            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-            const texts = [];
-            while (walker.nextNode()) {
-                const node = walker.currentNode;
-                if (!node.textContent.trim() || node.parentElement.closest(
-                    `.${labelClass}, svg, i, [aria-hidden="true"], .menu-item-icon-container, [class^="icon-"], [class*=" icon-"]`
-                )) continue;
-                texts.push(node);
-            }
-            texts.forEach(node => {
-                const label = document.createElement("span");
-                label.className = labelClass;
-                node.replaceWith(label);
-                label.appendChild(node);
-            });
-        });
-    };
-
-    if (!existing) {
-        const style = document.createElement("style");
-        style.id = id;
-        style.textContent = `.${labelClass} { font-weight: 700 !important; }`;
-        document.documentElement.appendChild(style);
-    }
-    // Disconnect while wrapping so our own DOM edits cannot trigger a loop.
-    boldSidebarObserver?.disconnect();
-    wrapLabels();
-    if (!boldSidebarObserver) {
-        boldSidebarObserver = new MutationObserver(() => {
-            boldSidebarObserver.disconnect();
-            wrapLabels();
-            boldSidebarObserver.observe(document.documentElement, { childList: true, subtree: true });
-        });
-    }
-    boldSidebarObserver.observe(document.documentElement, { childList: true, subtree: true });
 }
 
 let insertTimer;
@@ -1106,13 +1020,15 @@ function checkDashboardReady() {
                     }
                     updateCardContrast();
                     if (signature !== lastDashboardCardSignature || missingMarker) {
+                        if (signature !== lastDashboardCardSignature) {
+                            applyAestheticChanges();
+                        }
                         lastDashboardCardSignature = signature;
                         changeGradientCards();
                         setupCardAssignments();
                         loadCardAssignments();
                         customizeCards(cards);
                         insertGrades();
-                        loadDashboardNotes();
                         setupGPACalc();
                         showUpdateMsg();
                     }
@@ -1311,16 +1227,26 @@ function getCardsFromDashboard() {
                 const id = card.querySelector(".ic-DashboardCard__link").href.split("courses/")[1];
                 if (count >= (options["card_limit"] || 25)) return;
 
+                // Privacy mode replaces visible text. Persist Canvas' originals,
+                // otherwise Tasks keeps the fake labels after privacy is off.
+                const subtitle = card.querySelector(".ic-DashboardCard__header-subtitle");
+                const title = card.querySelector(".ic-DashboardCard__header-title span, .ic-DashboardCard__header-title");
+                const courseCode = (subtitle?.dataset?.crAnonOrig ?? subtitle?.textContent ?? "").substring(0, 20);
+                const fullName = (title?.dataset?.crAnonOrig ?? title?.textContent ?? "").trim();
+
                 if (!cards[id]) {
                     newCards = true;
-                    cards[id] = { "default": card.querySelector(".ic-DashboardCard__header-subtitle").textContent.substring(0, 20), "fullName": card.querySelector(".ic-DashboardCard__header-title")?.textContent?.trim() || "", "img": "", "hidden": false, "weight": "regular", "credits": 1, "eid": 100000 - count, "gr": null };
+                    cards[id] = { "default": courseCode, "fullName": fullName, "img": "", "hidden": false, "weight": "regular", "credits": 1, "eid": 100000 - count, "gr": null };
 
                     cards_3[id] = { "url": domain };
                 } else {
-                    // backfill full name for cards created before this field existed
-                    const full = card.querySelector(".ic-DashboardCard__header-title")?.textContent?.trim() || "";
-                    if (full && cards[id].fullName !== full) {
-                        cards[id].fullName = full;
+                    // Refresh names too, repairing placeholders saved by older scans.
+                    if (courseCode && cards[id].default !== courseCode) {
+                        cards[id].default = courseCode;
+                        newCards = true;
+                    }
+                    if (fullName && cards[id].fullName !== fullName) {
+                        cards[id].fullName = fullName;
                         newCards = true;
                     }
                 }
@@ -1453,7 +1379,7 @@ function updateIndicator(element) {
 	indicator.style.width = `${element.offsetWidth*2}px`;
 	indicator.style.left = `${element.offsetLeft - (element.offsetWidth * .5)}px`;
 
-	const buttons = ["announcement", "assignments", "completed"];
+	const buttons = ["announcement", "assignments", "completed", "feedback"];
 	buttons.forEach(button => {
 		const btn = document.getElementById(`better-todo-${button}`);
 		if (btn == element) {
@@ -1504,7 +1430,7 @@ function getTodoTimeframeKey() {
     return (options.todo_timeframe && Object.prototype.hasOwnProperty.call(BETTER_TODO_TIMEFRAME_DAYS, options.todo_timeframe)) ? options.todo_timeframe : "all";
 }
 
-// Better Todo timeframe filter, shared by the task list and the progress
+// Better Todo timeframe filter, shared by the todo list and the progress
 // display so their counts always agree: keeps items due inside the current
 // window. Offset 0 keeps everything on/before now+range (overdue items are
 // before now, so they are kept too); offset N>0 shows only the window
@@ -1543,13 +1469,12 @@ function getTodoTimeframeWindow() {
 // Refresh the timeframe pager (arrows under the Tasks header) after every
 // render: update its label/date range, disable the back arrow on the
 // current window, and hide it entirely when there is no window to page
-// ("all"). Shown on every tab — the pager pages time itself, so each tab
-// shows its slice of the selected window.
+// ("all"). Feedback uses Canvas's recent-feedback widget and is not paged.
 function updateTodoTimeframeNav() {
     const nav = document.getElementById("better-todo-timeframe-nav");
     if (!nav) return;
     const tfWindow = getTodoTimeframeWindow();
-    const paged = tfWindow.tf !== "all";
+    const paged = tfWindow.tf !== "all" && betterTodoFilter !== "feedback";
     nav.style.display = paged ? "flex" : "none";
     if (!paged) return;
     const label = nav.querySelector("#better-todo-timeframe-label");
@@ -1615,17 +1540,18 @@ function formatTimeForInput(date) {
 }
 
 /* Progress display mode, stored in options.todo_progress_rings.
-   Modes: "none", "rings", "rainbow", "lines", "line".
+   Modes: "none", "rings", "rainbow", "lines".
    Legacy booleans normalize: true/undefined -> rings, false -> none. */
 function getProgressRingMode() {
     const v = options.todo_progress_rings;
     if (v === false) return "none";
     if (v === true || v === undefined || v === null) return "rings";
-    const allowed = ["none", "rings", "rainbow", "lines", "line"];
+    const allowed = ["none", "rings", "rainbow", "lines"];
     if (allowed.includes(v)) return v;
     // migrate unreleased string values from the prior experimental set
     if (v === "per_course") return "rings";
-    if (v === "combined" || v === "segmented") return "line";
+    // Retired single-bar modes now use the per-course lines display.
+    if (v === "line" || v === "combined" || v === "segmented") return "lines";
     return "rings";
 }
 
@@ -1643,7 +1569,7 @@ function courseRingLabel(courseId) {
     if (String(courseId) === "personal") return "Personal tasks";
     if (options.hide_personal_details === true) return fakeCourseLabel(courseId);
     const card = options.custom_cards?.[String(courseId)] || options.custom_cards?.[courseId];
-    return card?.default || `Course ${courseId}`;
+    return card?.fullName || card?.default || `Course ${courseId}`;
 }
 
 // True when the course is hidden from the dashboard card grid.
@@ -1654,9 +1580,9 @@ function isCourseHidden(courseId) {
     return !!card && (card.hidden === true || card.hide === true);
 }
 
-// True when the course is hidden from the task list. Independent of the
+// True when the course is hidden from the todo list. Independent of the
 // dashboard card grid, so a course can stay on the dashboard while its items
-// stay off the task list, and the other way around. Personal tasks (planner
+// stay off the todo list, and the other way around. Personal tasks (planner
 // notes with no course) are always kept.
 function isCourseTodoHidden(courseId) {
     if (courseId === undefined || courseId === null) return false;
@@ -1673,7 +1599,7 @@ function filterHiddenCourses(data) {
 }
 
 // Build scoped data for the Better Todo list: drop courses hidden from the
-// task list, then (on a course page) restrict to the current course.
+// todo list, then (on a course page) restrict to the current course.
 function getTodoScopedData(data, courseId) {
     const visible = filterHiddenCourses(data);
     if (!courseId) return visible;
@@ -2085,90 +2011,6 @@ function renderProgressLines(wrapper, shown) {
     });
 }
 
-// Mode "line": one horizontal bar where each class's COMPLETED portion is packed
-// to the left (full course color) and its UNCOMPLETED portion to the right
-// (faded course color), with no gaps between segments. Overall % shown above.
-function renderProgressOneLine(wrapper, shown, totalAll, completedAll, percent) {
-    let box = wrapper.querySelector('.canvasrefined-progress-oneline');
-    if (!box) {
-        box = document.createElement('div');
-        box.className = 'canvasrefined-progress-oneline';
-        box.style.cssText = 'display:flex;flex-direction:column;gap:5px;width:100%;box-sizing:border-box;';
-        wrapper.appendChild(box);
-    }
-
-    let head = box.querySelector('.cr-ol-head');
-    if (!head) {
-        head = document.createElement('div');
-        head.className = 'cr-ol-head';
-        head.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--bctext-0);';
-        head.innerHTML = `<span>Overall</span><span class="cr-ol-pct" style="font-weight:700;"></span>`;
-        box.appendChild(head);
-    }
-    box.querySelector('.cr-ol-pct').textContent = `${percent}% (${completedAll}/${totalAll})`;
-    // Clicking the "Overall" header clears the active class filter.
-    if (getCurrentCourseId() == null) {
-        head.style.cursor = betterTodoProgressFilter != null ? 'pointer' : '';
-        head.onclick = () => {
-            if (betterTodoProgressFilter == null) return;
-            betterTodoProgressFilter = null;
-            const loc = document.querySelector("#canvasrefined-todo-list");
-            if (loc) { clearTodoList(); createTodoSections(loc); }
-        };
-    } else {
-        head.style.cursor = '';
-        head.onclick = null;
-    }
-
-    let bar = box.querySelector('.cr-ol-bar');
-    if (!bar) {
-        bar = document.createElement('div');
-        bar.className = 'cr-ol-bar';
-        // position:relative so absolutely-positioned segments anchor to it
-        bar.style.cssText = 'position:relative;width:100%;height:14px;border-radius:999px;overflow:hidden;background:var(--bcbackground-1);';
-        box.appendChild(bar);
-    }
-
-    // Build the segment list left -> right: ALL completed blocks first (each
-    // class's full course color), then ALL remaining blocks (each class's faded
-    // course color). This keeps every completed segment on the left and every
-    // remaining segment on the right. Consecutive segments share edges, so
-    // there are no gaps between them.
-    const segs = [];
-    let left = 0;
-    // First pass: completed blocks for every class (left side).
-    shown.forEach((entry, idx) => {
-        const color = courseRingColor(entry.courseId, idx);
-        const doneW = totalAll === 0 ? 0 : (entry.completed / totalAll) * 100;
-        if (doneW > 0) { segs.push({ left, w: doneW, bg: color, courseId: entry.courseId }); left += doneW; }              // completed: full color
-    });
-    // Second pass: remaining blocks for every class (right side).
-    shown.forEach((entry, idx) => {
-        const color = courseRingColor(entry.courseId, idx);
-        const remW = totalAll === 0 ? 0 : ((entry.total - entry.completed) / totalAll) * 100;
-        if (remW > 0) { segs.push({ left, w: remW, bg: `color-mix(in srgb, ${color} 25%, transparent)`, courseId: entry.courseId }); left += remW; } // remaining: faded
-    });
-
-    while (bar.children.length > segs.length) bar.lastChild.remove();
-
-    segs.forEach((seg, idx) => {
-        let el = bar.children[idx];
-        if (!el) {
-            el = document.createElement('div');
-            el.className = 'cr-ol-seg';
-            el.style.cssText = 'position:absolute;top:0;height:100%;transition:left .6s ease,width .6s ease,background .3s ease,opacity .3s ease;';
-            bar.appendChild(el);
-        }
-        el.style.left = `${seg.left}%`;
-        el.style.width = `${seg.w}%`;
-        el.style.background = seg.bg;
-        el.style.opacity = progressFilterDim(seg.courseId) ? '0.35' : '';
-        attachProgressFilterClick(el, seg.courseId);
-        el.onmouseenter = () => { el.style.opacity = '0.8'; };
-        el.onmouseleave = () => { el.style.opacity = progressFilterDim(seg.courseId) ? '0.35' : ''; };
-    });
-}
-
 function renderProgressRings(container, scopedData) {
     const mode = getProgressRingMode();
     if (mode === "none") { container.innerHTML = ""; return; }
@@ -2257,8 +2099,6 @@ function renderProgressRings(container, scopedData) {
         renderProgressRainbow(wrapper, shown, totalAll, completedAll, percent);
     } else if (mode === "lines") {
         renderProgressLines(wrapper, shown);
-    } else if (mode === "line") {
-        renderProgressOneLine(wrapper, shown, totalAll, completedAll, percent);
     }
 }
 
@@ -2785,12 +2625,8 @@ async function createTodoSections(location) {
 	if (!location.querySelector("#better-todo-header")) {
 		let header = makeElement("div", location, { id: "better-todo-header" });
 		header.style = "display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bcbackground-1);padding-bottom:-2px;";
-		let today = new Date();
-		today.setHours(0,0,0,0);
-		const todayString = today.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
         header.innerHTML = `
                 <h2 style="border:none !important;padding: 0">Tasks</h2>
-                <h2 style="border:none !important;padding: 0">${todayString}</h2>
             `;
 
         // Timeframe pager below the header: arrows page through the timeframe
@@ -2842,8 +2678,8 @@ async function createTodoSections(location) {
 		let filterControl = makeElement("div", location, { "id": "better-todo-filter" });
 		filterControl.innerHTML = `
 		<div style="display:flex;justify-content:center;margin-top:20px;">
-			<div id="better-todo-filterbuttongroup" style="display:flex;gap:50px;justify-content:space-between;position:relative;padding-bottom:5px;width:70%;height:30px;">
-				<div id="better-todo-announcement" style="color:black !important;width:25px;cursor:pointer;">
+			<div id="better-todo-filterbuttongroup" style="display:flex;justify-content:space-between;position:relative;padding-bottom:5px;width:80%;height:30px;">
+				<div id="better-todo-announcement" title="Announcements: view recent course announcements." aria-label="Announcements" style="color:black !important;width:25px;flex-shrink:0;cursor:pointer;">
 					<svg fill="var(--bctext-0)" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg" style="transition:all .3s ease;">
 						<g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
 						<g id="SVGRepo_iconCarrier">
@@ -2851,7 +2687,7 @@ async function createTodoSections(location) {
 						</g>
 					</svg>
 				</div>
-				<div id="better-todo-assignments" style="color:black !important;width:25px;cursor:pointer;">
+				<div id="better-todo-assignments" title="Tasks: view upcoming assignments and personal tasks." aria-label="Tasks" style="color:black !important;width:25px;flex-shrink:0;cursor:pointer;">
 					<svg fill="var(--bctext-0)" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff" style="transition:all .3s ease;">
 						<g id="SVGRepo_bgCarrier" stroke-width="1"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
 						<g id="SVGRepo_iconCarrier">
@@ -2859,13 +2695,18 @@ async function createTodoSections(location) {
 						</g>
 					</svg>
 				</div>
-				<div id="better-todo-completed" style="color:black !important;width:25px;cursor:pointer;">
+				<div id="better-todo-completed" title="Completed: view submitted assignments and tasks marked complete." aria-label="Completed" style="color:black !important;width:25px;flex-shrink:0;cursor:pointer;">
 					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="transition:all .3s ease;">
 						<g id="SVGRepo_bgCarrier" stroke-width="0"></g>
 						<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
 						<g id="SVGRepo_iconCarrier"> <g id="Interface / Checkbox_Check">
 							<path id="Vector" d="M8 12L11 15L16 9M4 16.8002V7.2002C4 6.08009 4 5.51962 4.21799 5.0918C4.40973 4.71547 4.71547 4.40973 5.0918 4.21799C5.51962 4 6.08009 4 7.2002 4H16.8002C17.9203 4 18.4796 4 18.9074 4.21799C19.2837 4.40973 19.5905 4.71547 19.7822 5.0918C20 5.5192 20 6.07899 20 7.19691V16.8036C20 17.9215 20 18.4805 19.7822 18.9079C19.5905 19.2842 19.2837 19.5905 18.9074 19.7822C18.48 20 17.921 20 16.8031 20H7.19691C6.07899 20 5.5192 20 5.0918 19.7822C4.71547 19.5905 4.40973 19.2842 4.21799 18.9079C4 18.4801 4 17.9203 4 16.8002Z" stroke="var(--bctext-0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
 						</g></g>
+					</svg>
+				</div>
+				<div id="better-todo-feedback" title="Recent feedback: view recent grades and instructor feedback." aria-label="Recent feedback" style="color:black !important;width:25px;flex-shrink:0;cursor:pointer;">
+					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="transition:all .3s ease;">
+						<path d="M21 11.5A8.5 8.5 0 0 1 12.5 20H4l-3 3V11.5A8.5 8.5 0 0 1 9.5 3h3a8.5 8.5 0 0 1 8.5 8.5Z M7 9h9M7 13h6" stroke="var(--bctext-0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 					</svg>
 				</div>
 				<div id="better-todo-indicator" style="position:absolute;bottom:4px;left:0;height:3px;background-color:var(--bctext-0);border-radius:3px 3px 0 0;transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);"></div>
@@ -2895,6 +2736,12 @@ async function createTodoSections(location) {
 			clearTodoList();
 			createTodoSections(location);
 		});
+		document.getElementById("better-todo-feedback").addEventListener("click", (e) => {
+			betterTodoFilter = "feedback";
+			updateIndicator(e.currentTarget);
+			clearTodoList();
+			createTodoSections(location);
+		});
 
 		let mainSection = makeElement("div", location, {
 			id: "better-todo-main",
@@ -2905,6 +2752,9 @@ async function createTodoSections(location) {
 	// Refresh the timeframe pager's label/arrows on every render (visibility
 	// depends on the current tab and the todo_timeframe option).
 	updateTodoTimeframeNav();
+    const feedbackElement = location.querySelector(".recent_feedback");
+    const showFeedback = betterTodoFilter === "feedback" && options.todo_hide_feedback !== true;
+    if (feedbackElement) feedbackElement.style.display = showFeedback ? "block" : "none";
 	assignments.then(data => {
 	    // A newer render superseded this one — appending now would duplicate
 	    // the whole list on top of it.
@@ -3025,7 +2875,14 @@ async function createTodoSections(location) {
             populateAssignments(true);
         }
 
-        const feedbackElement = location.querySelector(".recent_feedback");
+        if (betterTodoFilter === "feedback" && (!feedbackElement || !showFeedback)) {
+            const emptyState = makeElement("div", mainSection, { className: "better-todo-dueheader" });
+            makeElement("p", emptyState, {
+                textContent: options.todo_hide_feedback === true
+                    ? "Recent feedback is hidden in Todo List settings."
+                    : "No recent feedback."
+            });
+        }
 
         // populate progress rings placeholder (respect user toggle)
         const progressPlaceholder = document.getElementById("better-todo-progress-placeholder");
@@ -3043,14 +2900,6 @@ async function createTodoSections(location) {
         } else {
             const existing = location.querySelector("#better-todo-actions-row");
             if (existing) existing.remove();
-        }
-
-        if (feedbackElement) {
-            if (options.todo_hide_feedback == true) {
-                feedbackElement.style.display = "none";
-            } else {
-                feedbackElement.style.display = "block";
-            }
         }
 
         applyTodoSidebarLayout();
@@ -3100,7 +2949,7 @@ function applyTodoSidebarLayout() {
     sidebar.style.removeProperty("scrollbar-width");
     sidebar.style.removeProperty("-ms-overflow-style");
 
-    const show = options.todo_separate_scrollbar === true && options.todo_show_scrollbar === true;
+    const show = options.todo_separate_scrollbar === true;
     let style = document.getElementById("canvasrefined-right-sidebar-scrollbar") || document.createElement("style");
     // Remove the old rule too when updating a tab that already has it.
     document.getElementById("canvasrefined-hide-right-sidebar-scrollbar")?.remove();
@@ -3334,7 +3183,7 @@ function attachTodoHoverPreview(anchor, item) {
 // Task-type icons for the Better Todo task rows (quiz / graded discussion),
 // adapted from the legacy todo renderer so quizzes and discussions get a
 // recognizable icon instead of the generic assignment one. Same fill
-// variable as the assignment icon so "Remove icons"/theme tweaks apply.
+// variable as the assignment icon so theme tweaks apply consistently.
 const TODO_QUIZ_ICON_SVG = '<svg fill="var(--cr-todo-icon)" label="Quiz" name="IconQuiz" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><g fill-rule="evenodd" stroke="none" stroke-width="1"><path d="M746.255375,1466.76417 L826.739372,1547.47616 L577.99138,1796.11015 L497.507383,1715.51216 L746.255375,1466.76417 Z M580.35118,1300.92837 L660.949178,1381.52637 L329.323189,1713.15236 L248.725192,1632.55436 L580.35118,1300.92837 Z M414.503986,1135.20658 L495.101983,1215.80457 L80.5979973,1630.30856 L0,1549.71056 L414.503986,1135.20658 Z M1119.32036,264.600006 C1475.79835,-91.8779816 1844.58834,86.3040124 1848.35034,88.1280123 L1848.35034,88.1280123 L1865.45034,96.564012 L1873.88634,113.664011 C1875.71034,117.312011 2053.89233,486.101999 1697.30034,842.693987 L1697.30034,842.693987 L1550.69635,989.297982 L1548.07435,1655.17196 L1325.43235,1877.81395 L993.806366,1546.30196 L415.712386,968.207982 L84.0863971,636.467994 L306.72839,413.826001 L972.602367,411.318001 Z M1436.24035,1103.75398 L1074.40436,1465.70397 L1325.43235,1716.61796 L1434.30235,1607.74796 L1436.24035,1103.75398 Z M1779.26634,182.406009 C1710.18234,156.41401 1457.90035,87.1020124 1199.91836,345.198004 L1199.91836,345.198004 L576.90838,968.207982 L993.806366,1385.10597 L1616.70235,762.095989 C1873.65834,505.139998 1804.68834,250.920007 1779.26634,182.406009 Z M858.146371,525.773997 L354.152388,527.597997 L245.282392,636.467994 L496.310383,887.609985 L858.146371,525.773997 Z"></path><path d="M1534.98715,372.558003 C1483.91515,371.190003 1403.31715,385.326002 1321.69316,466.949999 L1281.22316,507.305998 L1454.61715,680.585992 L1494.97315,640.343994 C1577.16715,558.035996 1591.87315,479.033999 1589.82115,427.164001 L1587.65515,374.610003 L1534.98715,372.558003 Z"></path></g></g></svg>';
 const TODO_DISCUSSION_ICON_SVG = '<svg fill="var(--cr-todo-icon)" name="IconDiscussion" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><path d="M677.647059,16 L677.647059,354.936471 L790.588235,354.936471 L790.588235,129.054118 L1807.05882,129.054118 L1807.05882,919.529412 L1581.06353,919.529412 L1581.06353,1179.29412 L1321.41176,919.529412 L1242.24,919.529412 L1242.24,467.877647 L677.647059,467.877647 L0,467.877647 L0,1484.34824 L338.710588,1484.34824 L338.710588,1903.24706 L756.705882,1484.34824 L1242.24,1484.34824 L1242.24,1032.47059 L1274.99294,1032.47059 L1694.11765,1451.59529 L1694.11765,1032.47059 L1920,1032.47059 L1920,16 L677.647059,16 Z M338.789647,919.563294 L903.495529,919.563294 L903.495529,806.622118 L338.789647,806.622118 L338.789647,919.563294 Z M338.789647,1145.44565 L677.726118,1145.44565 L677.726118,1032.39153 L338.789647,1032.39153 L338.789647,1145.44565 Z M112.941176,580.705882 L1129.41176,580.705882 L1129.41176,1371.40706 L710.4,1371.40706 L451.651765,1631.05882 L451.651765,1371.40706 L112.941176,1371.40706 L112.941176,580.705882 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>';
 
@@ -3524,15 +3373,8 @@ function populateAssignments(iscompleted = false) {
 			options.custom_cards_3?.[item.plannable.course_id]?.color ??
 			"#cccccc";
 
-        // "Ignore card colors" (Better Todo List): when on, the class name is
-        // rendered black in light mode or the theme text color in dark mode
-        // instead of the course's card color.
-        const classNameColor = options.todo_ignore_card_colors
-            ? (isDarkModeActive() ? "var(--bctext-0)" : "#000000")
-            : courseColor;
-        // "Remove icons" (Better Todo List): when on, the task-type icon is
-        // omitted from the colored strip on the left of each task.
-        const removeIcons = options.todo_remove_icons === true;
+        // Keep course names readable independently of the course's card color.
+        const classNameColor = isDarkModeActive() ? "var(--bctext-0)" : "#000000";
 
         const isCustomTask = item.plannable_type == "planner_note" || item.planner_override?.custom === true;
         // True when Canvas has a real submission for this item: the Completed
@@ -3551,7 +3393,7 @@ function populateAssignments(iscompleted = false) {
         // nudge — otherwise it reads as off-center next to the others.
         const iconLeftOffset = isCustomTask ? 2 : item.plannable_type == "quiz" ? 2 : 5;
         const scoreBadge = options.todo_show_scores === true ? todoScoreBadgeHtml(item) : "";
-        const taskIcon = removeIcons ? "" : isCustomTask
+        const taskIcon = isCustomTask
             ? `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
                 <path d="M19.8201 14H15.6001C15.04 14 14.76 14 14.5461 14.109C14.3579 14.2049 14.2049 14.3578 14.1091 14.546C14.0001 14.7599 14.0001 15.0399 14.0001 15.6V19.82M20 12.7269V7.2C20 6.0799 20 5.51984 19.782 5.09202C19.5903 4.71569 19.2843 4.40973 18.908 4.21799C18.4802 4 17.9201 4 16.8 4H7.2C6.0799 4 5.51984 4 5.09202 4.21799C4.71569 4.40973 4.40973 4.71569 4.21799 5.09202C4 5.51984 4 6.0799 4 7.2V16.8C4 17.9201 4 18.4802 4.21799 18.908C4.40973 19.2843 4.71569 19.5903 5.09202 19.782C5.51984 20 6.0799 20 7.2 20H12.9496C13.4578 20 13.7118 20 13.9498 19.9407C14.1608 19.8882 14.3618 19.8016 14.5449 19.6844C14.7515 19.5522 14.926 19.3675 15.2751 18.9983L19.1254 14.9252C19.4486 14.5833 19.6101 14.4124 19.7255 14.2156C19.8278 14.041 19.903 13.8519 19.9486 13.6548C20 13.4325 20 13.1973 20 12.7269Z" stroke="var(--cr-todo-icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>`
@@ -3659,12 +3501,8 @@ function populateAnnouncements() {
 			options.custom_cards_3?.[item.plannable.course_id]?.color ??
 			"#cccccc";
 
-		// "Ignore card colors": black in light mode, theme text color in dark.
-		const classNameColor = options.todo_ignore_card_colors
-			? (isDarkModeActive() ? "var(--bctext-0)" : "#000000")
-			: courseColor;
-		// "Remove icons": drop the announcement icon from the colored strip.
-		const removeIcons = options.todo_remove_icons === true;
+		// Keep course names readable independently of the course's card color.
+		const classNameColor = isDarkModeActive() ? "var(--bctext-0)" : "#000000";
 
 		let filter = "";
 		if (item.plannable.read_state == "read") {
@@ -3675,12 +3513,12 @@ function populateAnnouncements() {
 		<div style="display:flex;align-items:center;gap:5px;width:100%;height:60px;background:var(--bcbackground-2);border-radius:5px;${filter}">
 			<div style="width:40px;display:flex;align-items:center;justify-content:center;background-color:${courseColor};${todoIconStyleForColor(courseColor)}height:100%;border-radius:5px 0 0 5px;">
 				<div style="width:23px;height:23px;display:flex;margin-left:0px;">
-					${removeIcons ? "" : `<svg fill="var(--cr-todo-icon)" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg" style="transition:all .3s ease;">
+					<svg fill="var(--cr-todo-icon)" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg" style="transition:all .3s ease;">
 						<g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
 						<g id="SVGRepo_iconCarrier">
 							<path d="M1587.162 31.278c11.52-23.491 37.27-35.689 63.473-29.816 25.525 6.099 43.483 28.8 43.483 55.002V570.46C1822.87 596.662 1920 710.733 1920 847.053c0 136.32-97.13 250.503-225.882 276.705v513.883c0 26.202-17.958 49.016-43.483 55.002a57.279 57.279 0 0 1-12.988 1.468c-21.12 0-40.772-11.745-50.485-31.171C1379.238 1247.203 964.18 1242.347 960 1242.347H564.706v564.706h87.755c-11.859-90.127-17.506-247.003 63.473-350.683 52.405-67.087 129.657-101.082 229.948-101.082v112.941c-64.49 0-110.57 18.861-140.837 57.487-68.781 87.868-45.064 263.83-30.269 324.254 4.18 16.828.34 34.673-10.277 48.34-10.73 13.665-27.219 21.684-44.499 21.684H508.235c-31.171 0-56.47-25.186-56.47-56.47v-621.177h-56.47c-155.747 0-282.354-126.607-282.354-282.353v-56.47h-56.47C25.299 903.523 0 878.336 0 847.052c0-31.172 25.299-56.471 56.47-56.471h56.471v-56.47c0-155.634 126.607-282.354 282.353-282.354h564.593c16.941-.112 420.48-7.002 627.275-420.48Zm-5.986 218.429c-194.71 242.371-452.216 298.164-564.705 311.04v572.724c112.489 12.876 369.995 68.556 564.705 311.04ZM903.53 564.7H395.294c-93.402 0-169.412 76.01-169.412 169.411v225.883c0 93.402 76.01 169.412 169.412 169.412H903.53V564.7Zm790.589 123.444v317.93c65.618-23.379 112.94-85.497 112.94-159.021 0-73.525-47.322-135.53-112.94-158.909Z" fill-rule="evenodd"></path>
 						</g>
-					</svg>`}
+					</svg>
 				</div>
 			</div>
 			<div style="width:calc(100% - 40px);height:80%;display:flex;flex-direction:column;gap:5px;padding-left:2px;box-sizing:border-box;overflow:hidden;position:relative;">
@@ -3894,8 +3732,9 @@ function setupBetterTodo() {
 
         list.textContent = "";
         list = makeElement("div", list, { "className": "canvasrefined-todosidebar","id": "canvasrefined-todo-list"});
+        if (feedback) list.append(feedback);
         createTodoSections(list);
-
+        // Keep the saved widget below the tab controls and task groups.
         if (feedback) list.append(feedback);
 
     } catch (e) {
@@ -4922,7 +4761,7 @@ function applyPersonalDetailsPrivacyStyle() {
             content: url("${avatar}") !important;
             object-fit: cover !important;
         }
-        .canvasrefined-dashboard-notes, .canvasrefined-gpa-header-mount,
+        .canvasrefined-gpa-header-mount,
         .canvasrefined-gpa-card, .canvasrefined-gpa, .canvasrefined-gpa-customize-btn,
         .canvasrefined-gpa-dialog, .canvasrefined-gpa-view-btn,
         #better-todo-add-task-menu, #better-todo-add-task-btn,
@@ -4998,21 +4837,18 @@ Dashboard grades
 // "+" grades unreachable and displayed e.g. 100% as "A". Cutoffs are coerced
 // with Number() so string values carried in by imported themes still match.
 function percentToLetterGrade(percent, courseId) {
+    if (typeof percent !== "number") return null;
+    return getGradeThresholds(courseId).find(grade => percent >= grade.cutoff)?.letter ?? null;
+}
+
+// Shared by letter-grade calculations and the analytics chart's grade zones.
+function getGradeThresholds(courseId) {
     const shared = options.gpa_calc_bounds;
     const custom = options.gpa_threshold_mode === "course" ? options.gpa_course_bounds?.[courseId] : null;
-    const bounds = custom && shared ? Object.fromEntries(Object.entries(shared).map(([letter, values]) =>
-        [letter, { cutoff: custom[letter] ?? values.cutoff }])) : shared;
-    if (!bounds || typeof percent !== "number") return null;
-    let best = null;
-    let bestCutoff = -Infinity;
-    for (const letter of Object.keys(bounds)) {
-        const cutoff = Number(bounds[letter]?.cutoff);
-        if (Number.isFinite(cutoff) && percent >= cutoff && cutoff > bestCutoff) {
-            best = letter;
-            bestCutoff = cutoff;
-        }
-    }
-    return best;
+    return Object.entries(shared || {})
+        .map(([letter, values]) => ({ letter, cutoff: Number(custom?.[letter] ?? values?.cutoff) }))
+        .filter(grade => Number.isFinite(grade.cutoff))
+        .sort((a, b) => b.cutoff - a.cutoff);
 }
 
 function insertGrades() {
@@ -5089,44 +4925,6 @@ function createCardAssignment(assignment) {
 
 let cardAssignments;
 
-/* Equal Height Cards: stretch each card's assignment area to match the tallest
-   one, using min-height so cards can still grow. */
-let equalHeightResizeTimer = null;
-
-function equalizeCardHeights() {
-    const cards = document.querySelectorAll(".ic-DashboardCard");
-    if (cards.length === 0) return;
-
-    const enabled = options.equal_height_cards === true && options.assignments_due === true;
-
-    // Clear prior min-height so we can measure fresh or fully reset.
-    cards.forEach(card => {
-        const area = card.querySelector(".canvasrefined-card-assignment");
-        if (area) area.style.removeProperty("min-height");
-    });
-
-    if (!enabled) return;
-
-    // Stretch each assignment area to the tallest one.
-    let maxHeight = 0;
-    cards.forEach(card => {
-        const area = card.querySelector(".canvasrefined-card-assignment");
-        if (area) maxHeight = Math.max(maxHeight, area.offsetHeight);
-    });
-
-    if (maxHeight > 0) {
-        cards.forEach(card => {
-            const area = card.querySelector(".canvasrefined-card-assignment");
-            if (area) area.style.minHeight = maxHeight + "px";
-        });
-    }
-}
-
-window.addEventListener("resize", () => {
-    if (equalHeightResizeTimer) clearTimeout(equalHeightResizeTimer);
-    equalHeightResizeTimer = setTimeout(equalizeCardHeights, 150);
-});
-
 function preloadAssignmentEls() {
     return new Promise((resolve) => {
         let assignmentEls = {};
@@ -5172,7 +4970,6 @@ function loadCardAssignments() {
         document.querySelectorAll(".canvasrefined-card-assignment").forEach(card => {
             card.style.display = "none";
         });
-        equalizeCardHeights();
         return;
     }
     setupCardAssignments();
@@ -5205,6 +5002,7 @@ function loadCardAssignments() {
                         if (count >= options.num_assignments) return;
                         if (options.hide_completed_cards === true && assignment.submitted === true) return;
                         if ((options.card_overdues !== true && now >= assignment.due) || (options.card_overdues === true && assignment.submitted === true)) return;
+                        if (options.card_future_dues === false && now < assignment.due) return;
                         if (assignment.type !== "assignment" && assignment.type !== "quiz" && assignment.type !== "discussion_topic") return;
                         if (assignment.override === true) return;
                         //assignment.el.querySelector(".canvasrefined-assignment-dueat").textContent = formatCardDue(assignment.due);
@@ -5218,9 +5016,6 @@ function loadCardAssignments() {
                     let assignmentDivLink = makeElement("a", assignmentContainer, { "className": "canvasrefined-assignment-link", "textContent": "None" });
                 }
             });
-            // Wait one frame so the browser lays out the freshly appended
-            // assignment rows before measuring/equalizing card heights.
-            requestAnimationFrame(equalizeCardHeights);
         } catch (e) {
             logError(e);
         }
@@ -5335,7 +5130,7 @@ GPA calculator
 */
 
 function calculateGPA2() {
-    let qualityPoints = 0, numCredits = 0, weightedQualityPoints = 0, cumulativePoints = 0, cumulativeCredits = 0;
+    let numCredits = 0, weightedQualityPoints = 0;
     document.querySelectorAll('.canvasrefined-gpa-course').forEach(course => {
         const weight = course.querySelector('.canvasrefined-course-weight').value;
         const credits = parseFloat(course.querySelector('.canvasrefined-course-credit').value);
@@ -5352,28 +5147,78 @@ function calculateGPA2() {
             weightMultiplier = .5;
         }
 
-        qualityPoints += gpa * credits;
         weightedQualityPoints += (gpa + weightMultiplier) * credits;
         numCredits += credits;
 
     });
-    document.querySelector("#canvasrefined-gpa-unweighted").textContent = (qualityPoints / numCredits).toFixed(2);
     document.querySelector("#canvasrefined-gpa-weighted").textContent = (weightedQualityPoints / numCredits).toFixed(2);
-    const cGPA = document.querySelector("#canvasrefined-cumulative-gpa");
-    const g = parseFloat(cGPA.querySelector(".canvasrefined-course-percent").value);
-    const c = parseInt(cGPA.querySelector(".canvasrefined-course-credit").value);
-    document.querySelector("#canvasrefined-gpa-cumulative").textContent = (((options.gpa_calc_weighted === true ? weightedQualityPoints : qualityPoints) + (g * c)) / (numCredits + c)).toFixed(2);
+}
+
+// Serialize writes so rapid edits to different courses (or a reset) save in order.
+let gpaSettingsWrite = Promise.resolve();
+function saveGpaCourseUpdates(updates) {
+    const cards = { ...options.custom_cards };
+    Object.entries(updates).forEach(([id, update]) => {
+        cards[id] = { ...cards[id], ...update };
+    });
+    options.custom_cards = cards;
+    gpaSettingsWrite = gpaSettingsWrite.then(() => new Promise(resolve => {
+        chrome.storage.sync.get("custom_cards", storage => {
+            const saved = { ...storage.custom_cards };
+            Object.entries(updates).forEach(([id, update]) => {
+                saved[id] = { ...saved[id], ...update };
+            });
+            chrome.storage.sync.set({ custom_cards: saved }, resolve);
+        });
+    })).catch(logError);
+    return gpaSettingsWrite;
 }
 
 function changeGPASettings(course_id, update) {
+    saveGpaCourseUpdates({ [course_id]: update });
     calculateGPA2();
-    chrome.storage.sync.get(["custom_cards", "cumulative_gpa"], storage => {
-        if (course_id === "cumulative") {
-            chrome.storage.sync.set({ "cumulative_gpa": { ...storage["cumulative_gpa"], ...update } });
-        } else {
-            chrome.storage.sync.set({ "custom_cards": { ...storage["custom_cards"], [course_id]: { ...storage["custom_cards"][course_id], ...update } } });
-        }
+}
+
+function refreshGpaWhatIfMode() {
+    const enabled = options.gpa_what_if === true;
+    const toggle = document.querySelector('.canvasrefined-gpa-what-if');
+    if (toggle) toggle.checked = enabled;
+    const reset = document.querySelector('.canvasrefined-gpa-reset-grades');
+    if (reset) reset.hidden = !enabled;
+    document.querySelectorAll('.canvasrefined-gpa-course').forEach(course => {
+        const input = course.querySelector('.canvasrefined-course-percent');
+        const saved = options.custom_cards?.[course.dataset.courseId]?.gr;
+        input.readOnly = !enabled;
+        input.value = enabled && saved != null ? saved : course.dataset.currentGrade;
     });
+    if (document.querySelector('#canvasrefined-gpa-weighted')) calculateGPA2();
+}
+
+function createGpaWhatIfControls(container) {
+    const controls = makeElement('div', container, { className: 'canvasrefined-gpa-what-if-controls' });
+    const label = makeElement('label', controls, { className: 'canvasrefined-gpa-what-if-label' });
+    const toggle = makeElement('input', label, { type: 'checkbox', className: 'canvasrefined-gpa-what-if' });
+    toggle.setAttribute('role', 'switch');
+    makeElement('span', label, { textContent: 'What-if mode' });
+    toggle.addEventListener('change', () => {
+        options.gpa_what_if = toggle.checked;
+        refreshGpaWhatIfMode();
+        chrome.storage.sync.set({ gpa_what_if: options.gpa_what_if });
+    });
+    const reset = makeElement('button', controls, {
+        type: 'button', className: 'canvasrefined-custom-btn canvasrefined-gpa-reset-grades',
+        textContent: 'Reset to current grades', hidden: true
+    });
+    reset.addEventListener('click', () => {
+        if (options.gpa_what_if !== true) return;
+        const updates = {};
+        Object.entries(options.custom_cards || {}).forEach(([id, card]) => {
+            if (card.gr != null) updates[id] = { gr: null };
+        });
+        saveGpaCourseUpdates(updates);
+        refreshGpaWhatIfMode();
+    });
+    container.insertBefore(controls, container.querySelector('.canvasrefined-gpa-courses-container'));
 }
 
 function createGPACalcCourse(location, course) {
@@ -5381,8 +5226,6 @@ function createGPACalcCourse(location, course) {
     let customs;
     if (course.access_restricted_by_date === true) {
         return null;
-    } if (course.id === "cumulative") {
-        customs = options["cumulative_gpa"];
     } else if (options.custom_cards && options.custom_cards[course.id]) {
         customs = options.custom_cards[course.id];
     } else {
@@ -5391,11 +5234,9 @@ function createGPACalcCourse(location, course) {
     }
     if (customs.hidden === true || customs.hide === true) return;
 
-    let courseContainer = makeElement("div", location, { "className": course.id === "cumulative" ? "canvasrefined-gpa-cumulative" : "canvasrefined-gpa-course", "innerHTML": '<div class="canvasrefined-gpa-letter-grade"></div>' });
+    let courseContainer = makeElement("div", location, { "className": "canvasrefined-gpa-course", "innerHTML": '<div class="canvasrefined-gpa-letter-grade"></div>' });
     courseContainer.dataset.courseId = String(course.id);
-    const courseLabel = course.id === "cumulative"
-        ? (customs.name || "Cumulative GPA")
-        : (course.name || course.course_code || "");
+    const courseLabel = course.name || course.course_code || "";
     let courseName = makeElement("p", courseContainer, { "className": "canvasrefined-gpa-name", "textContent": courseLabel });
     let changerContainer = makeElement("div", courseContainer, { "className": "canvasrefined-gpa-percent-container" });
 
@@ -5404,12 +5245,14 @@ function createGPACalcCourse(location, course) {
     creditsChanger.value = customs.credits;
     creditsChanger.setAttribute("aria-label", `${courseLabel} credits`);
     let changer = makeElement("input", changerContainer, { "className": "canvasrefined-course-percent" });
-    changer.setAttribute("aria-label", `${courseLabel} ${course.id === "cumulative" ? "GPA" : "percentage"}`);
-    let percent = makeElement("span", changerContainer, { "className": "canvasrefined-course-percent-sign", "textContent": course.id === "cumulative" ? "/4" : "%" });
+    changer.setAttribute("aria-label", `${courseLabel} percentage`);
+    let percent = makeElement("span", changerContainer, { "className": "canvasrefined-course-percent-sign", "textContent": "%" });
     const enrollment = course.enrollments?.[0];
     let courseGrade = enrollment?.has_grading_periods === true ? enrollment.current_period_computed_current_score : enrollment?.computed_current_score;
+    courseContainer.dataset.currentGrade = courseGrade ?? "--";
+    changer.readOnly = options.gpa_what_if !== true;
 
-    if (customs["gr"] !== null) {
+    if (options.gpa_what_if === true && customs.gr != null) {
         changer.value = customs["gr"];
     } else if (courseGrade != null) {
         changer.value = courseGrade;
@@ -5417,34 +5260,18 @@ function createGPACalcCourse(location, course) {
         changer.value = "--";
     }
 
-    if (course.id !== "cumulative") {
-        let weightSelections = makeElement("form", courseContainer, { "className": "canvasrefined-course-weights" });
-        weightSelections.innerHTML = '<select name="weight-selection" class="canvasrefined-course-weight"><option value="dnc">Do not count</option><option value="regular">Regular/College</option><option value="honors">Honors</option><option value="ap">AP/IB</option></select>';
-        let weightChanger = weightSelections.querySelector(".canvasrefined-course-weight");
-        weightChanger.value = changer.value === "--" ? "dnc" : customs.weight;
-        weightChanger.setAttribute("aria-label", `${courseLabel} weighting`);
-        weightChanger.addEventListener('change', () => changeGPASettings(course.id, { "weight": weightSelections.querySelector(".canvasrefined-course-weight").value }));
-
-        let useCustomGr = makeElement("input", courseContainer, { "className": "canvasrefined-course-customgr", "type": "checkbox", "checked": customs.gr !== null ? true : false });
-        useCustomGr.setAttribute("aria-label", `${courseLabel} save custom grade`);
-        let useCustomGrLabel = makeElement("span", courseContainer, { "className": "canvasrefined-course-customgr-label", "textContent": "Save custom grade" });
-        useCustomGr.addEventListener("input", () => {
-            if (options["custom_cards"][course.id]) {
-                if (options["custom_cards"][course.id]["gr"] !== undefined && options["custom_cards"][course.id]["gr"] !== null) {
-                    changer.value = courseGrade;
-                    changeGPASettings(course.id, { "gr": null });
-                } else {
-                    changeGPASettings(course.id, { "gr": changer.value });
-                }
-            }
-        });
-    }
+    let weightSelections = makeElement("form", courseContainer, { "className": "canvasrefined-course-weights" });
+    weightSelections.innerHTML = '<select name="weight-selection" class="canvasrefined-course-weight"><option value="dnc">Do not count</option><option value="regular">Regular/College</option><option value="honors">Honors</option><option value="ap">AP/IB</option></select>';
+    let weightChanger = weightSelections.querySelector(".canvasrefined-course-weight");
+    weightChanger.value = changer.value === "--" ? "dnc" : customs.weight;
+    weightChanger.setAttribute("aria-label", `${courseLabel} weighting`);
+    weightChanger.addEventListener('change', () => changeGPASettings(course.id, { "weight": weightSelections.querySelector(".canvasrefined-course-weight").value }));
 
     changer.addEventListener('input', (e) => {
-        if (course.id === "cumulative" || (options["custom_cards"][course.id]["gr"] !== undefined && options["custom_cards"][course.id]["gr"] !== null)) {
+        if (options.gpa_what_if === true) {
             changeGPASettings(course.id, { "gr": e.target.value });
         } else {
-            calculateGPA2();
+            changer.value = courseGrade ?? "--";
         }
     });
 
@@ -5507,7 +5334,7 @@ function ensureGpaDialog(card, calculator) {
         dialog.className = "canvasrefined-gpa-dialog";
         dialog.setAttribute("aria-labelledby", "canvasrefined-gpa-dialog-title");
         const header = makeElement("div", dialog, { className: "canvasrefined-gpa-dialog-header" });
-        makeElement("h2", header, { id: "canvasrefined-gpa-dialog-title", textContent: "GPA & Calculator" });
+        makeElement("h2", header, { id: "canvasrefined-gpa-dialog-title", textContent: "GPA" });
         const close = makeElement("button", header, { type: "button", className: "canvasrefined-custom-btn", textContent: "Close" });
         close.setAttribute("aria-label", "Close GPA");
         close.addEventListener("click", () => dialog.close());
@@ -5532,7 +5359,7 @@ function placeGpaWidgets(card, calculator) {
     if (!view) {
         view = document.createElement("button");
         view.type = "button";
-        view.className = "canvasrefined-custom-btn canvasrefined-gpa-view-btn";
+        view.className = "canvasrefined-gpa-view-btn";
         view.textContent = "View GPA";
         view.setAttribute("aria-haspopup", "dialog");
         view.setAttribute("aria-controls", dialog.id);
@@ -5604,27 +5431,21 @@ function setupGPACalc() {
             }
 
             if (!alreadyRendered) {
-                container2.innerHTML = `<h3 class="canvasrefined-gpa-header">GPA</h3><div><div><p id="canvasrefined-gpa-unweighted"></p><p>Current</p></div><div style="display:${options["gpa_calc_weighted"] ? "block" : "none"}"><p id="canvasrefined-gpa-weighted"></p><p>Weighted</p></div><div style="display:${options["gpa_calc_cumulative"] ? "block" : "none"}"><p id="canvasrefined-gpa-cumulative"></p><p>Cumulative</p></div></div>`;
+                container2.innerHTML = '<h3 class="canvasrefined-gpa-header">Weighted GPA</h3><p id="canvasrefined-gpa-weighted"></p>';
 
                 container.innerHTML = '<h3 class="canvasrefined-gpa-header">GPA Calculator</h3><div class="canvasrefined-gpa-courses-container"><div class="canvasrefined-gpa-courses"></div></div>';
+                createGpaWhatIfControls(container);
 
                 placeGpaWidgets(container2, container);
 
                 let location = document.querySelector(".canvasrefined-gpa-courses");
                 if (!location) return;
 
-                let cumulative = createGPACalcCourse(location, { "id": "cumulative", "enrollments": [{ "has_grading_periods": true, "current_period_computed_current_score": 0 }] });
-                cumulative.id = "canvasrefined-cumulative-gpa";
                 result.forEach(course => createGPACalcCourse(location, course));
 
                 container2.dataset.canvasrefinedGpaRendered = "true";
                 container.dataset.canvasrefinedGpaRendered = "true";
             } else {
-                const weighted = container2.querySelector("#canvasrefined-gpa-weighted")?.parentElement;
-                const cumulative = container2.querySelector("#canvasrefined-gpa-cumulative")?.parentElement;
-                if (weighted) weighted.style.display = options.gpa_calc_weighted ? "block" : "none";
-                if (cumulative) cumulative.style.display = options.gpa_calc_cumulative ? "block" : "none";
-
                 placeGpaWidgets(container2, container);
             }
 
@@ -5634,329 +5455,12 @@ function setupGPACalc() {
                 }
             } catch (e) {}
 
-            calculateGPA2();
+            refreshGpaWhatIfMode();
         }).catch(e => logError(e));
     } catch (e) {
         logError(e);
     }
 }
-
-/*
-Dashboard notes
-*/
-
-let dashboardNotesTimer;
-function delayDashboardNotesStorage(text) {
-    clearTimeout(dashboardNotesTimer);
-    dashboardNotesTimer = setTimeout(() => {
-        chrome.storage.sync.set({ dashboard_notes_text: text });
-    }, 250);
-}
-
-/* Fallback Markdown renderer used only if js/markdown.js failed to load. */
-function crRenderMarkdownFallback(src) {
-    if (src == null) return "";
-    const escapeHtml = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-    const sanitizeUrl = (u) => {
-        const v = String(u == null ? "" : u).trim();
-        if (!v) return "";
-        if (/^(https?:|mailto:|ftp:|tel:)/i.test(v)) return v;
-        if (/^(javascript:|vbscript:|file:|data:)/i.test(v)) return "#";
-        if (/^[#/?]/.test(v)) return v;
-        if (/^[a-z][a-z0-9+.-]*:/i.test(v)) return "#";
-        return v;
-    };
-    let text = String(src).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-    const out = [];
-    const lines = text.split("\n");
-    let i = 0;
-    let taskSeq = 0; // ordinal of rendered task items, stable across code-block stashing
-    const inline = (t) => {
-        let h = escapeHtml(t);
-        h = h.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, (m, alt, url, title) =>
-            `<img src="${sanitizeUrl(url)}" alt="${alt}"${title ? ` title="${title}"` : ""}>`);
-        h = h.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, (m, txt, url, title) =>
-            `<a href="${sanitizeUrl(url)}" target="_blank" rel="noopener noreferrer"${title ? ` title="${title}"` : ""}>${txt}</a>`);
-        h = h.replace(/`([^`\n]+)`/g, (m, c) => `<code>${c}</code>`);
-        h = h.replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>");
-        h = h.replace(/~~([^~]+?)~~/g, "<del>$1</del>");
-        h = h.replace(/(^|[^*])\*([^*]+?)\*(?!\*)/g, "$1<em>$2</em>");
-        return h;
-    };
-    while (i < lines.length) {
-        const line = lines[i];
-        if (/^\s*$/.test(line)) { i++; continue; }
-        const h = line.match(/^(#{1,6})\s+(.*)$/);
-        if (h) { const l = h[1].length; out.push(`<h${l}>${inline(h[2])}</h${l}>`); i++; continue; }
-        if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { out.push("<hr>"); i++; continue; }
-        if (/^>\s?/.test(line)) {
-            const q = []; while (i < lines.length && /^>\s?/.test(lines[i])) { q.push(inline(lines[i].replace(/^>\s?/, ""))); i++; }
-            out.push(`<blockquote>${q.join("<br>")}</blockquote>`); continue;
-        }
-        if (/^\s*[-*+]\s+/.test(line)) {
-            const items = []; while (i < lines.length) { const m = lines[i].match(/^\s*[-*+]\s+(.*)$/); if (!m) break; const tk = m[1].match(/^\[([ xX])\]\s+(.*)$/); if (tk) { items.push(`<li class="cr-task" data-cr-task="${taskSeq++}"><input type="checkbox"${/x/i.test(tk[1]) ? " checked" : ""}> ${inline(tk[2])}</li>`); } else { items.push(`<li>${inline(m[1])}</li>`); } i++; } out.push(`<ul>${items.join("")}</ul>`); continue;
-        }
-        if (/^\s*\d+\.\s+/.test(line)) {
-            const items = []; while (i < lines.length) { const m = lines[i].match(/^\s*\d+\.\s+(.*)$/); if (!m) break; items.push(`<li>${inline(m[1])}</li>`); i++; } out.push(`<ol>${items.join("")}</ol>`); continue;
-        }
-        const para = [line]; i++; while (i < lines.length && !/^\s*$/.test(lines[i]) && !/^(#{1,6}\s|\s*[-*+]\s|\s*\d+\.\s|>)/.test(lines[i])) { para.push(lines[i]); i++; }
-        out.push(`<p>${para.map(inline).join("<br>")}</p>`);
-    }
-    return out.join("\n");
-}
-
-function renderDashboardNotesPreview(preview, text) {
-    if (!preview) return;
-    // Skip identical re-renders to avoid a self-sustaining observer loop.
-    if (preview._crLastText === text) return;
-    preview._crLastText = text;
-    const renderer = (typeof window.renderMarkdown === "function") ? window.renderMarkdown : crRenderMarkdownFallback;
-    preview.innerHTML = renderer(text);
-}
-
-/* Insert/wrap Markdown formatting at the selection and fire an input event. */
-function notesApplyFormat(editor, action) {
-    if (!editor) return;
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
-    const value = editor.value;
-    const fire = () => {
-        editor.dispatchEvent(new Event("input", { bubbles: true }));
-        editor.focus();
-    };
-
-    const wrap = (before, after, placeholder) => {
-        const had = end > start;
-        const sel = had ? value.slice(start, end) : (placeholder || "");
-        editor.setRangeText(before + sel + after, start, end, "end");
-        editor.selectionStart = start + before.length;
-        editor.selectionEnd = start + before.length + sel.length;
-        fire();
-    };
-
-    // Range covering every line touched by the selection.
-    const lineBlock = () => {
-        const ls = start === 0 ? 0 : value.lastIndexOf("\n", start - 1) + 1;
-        let le = value.indexOf("\n", end);
-        if (le === -1) le = value.length;
-        return { ls, le, block: value.slice(ls, le) };
-    };
-
-    const togglePrefix = (prefix) => {
-        const { ls, le, block } = lineBlock();
-        const lines = block.split("\n");
-        const allHave = lines.every((l) => l.startsWith(prefix));
-        const newBlock = lines.map((l) => allHave ? l.slice(prefix.length) : prefix + l).join("\n");
-        editor.setRangeText(newBlock, ls, le, "end");
-        editor.selectionStart = ls;
-        editor.selectionEnd = ls + newBlock.length;
-        fire();
-    };
-
-    switch (action) {
-        case "bold": wrap("**", "**", "bold"); break;
-        case "italic": wrap("*", "*", "italic"); break;
-        case "strike": wrap("~~", "~~", "strikethrough"); break;
-        case "code": wrap("`", "`", "code"); break;
-        case "h1": togglePrefix("# "); break;
-        case "h2": togglePrefix("## "); break;
-        case "list": togglePrefix("- "); break;
-        case "numbered": togglePrefix("1. "); break;
-        case "quote": togglePrefix("> "); break;
-        case "task": {
-            const { ls, le, block } = lineBlock();
-            const marker = block.match(/^-\s*\[([ xX])\]\s+/);
-            const bullet = block.match(/^[-*+]\s+/);
-            let newBlock;
-            if (marker) {
-                newBlock = block.slice(marker[0].length);
-            } else if (bullet) {
-                newBlock = "- [ ] " + block.slice(bullet[0].length);
-            } else {
-                newBlock = "- [ ] " + block;
-            }
-            editor.setRangeText(newBlock, ls, le, "end");
-            editor.selectionStart = ls;
-            editor.selectionEnd = ls + newBlock.length;
-            fire();
-            break;
-        }
-        case "link": {
-            const had = end > start;
-            const sel = had ? value.slice(start, end) : "text";
-            editor.setRangeText("[" + sel + "](url)", start, end, "end");
-            const urlStart = start + 1 + sel.length + 2; // after "]("
-            editor.selectionStart = urlStart;
-            editor.selectionEnd = urlStart + 3; // select "url"
-            fire();
-            break;
-        }
-        case "hr": {
-            const lead = start > 0 && value[start - 1] !== "\n" ? "\n" : "";
-            editor.setRangeText(lead + "---\n", start, start, "end");
-            fire();
-            break;
-        }
-        case "codeblock": {
-            const had = end > start;
-            const sel = had ? value.slice(start, end) : "code";
-            const lead = start > 0 && value[start - 1] !== "\n" ? "\n" : "";
-            editor.setRangeText(lead + "```\n" + sel + "\n```", start, end, "end");
-            fire();
-            break;
-        }
-    }
-}
-
-/* Toggle the Nth rendered Markdown task checkbox and re-render, using a task
-   ordinal that skips fenced code blocks. */
-function toggleDashboardNoteTask(editor, taskIndex) {
-    if (!editor) return;
-    const value = editor.value || "";
-    const lines = value.split("\n");
-    let inFence = false;
-    let count = 0;
-    for (let idx = 0; idx < lines.length; idx++) {
-        const line = lines[idx];
-        if (/^\s*```/.test(line)) { inFence = !inFence; continue; }
-        if (inFence) continue;
-        const m = line.match(/^(\s*[-*+]\s+)\[([ xX])\](\s+)/);
-        if (!m) continue;
-        if (count === taskIndex) {
-            const newMark = m[2] === " " ? "x" : " ";
-            lines[idx] = m[1] + "[" + newMark + "]" + m[3] + line.slice(m[0].length);
-            editor.value = lines.join("\n");
-            editor.dispatchEvent(new Event("input", { bubbles: true }));
-            const notes = editor.closest(".canvasrefined-dashboard-notes");
-            const rendered = notes ? notes.querySelector(".canvasrefined-notes-rendered") : null;
-            if (rendered) renderDashboardNotesPreview(rendered, editor.value);
-            return;
-        }
-        count++;
-    }
-}
-
-const DASHBOARD_NOTES_HTML = `
-    <div class="canvasrefined-notes-toolbar" role="toolbar" aria-label="Format notes">
-        <button type="button" class="cr-fmt" data-action="bold" title="Bold (Ctrl/Cmd+B)"><strong>B</strong></button>
-        <button type="button" class="cr-fmt" data-action="italic" title="Italic (Ctrl/Cmd+I)"><em>I</em></button>
-        <button type="button" class="cr-fmt" data-action="strike" title="Strikethrough"><s>S</s></button>
-        <button type="button" class="cr-fmt" data-action="code" title="Inline code"><code>&lt;/&gt;</code></button>
-        <span class="cr-fmt-sep"></span>
-        <button type="button" class="cr-fmt" data-action="h1" title="Heading 1">H1</button>
-        <button type="button" class="cr-fmt" data-action="h2" title="Heading 2">H2</button>
-        <span class="cr-fmt-sep"></span>
-        <button type="button" class="cr-fmt" data-action="list" title="Bullet list">&bull;</button>
-        <button type="button" class="cr-fmt" data-action="numbered" title="Numbered list">1.</button>
-        <button type="button" class="cr-fmt" data-action="task" title="Task list">&#9744;</button>
-        <button type="button" class="cr-fmt" data-action="quote" title="Quote">&ldquo;</button>
-        <span class="cr-fmt-sep"></span>
-        <button type="button" class="cr-fmt" data-action="link" title="Insert link">Link</button>
-        <button type="button" class="cr-fmt" data-action="hr" title="Horizontal rule">&mdash;</button>
-        <button type="button" class="cr-fmt" data-action="codeblock" title="Code block">&#96;&#96;&#96;</button>
-    </div>
-    <div class="canvasrefined-notes-surface">
-        <div class="canvasrefined-notes-rendered" tabindex="0" aria-label="Dashboard notes — click to edit" title="Click to edit"></div>
-        <textarea class="canvasrefined-notes-editor" placeholder="Type away!" spellcheck="false"></textarea>
-    </div>
-`;
-
-function wireDashboardNotes(notes) {
-    const editor = notes.querySelector(".canvasrefined-notes-editor");
-    const rendered = notes.querySelector(".canvasrefined-notes-rendered");
-    editor.value = options.dashboard_notes_text || "";
-    renderDashboardNotesPreview(rendered, editor.value);
-
-    const enterEdit = () => {
-        if (notes.classList.contains("is-editing")) return;
-        notes.classList.add("is-editing");
-        editor.focus();
-        const len = editor.value.length;
-        editor.setSelectionRange(len, len);
-    };
-    const exitEdit = () => {
-        notes.classList.remove("is-editing");
-        renderDashboardNotesPreview(rendered, editor.value);
-    };
-
-    rendered.addEventListener("click", (e) => {
-        // Clicking a checkbox toggles the task; clicking the text edits.
-        const t = e.target;
-        if (t && t.nodeType === 1 && t.tagName === "INPUT" && t.type === "checkbox" && t.closest && t.closest("li.cr-task")) {
-            e.stopPropagation();
-            const li = t.closest("li.cr-task");
-            const taskIndex = parseInt(li.dataset.crTask, 10);
-            if (!Number.isNaN(taskIndex)) toggleDashboardNoteTask(editor, taskIndex);
-            return;
-        }
-        enterEdit();
-    });
-    rendered.addEventListener("focus", enterEdit);
-    editor.addEventListener("blur", exitEdit);
-    editor.addEventListener("input", function () {
-        options.dashboard_notes_text = this.value;
-        delayDashboardNotesStorage(this.value);
-    });
-
-    // preventDefault on the toolbar keeps focus in the editor across misclicks.
-    const toolbar = notes.querySelector(".canvasrefined-notes-toolbar");
-    if (toolbar) toolbar.addEventListener("mousedown", e => e.preventDefault());
-    notes.querySelectorAll(".cr-fmt").forEach(btn => {
-        btn.addEventListener("click", () => {
-            if (!notes.classList.contains("is-editing")) enterEdit();
-            notesApplyFormat(editor, btn.dataset.action);
-        });
-    });
-
-    editor.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") { e.preventDefault(); editor.blur(); return; } // Esc: render
-        const mod = e.ctrlKey || e.metaKey;
-        if (!mod) return;
-        const k = e.key.toLowerCase();
-        if (k === "b") { e.preventDefault(); notesApplyFormat(editor, "bold"); }
-        else if (k === "i") { e.preventDefault(); notesApplyFormat(editor, "italic"); }
-        else if (k === "enter") { e.preventDefault(); editor.blur(); } // Ctrl/Cmd+Enter: render
-    });
-}
-
-function loadDashboardNotes() {
-    const container = document.querySelector("#DashboardCard_Container");
-    if (options.dashboard_notes === true) {
-        if (!container) return;
-        let notes = document.querySelector('.canvasrefined-dashboard-notes');
-        // Rebuild older (split edit/preview) markup into the new single-surface layout.
-        if (notes && !notes.querySelector(".canvasrefined-notes-surface")) {
-            notes.remove();
-            notes = null;
-        }
-        if (!notes) {
-            notes = document.createElement("div");
-            notes.classList.add("canvasrefined-dashboard-notes");
-            notes.innerHTML = DASHBOARD_NOTES_HTML;
-            // Mount as a full-width sibling above the card grid. Prepending inside the
-            // DashboardCard_Container makes the notes a masonry/grid cell (narrow & broken).
-            const parent = container.parentNode;
-            if (parent) parent.insertBefore(notes, container);
-            else container.prepend(notes);
-            wireDashboardNotes(notes);
-        } else {
-            notes.style.display = "";
-            const editor = notes.querySelector(".canvasrefined-notes-editor");
-            const rendered = notes.querySelector(".canvasrefined-notes-rendered");
-            // Only sync and render in view mode; the textarea is the source of truth while editing.
-            if (!notes.classList.contains("is-editing")) {
-                if (editor && editor.value !== (options.dashboard_notes_text || "")) {
-                    editor.value = options.dashboard_notes_text || "";
-                }
-                renderDashboardNotesPreview(rendered, editor ? editor.value : "");
-            }
-        }
-    } else {
-        let notes = document.querySelector('.canvasrefined-dashboard-notes');
-        if (notes) notes.style.display = "none";
-    }
-}
-
 
 /*
 Smaller features
@@ -5981,25 +5485,36 @@ function applyAestheticChanges() {
     style.id = "canvasrefined-aesthetics";
     style.textContent = "";
     if (options.condensed_cards === true) style.textContent += ".ic-DashboardCard__header_hero {height:60px!important}.ic-DashboardCard__header-subtitle, .ic-DashboardCard__header-term{display:none}";
+    const nicknameSize = options.course_nickname_font_size ?? (options.emphasize_course_name === true ? "medium" : "small");
+    const courseIdSize = options.course_id_font_size ?? (options.emphasize_course_name === true ? "small" : "medium");
+    if (nicknameSize !== "small" || courseIdSize !== "medium") {
+        // The sheet is cleared above, so measure Canvas's native sizes. Extend
+        // the Small-to-Medium difference equally for Large and Extra Large.
+        const sizes = { small: ".875rem", medium: "1.25rem", large: "1.625rem", extra_large: "2rem" };
+        const title = document.querySelector(".ic-DashboardCard__header-title");
+        const subtitle = document.querySelector(".ic-DashboardCard__header-subtitle");
+        if (title && subtitle) {
+            const small = parseFloat(getComputedStyle(title.querySelector("span") || title).fontSize);
+            const medium = parseFloat(getComputedStyle(subtitle).fontSize);
+            if (Number.isFinite(small) && small > 0 && Number.isFinite(medium) && medium > small) {
+                Object.keys(sizes).forEach((key, index) => {
+                    sizes[key] = `${small + (medium - small) * index}px`;
+                });
+            }
+        }
+        style.textContent += `.ic-DashboardCard .ic-DashboardCard__header-title, .ic-DashboardCard .ic-DashboardCard__header-title span{font-size:${sizes[nicknameSize] || sizes.small}!important}.ic-DashboardCard .ic-DashboardCard__header-subtitle{font-size:${sizes[courseIdSize] || sizes.medium}!important}`;
+    }
     if (options.remlogo === true) style.textContent += ".ic-app-header__logomark-container{display:none}";
     if (options.disable_color_overlay === true) style.textContent += ".ic-DashboardCard__header_hero{opacity: 0!important} .ic-DashboardCard__header-button-bg{opacity: 1!important}";
     if (options.full_width === true) style.textContent += "#wrapper,.ic-Layout-wrapper{max-width:100%!important}";
     if (options.center_cards === true) style.textContent += ".ic-DashboardCard__box__container{display:flex!important;flex-wrap:wrap!important;justify-content:center!important;align-items:flex-start!important}";
     if (options.imageSize !== undefined && options.imageSize !== 100) style.textContent += `.ic-DashboardCard__header_image {transform: scale(${options.imageSize / 100})!important; }`;
-    if (options.cardRoundness !== undefined && options.cardRoundness !== 5) style.textContent += `.ic-DashboardCard {border-radius: ${options.cardRoundness}px!important;}`;
-    if (options.cardSpacing !== undefined && options.cardSpacing !== 0) style.textContent += `.ic-DashboardCard {margin-right: ${options.cardSpacing / 2}px!important; margin-bottom: ${options.cardSpacing / 2}px!important;}`;
-    if (options.cardWidth !== undefined && options.cardWidth !== 262) style.textContent += `.ic-DashboardCard {width: ${options.cardWidth}px!important;}`;
-    // Card height sizes the image band via .ic-DashboardCard__header_hero —
-    // the element Canvas pins at 146px that actually drives the header image
-    // height (both .ic-DashboardCard and .ic-DashboardCard__header are
-    // content-sized, so a height on either just clips or adds dead space).
-    // Everything else — title, actions, and the appended
-    // .canvasrefined-card-assignment rows — flows below the hero, so the card
-    // grows with the assignment list and nothing gets clipped. Skipped when
-    // condensed cards is on, since that mode pins the hero at 60px.
-    if (options.condensed_cards !== true && options.cardHeight !== undefined && options.cardHeight !== null && options.cardHeight !== "") {
-        style.textContent += `.ic-DashboardCard__header_hero {height: ${options.cardHeight}px!important;}`;
+    // Fall back to the old format until the install/update migration has run.
+    const cardMargin = options.cardMargin ?? (options.cardSpacing === undefined || options.cardSpacing === 0 ? 36 : Number(options.cardSpacing) / 2);
+    if (Number.isFinite(Number(cardMargin)) && Number(cardMargin) >= 0 && Number(cardMargin) !== 36) {
+        style.textContent += `.ic-DashboardCard {margin-right: ${Number(cardMargin)}px!important; margin-bottom: ${Number(cardMargin)}px!important;}`;
     }
+    if (options.cardWidth !== undefined && options.cardWidth !== 262) style.textContent += `.ic-DashboardCard {width: ${options.cardWidth}px!important;}`;
     // Inner card padding. Applied to the whole .ic-DashboardCard box so the
     // hero header, title, and action buttons all get breathing room from the
     // card's edges. Canvas sizes the card with border-box + a fixed width,
@@ -6100,8 +5615,8 @@ function injectQuizSafeModeBanner(safeModeOn) {
 // =============================================================================
 // Global Canvas Search
 // Search across all of the user's courses for modules, module items, and
-// assignments, then jump straight to them. Triggered by a floating search
-// button (bottom-right) or Ctrl/Cmd+K.
+// assignments, then jump straight to them. Open from the dashboard header,
+// global navigation.
 // =============================================================================
 
 let globalSearchIndex = null;            // [{type,title,course,courseId,url}]
@@ -6109,29 +5624,15 @@ let globalSearchIndexPromise = null;     // in-flight build so concurrent opens 
 let globalSearchIndexAt = 0;             // ms timestamp of last successful build
 const GLOBAL_SEARCH_INDEX_TTL = 10 * 60 * 1000; // 10 minutes
 const GLOBAL_SEARCH_STORAGE_KEY = "canvasrefined_global_search_index";
-let _gsShortcutBound = false;
 
 function setupGlobalSearch() {
-    if (options.global_search !== true) return;
     // Rebuild the index fresh on every page load so newly-concluded/hidden
     // courses never linger from a previous session's cache.
     invalidateGlobalSearchIndex();
     ensureGlobalSearchButton();
-    ensureGlobalSearchShortcut();
 }
 
-function removeGlobalSearch() {
-    document.getElementById("canvasrefined-global-search-header-btn")?.remove();
-    removeGlobalSearchNativeSidebarButton();
-    closeGlobalSearchModal();
-    if (_gsPlacementObserver) { _gsPlacementObserver.disconnect(); _gsPlacementObserver = null; }
-    if (_gsShortcutBound) {
-        document.removeEventListener("keydown", onGlobalSearchShortcut, true);
-        _gsShortcutBound = false;
-    }
-}
-
-// Shared search icon used by the sidebar + header triggers.
+// Search icon used by the sidebar trigger.
 const GLOBAL_SEARCH_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle cx="11" cy="11" r="7" stroke="var(--bcsidebar-text)" stroke-width="2" fill="none"/><path d="m20 20-3.2-3.2" stroke="var(--bcsidebar-text)" stroke-width="2" stroke-linecap="round"/></g></svg>`;
 
 // Placement: a search trigger is injected into Canvas' native global nav
@@ -6155,15 +5656,13 @@ function ensureGlobalSearchButton() {
 }
 
 function placeGlobalSearchTrigger() {
-    if (options.global_search !== true) return;
-
     // Native global nav (the slim icon bar) — always present, so always add.
     ensureGlobalSearchNativeSidebarButton();
 
     // Dashboard header button (in addition to the sidebar triggers).
-    const headerActions = document.querySelector(".ic-Dashboard-header__actions");
-    if (isDashboardPage() && headerActions) {
-        ensureGlobalSearchHeaderButton(headerActions);
+    const anchor = gpaHeaderAnchor();
+    if (isDashboardPage() && anchor) {
+        ensureGlobalSearchHeaderButton(anchor.row, anchor.before);
     } else {
         document.getElementById("canvasrefined-global-search-header-btn")?.remove();
     }
@@ -6182,7 +5681,7 @@ function ensureGlobalSearchNativeSidebarButton() {
     link.className = "ic-app-header__menu-list-link";
     link.href = "#";
     link.setAttribute("role", "button");
-    link.title = "Search Canvas (Ctrl+K)";
+    link.title = "Search Canvas";
     link.setAttribute("aria-label", "Search Canvas");
     link.innerHTML = `<span class="menu-item-icon-container" aria-hidden="true">${GLOBAL_SEARCH_ICON_SVG}</span><span class="menu-item__text">Search</span>`;
     link.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); openGlobalSearchModal(); });
@@ -6191,49 +5690,30 @@ function ensureGlobalSearchNativeSidebarButton() {
     navMenu.appendChild(li);
 }
 
-function removeGlobalSearchNativeSidebarButton() {
-    document.getElementById("canvasrefined-gs-nav-item")?.remove();
-}
-
 // --- Dashboard header trigger -----------------------------------------------
 
-function ensureGlobalSearchHeaderButton(headerActions) {
-    if (headerActions.querySelector("#canvasrefined-global-search-header-btn")) return;
-    const btn = document.createElement("button");
-    btn.id = "canvasrefined-global-search-header-btn";
-    btn.type = "button";
-    btn.className = "canvasrefined-gs-header-btn";
-    btn.title = "Search Canvas (Ctrl+K)";
-    btn.setAttribute("aria-label", "Search Canvas");
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="canvasrefined-gs-header-btn-label">Search</span>`;
-    btn.addEventListener("click", openGlobalSearchModal);
-    // Insert as the first child of the actions row so it sits just to the left
-    // of the "Dashboard Options" (⋯) button, right-aligned with it.
-    headerActions.insertBefore(btn, headerActions.firstChild);
-}
-
-function ensureGlobalSearchShortcut() {
-    if (_gsShortcutBound) return;
-    document.addEventListener("keydown", onGlobalSearchShortcut, true);
-    _gsShortcutBound = true;
-}
-
-function onGlobalSearchShortcut(e) {
-    // Ctrl/Cmd+K toggles the search modal. Ignore when a modal is already open
-    // and the user is typing in its input (handled by the modal's own listener).
-    if (!(e.ctrlKey || e.metaKey) || !(e.key === "k" || e.key === "K")) return;
-
-    // Never activate on quiz pages (intro or take) so we don't interfere with
-    // the quiz experience or the browser's native Ctrl+K. Read the URL live
-    // because current_page can be stale after Canvas' client-side navigation.
-    if (/^\/courses\/\d+\/quizzes\/\d+(?:\/|$)/.test(window.location.pathname)) return;
-
-    const modal = document.getElementById("canvasrefined-global-search-modal");
-    if (modal && modal.dataset.open === "true") {
-        closeGlobalSearchModal();
-    } else {
-        e.preventDefault();
-        openGlobalSearchModal();
+function ensureGlobalSearchHeaderButton(headerActions, before) {
+    let btn = document.getElementById("canvasrefined-global-search-header-btn");
+    if (!btn) {
+        btn = document.createElement("button");
+        btn.id = "canvasrefined-global-search-header-btn";
+        btn.type = "button";
+        btn.className = "canvasrefined-gs-header-btn";
+        btn.title = "Search Canvas";
+        btn.setAttribute("aria-label", "Search Canvas");
+        btn.setAttribute("aria-haspopup", "dialog");
+        btn.setAttribute("aria-controls", "canvasrefined-global-search-modal");
+        btn.textContent = "Search";
+        btn.addEventListener("click", openGlobalSearchModal);
+    }
+    // Keep Search directly before View GPA, including after Canvas rebuilds
+    // the header or GPA finishes loading asynchronously.
+    const slot = headerActions.querySelector(":scope > .canvasrefined-gpa-header-mount")
+        || headerActions.querySelector(":scope > .canvasrefined-gpa-customize-btn")
+        || before || null;
+    btn.style.order = "1";
+    if (btn.parentElement !== headerActions || btn.nextSibling !== slot) {
+        headerActions.insertBefore(btn, slot);
     }
 }
 
@@ -6241,8 +5721,6 @@ function openGlobalSearchModal() {
     if (options.hide_personal_details === true) return;
     if (document.getElementById("canvasrefined-global-search-modal")) return;
 
-    // Show the platform-appropriate modifier in keybind hints (⌘ on Mac).
-    const modKey = /Mac|iPhone|iPad/.test(navigator.platform) ? "\u2318" : "Ctrl";
     const modal = document.createElement("div");
     modal.id = "canvasrefined-global-search-modal";
     modal.className = "canvasrefined-gs-modal";
@@ -6258,8 +5736,6 @@ function openGlobalSearchModal() {
             <div class="canvasrefined-gs-footer">
                 <span><kbd>\u2191</kbd><kbd>\u2193</kbd> navigate</span>
                 <span><kbd>Enter</kbd> open</span>
-                <span><kbd>${modKey}</kbd>+<kbd>Enter</kbd> new tab</span>
-                <span><kbd>${modKey}</kbd>+<kbd>K</kbd> toggle search</span>
                 <span><kbd>Esc</kbd> close</span>
             </div>
         </div>`;
@@ -6274,8 +5750,7 @@ function openGlobalSearchModal() {
     closeBtn.addEventListener("click", closeGlobalSearchModal);
     modal.addEventListener("mousedown", (e) => { if (e.target === modal) closeGlobalSearchModal(); });
 
-    // Escape closes; arrows + enter navigate. Bound on capture so we win over
-    // the global Ctrl+K toggle.
+    // Keep standard keyboard navigation within the search dialog.
     modal.addEventListener("keydown", (e) => {
         if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeGlobalSearchModal(); return; }
         if (e.key === "ArrowDown") {
@@ -6289,14 +5764,9 @@ function openGlobalSearchModal() {
         } else if (e.key === "Enter") {
             e.preventDefault();
             const item = currentResults[selected];
-            if (item) openGlobalSearchResult(item, e.ctrlKey || e.metaKey);
+            if (item) openGlobalSearchResult(item, false);
         }
     });
-    // Stop the global Ctrl+K handler from closing the modal while typing.
-    input.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) e.stopPropagation();
-    });
-
     let debounce = null;
     input.addEventListener("input", () => {
         clearTimeout(debounce);
@@ -7248,7 +6718,7 @@ function getNextPageUrl(linkHeader) {
 // ===================== Grade Analytics =====================
 // On course grades pages, adds an "Analytics" toggle in the native course nav that shows
 // a panel with a score-distribution doughnut, an overall-grade-over-time
-// line chart, a GitHub-style grade heatmap, and a final-grade calculator.
+// line chart, and a final-grade calculator.
 // Data comes from the Canvas API with the user's session, so it
 // matches the numbers on the page. Charts are hand-drawn on <canvas> so the
 // extension needs no CDN/library and no chart library dependency.
@@ -7266,24 +6736,27 @@ const GA_BUCKETS = [
     { label: "0-9",   min: 0,  max: 10,       color: "#7f1d1d" },
 ];
 const GA_UNGRADED_COLOR = "#6b7280";
-// 5%-wide zone colors for the line chart background: the doughnut's bucket
-// colors interpolated at 5% steps (dark red at 0 → green at 100), so every
-// 5% band gets its own shade. Each band is sampled at its LOWER edge so
-// every decade starts on its pure bucket color — a 70 is exactly yellow,
-// not a yellow-green blend.
-const GA_ZONE_COLORS = (() => {
-    const stops = GA_BUCKETS.slice().reverse(); // 0-9 (dark red) → 90+ (green)
-    const rgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-    const lerp = (a, b, t) => Math.round(a + (b - a) * t);
-    return Array.from({ length: 20 }, (_, i) => {
-        const m = i * 5; // band's lower edge (70, 75, …) — see comment above
-        const k = Math.min(stops.length - 1, Math.floor(m / 10));
-        if (k >= stops.length - 1) return stops[stops.length - 1].color;
-        const t = (m - k * 10) / 10;
-        const c1 = rgb(stops[k].color), c2 = rgb(stops[k + 1].color);
-        return `rgb(${lerp(c1[0], c2[0], t)},${lerp(c1[1], c2[1], t)},${lerp(c1[2], c2[2], t)})`;
+const GA_GRADE_COLORS = {
+    "A+": "#93c5fd", A: "#3b82f6", "A-": "#1e40af",
+    "B+": "#86efac", B: "#22c55e", "B-": "#166534",
+    "C+": "#facc15", C: "#facc15", "C-": "#facc15",
+    "D+": "#ef4444", D: "#ef4444", "D-": "#ef4444",
+    F: "#9ca3af",
+};
+
+// Solid letter-grade bands, clipped to the current Y range. Use the same
+// sorted thresholds and tie handling as percentToLetterGrade, including
+// per-course overrides. The highest grade continues above 100%.
+function gaGradeZones(courseId, yMin, yMax) {
+    const thresholds = getGradeThresholds(courseId);
+    const edges = [...new Set([yMin, yMax, ...thresholds.map(grade => grade.cutoff)
+        .filter(cutoff => cutoff > yMin && cutoff < yMax)])].sort((a, b) => a - b);
+    return edges.slice(0, -1).map((bottom, i) => {
+        const letter = thresholds.find(grade => bottom >= grade.cutoff)?.letter;
+        return { bottom, top: edges[i + 1], color: GA_GRADE_COLORS[letter] || GA_GRADE_COLORS.F };
     });
-})();
+}
+
 const GA_OPEN_KEY = "grade_analytics_open";
 
 async function getGradeAnalyticsOpenState() {
@@ -7334,11 +6807,11 @@ function saveGaCalcSettings() {
 let gaObserver = null;
 let gaOpen = false;          // panel open on this page view
 let gaFitY = false;         // scale the line chart Y axis to fit the data
-let gaImagineIf = false;    // "Imagine-If mode" enabled on this page view (never persisted — always off on load)
-let gaScenario = null;      // imagine-if working copy of groups + assignments
+let gaImagineIf = false;    // "What-If mode" enabled on this page view (never persisted — always off on load)
+let gaScenario = null;      // What-If working copy of groups + assignments
 let gaIfCounter = 0;         // unique ids for user-added groups/assignments
 let gaOriginalFinalHtml = null; // Total row's original grade span innerHTML, for restore
-let gaTab = "overview";     // active panel tab: "overview" | "calc" | "heatmap"
+let gaTab = "overview";     // active panel tab: "overview" | "calc"
 let gaCalc = null;           // final-grade calculator settings for this course
 let gaCourseId = null;       // course whose data is cached
 let gaData = null;           // computed data for the current course
@@ -7346,7 +6819,7 @@ let gaLoading = false;
 let gaChartObserver = null;  // ResizeObserver: redraws charts once their boxes gain a real size
 
 function gradeAnalyticsActive() {
-    return options.grade_analytics === true && isGradesPage() && !quizSafeModeActive();
+    return isGradesPage() && !quizSafeModeActive();
 }
 
 // Grades data is read straight from the #grades_summary table the page
@@ -7374,7 +6847,7 @@ function gaWaitForGradesTable(timeoutMs = 15000) {
     });
 }
 
-// Entry point: called at init, on SPA navigation, and when the option changes.
+// Entry point: always runs on Grades pages at init and on SPA navigation.
 function watchGradeAnalytics() {
     if (!gradeAnalyticsActive()) {
         removeGradeAnalyticsPanel();
@@ -7423,7 +6896,7 @@ function syncGradeAnalyticsUI() {
     if (!gradeAnalyticsActive()) return;
     const panel = ensureGradeAnalyticsPanel();
     if (!panel) return;
-    // Imagine-If: Canvas re-renders can wipe the overwritten Total block or
+    // What-If: Canvas re-renders can wipe the overwritten Total block or
     // swap in a new grades table (grading-period switch) — reapply, and
     // rebuild the scenario when the table's rows changed.
     if (gaImagineIf) {
@@ -7468,7 +6941,7 @@ function applyGradeAnalyticsOpenState(panel) {
     btn.setAttribute("aria-expanded", String(gaOpen));
 }
 
-// Syncs the "Imagine-If mode" button's DOM to the in-memory state.
+// Syncs the "What-If mode" button's DOM to the in-memory state.
 // Called at panel creation and whenever an already-attached panel is
 // reused, mirroring applyGradeAnalyticsOpenState.
 function applyGradeAnalyticsImagineState(panel) {
@@ -7512,7 +6985,7 @@ function ensureGradeAnalyticsPanel() {
     panel.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;">
             <h2 style="margin:0;font-size:18px;color:var(--bctext-0);">Grade Analytics</h2>
-            <button id="canvasrefined-ga-imagine" type="button" aria-pressed="false" title="Toggle Imagine-If mode" style="margin-left:auto;background:var(--bcbackground-1);color:var(--bctext-0);border:1px solid var(--bcborders);border-radius:8px;padding:4px 12px;font-size:14px;line-height:1.4;cursor:pointer;">Imagine-If mode</button>
+            <button id="canvasrefined-ga-imagine" type="button" aria-pressed="false" title="Toggle What-If mode" style="margin-left:auto;background:var(--bcbackground-1);color:var(--bctext-0);border:1px solid var(--bcborders);border-radius:8px;padding:4px 12px;font-size:14px;line-height:1.4;cursor:pointer;">What-If mode</button>
             <button id="canvasrefined-ga-toggle" type="button" aria-expanded="true" title="Toggle Grade Analytics" style="background:var(--bcbackground-1);color:var(--bctext-0);border:1px solid var(--bcborders);border-radius:8px;padding:4px 12px;font-size:14px;line-height:1.4;cursor:pointer;"><svg style="transform:rotate(180deg);display:block;" fill="currentColor" width="16px" height="16px" viewBox="-6.5 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="1.6"><g stroke-width="0"/><g stroke-linecap="round" stroke-linejoin="round"/><path d="M18.813 11.406l-7.906 9.906c-0.75 0.906-1.906 0.906-2.625 0l-7.906-9.906c-0.75-0.938-0.375-1.656 0.781-1.656h16.875c1.188 0 1.531 0.719 0.781 1.656z"/></svg></button>
         </div>
         <div id="canvasrefined-ga-body">
@@ -7520,7 +6993,6 @@ function ensureGradeAnalyticsPanel() {
         <div id="canvasrefined-ga-tabs" style="display:flex;gap:4px;border-bottom:1px solid color-mix(in srgb, var(--bcborders) 75%, transparent);margin-bottom:14px;">
             <button type="button" data-ga-tab="overview" style="${gaTabStyle(true)}">Overview</button>
             <button type="button" data-ga-tab="calc" style="${gaTabStyle(false)}">Final Calculator</button>
-            <button type="button" data-ga-tab="heatmap" style="${gaTabStyle(false)}">Heatmap</button>
         </div>
         <div id="canvasrefined-ga-tab-overview">
         <div id="canvasrefined-ga-stats" style="display:none;flex-wrap:wrap;gap:10px;margin-bottom:14px;"></div>
@@ -7553,24 +7025,6 @@ function ensureGradeAnalyticsPanel() {
                 <div id="canvasrefined-ga-calc-result" style="padding:12px 16px;border-radius:8px;background:var(--bcbackground-1);border:1px solid color-mix(in srgb, var(--bcborders) 75%, transparent);font-size:14px;"></div>
             </div>
         </div>
-        <div id="canvasrefined-ga-tab-heatmap" style="display:none;position:relative;">
-            <div style="overflow-x:auto;max-width:100%;padding:2px 2px 6px;">
-                <div id="canvasrefined-ga-heatmap-grid" style="display:inline-flex;gap:4px;"></div>
-            </div>
-            <div id="canvasrefined-ga-heatmap-note" style="margin:0;color:var(--bctext-1);font-size:12px;"></div>
-            <div style="display:flex;align-items:center;gap:4px;margin-top:8px;font-size:11px;color:var(--bctext-1);">
-                <span>0%</span>
-                <span style="width:11px;height:11px;border-radius:3px;display:inline-block;background:${GA_ZONE_COLORS[0]};"></span>
-                <span style="width:11px;height:11px;border-radius:3px;display:inline-block;background:${GA_ZONE_COLORS[5]};"></span>
-                <span style="width:11px;height:11px;border-radius:3px;display:inline-block;background:${GA_ZONE_COLORS[10]};"></span>
-                <span style="width:11px;height:11px;border-radius:3px;display:inline-block;background:${GA_ZONE_COLORS[15]};"></span>
-                <span style="width:11px;height:11px;border-radius:3px;display:inline-block;background:${GA_ZONE_COLORS[19]};"></span>
-                <span>100%</span>
-                <span style="margin-left:12px;display:inline-flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:3px;display:inline-block;background:color-mix(in srgb, var(--bctext-1) 20%, transparent);"></span>No grade/assignment</span>
-            </div>
-            <style>#canvasrefined-grade-analytics .canvasrefined-ga-hcell:hover{outline:1px solid var(--bctext-0);outline-offset:1px;}</style>
-            <div id="canvasrefined-ga-heatmap-tip" style="position:absolute;display:none;pointer-events:none;z-index:100;background:var(--bcbackground-1);color:var(--bctext-0);border:1px solid var(--bcborders);border-radius:6px;padding:6px 10px;font-size:12px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,0.25);"></div>
-        </div>
         </div>
     `;
     const toggleBtn = panel.querySelector("#canvasrefined-ga-toggle");
@@ -7583,7 +7037,7 @@ function ensureGradeAnalyticsPanel() {
         applyOpenState();
         if (gaOpen && gaData) renderGradeAnalytics();
     });
-    // "Imagine-If mode" button on the right side of the panel header. The
+    // "What-If mode" button on the right side of the panel header. The
     // toggle is per-page-view only (always off on load); the active style
     // highlights the button while the mode is on.
     imagineBtn.addEventListener("click", () => {
@@ -7946,7 +7400,6 @@ function renderGradeAnalytics() {
 
     gaDrawPie(panel.querySelector("#canvasrefined-ga-pie"), panel.querySelector("#canvasrefined-ga-pie-tip"));
     gaDrawLine(panel.querySelector("#canvasrefined-ga-line"), panel.querySelector("#canvasrefined-ga-line-tip"));
-    renderGaHeatmap();
     renderGaCalculator();
 }
 
@@ -7962,7 +7415,7 @@ function gaSetTab(tab) {
     gaTab = tab;
     const panel = document.getElementById("canvasrefined-grade-analytics");
     if (!panel) return;
-    for (const name of ["overview", "calc", "heatmap"]) {
+    for (const name of ["overview", "calc"]) {
         const el = panel.querySelector(`#canvasrefined-ga-tab-${name}`);
         if (el) el.style.display = name === tab ? "" : "none";
     }
@@ -7975,15 +7428,13 @@ function gaSetTab(tab) {
         // The canvases were zero-size while the tab was hidden; redraw now
         // that it's visible again.
         if (gaOpen && gaData) renderGradeAnalytics();
-    } else if (tab === "heatmap") {
-        renderGaHeatmap();
     } else {
         renderGaCalculator();
     }
 }
 
-// Severity color for an arbitrary score percentage — the same palette the
-// doughnut / zone charts use, so a 70 renders yellow, an 85 green, etc.
+// Severity color for an arbitrary score percentage, using the doughnut's
+// palette: a 70 renders yellow, an 85 green, etc.
 function gaSeverityColor(pct) {
     if (pct == null || !isFinite(pct)) return "var(--bctext-0)";
     const b = GA_BUCKETS.find(b => pct >= b.min && pct < b.max);
@@ -8055,206 +7506,9 @@ function renderGaCalculator() {
     box.innerHTML = head + `<div style="margin-top:6px;color:var(--bctext-1);font-size:13px;">${sub}</div>`;
 }
 
-// --- Heatmap tab ----------------------------------------------------------
-
-// One week cell in the heatmap strip: one square per Sunday–Saturday week,
-// laid out left to right — 16px squares with 4px gaps. Weekly (not daily)
-// buckets keep a whole semester compact instead of a sparse daily grid.
-// One day cell in the calendar heatmap: 13px squares with 3px gaps,
-// GitHub-style columns of Sunday–Saturday weeks.
-const GA_HM_CELL = 13;
-const GA_HM_GAP = 3;
-const GA_HM_MONTH_H = 16; // vertical room for the month labels above the grid
-let gaHeatmapToken = null; // identifies the data the grid was last built from
-
-// Color for a day's average score — the same 5%-banded red→green palette
-// the line chart's zones use, so an 84% day matches an 84% zone.
-function gaHeatmapColor(avg) {
-    return GA_ZONE_COLORS[Math.max(0, Math.min(GA_ZONE_COLORS.length - 1, Math.floor(avg / 5)))];
-}
-
-// Minimal HTML escaping for assignment titles that go into tooltips.
+// Minimal HTML escaping for assignment titles and group names.
 function gaEscHtml(s) {
     return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-}
-
-// Groups the graded assignments by due DATE. The grades table only renders
-// "Sep 23"-style due dates (no year), so years are reconstructed: the table
-// rows are in chronological order, so a month that steps backwards means the
-// calendar wrapped into a new year; the base year is then chosen so the last
-// due date isn't more than ~6 weeks in the future. Returns null when no
-// graded assignment has a parseable due date.
-function gaBuildHeatmapData() {
-    if (!gaData || !Array.isArray(gaData.points) || !gaData.points.length) return null;
-    const parsed = [];
-    for (const p of gaData.points) {
-        const m = /^([A-Za-z]{3})\s+(\d{1,2})/.exec((p.due || "").trim());
-        if (!m) continue;
-        const mo = months.findIndex(x => x.toLowerCase() === m[1].toLowerCase());
-        const day = parseInt(m[2], 10);
-        if (mo < 0 || day < 1 || day > 31) continue;
-        parsed.push({ p, mo, day });
-    }
-    if (!parsed.length) return null;
-    // Reconstruct years WITHOUT assuming the rows are in due-date order —
-    // the table isn't sorted by date when Canvas arranges it by assignment
-    // group, and the old "month stepped backwards ⇒ new year" detection
-    // snowballed on that, landing dates decades off. A course spans at most
-    // ~12 months, so instead: find the month rotation that packs every due
-    // month into the shortest window (months before the rotation wrap into
-    // the following year), then pick the base year whose window actually
-    // contains today — or, failing that, the latest window entirely in the
-    // past.
-    const present = [...new Set(parsed.map(e => e.mo))];
-    let rho = 0, bestSpan = 12;
-    for (let r = 0; r < 12; r++) {
-        let lo = 12, hi = -1;
-        for (const m of present) {
-            const u = (m - r + 12) % 12;
-            if (u < lo) lo = u;
-            if (u > hi) hi = u;
-        }
-        if (hi - lo < bestSpan) { bestSpan = hi - lo; rho = r; }
-    }
-    const thisYear = new Date().getFullYear();
-    const now = Date.now(), grace = 45 * 86400000;
-    const mkDate = (e, y) => new Date(y + (e.mo < rho ? 1 : 0), e.mo, e.day);
-    let base = null;
-    for (let y = thisYear + 1; y >= thisYear - 2 && base == null; y--) {
-        const ds = parsed.map(e => mkDate(e, y).getTime());
-        if (Math.min(...ds) <= now && now <= Math.max(...ds) + grace) base = y;
-    }
-    if (base == null) {
-        for (let y = thisYear; y >= thisYear - 3 && base == null; y--) {
-            if (parsed.every(e => mkDate(e, y).getTime() <= now + grace)) base = y;
-        }
-    }
-    if (base == null) base = thisYear;
-    const abs = (e) => mkDate(e, base);
-    // Bucket by calendar day; multiple assignments due the same day pool into
-    // one cell colored by their average score.
-    const byDay = new Map();
-    let min = null, max = null;
-    for (const e of parsed) {
-        const d = abs(e);
-        const key = d.getTime();
-        let cell = byDay.get(key);
-        if (!cell) {
-            cell = { date: d, sum: 0, items: [] };
-            byDay.set(key, cell);
-            if (min == null || d.getTime() < min.getTime()) min = d;
-            if (max == null || d.getTime() > max.getTime()) max = d;
-        }
-        cell.sum += e.p.pct;
-        cell.items.push(e.p);
-    }
-    return { byDay, min, max, undated: gaData.points.length - parsed.length };
-}
-
-// Tooltip anchored beside the hovered day cell. Positioning is relative to
-// the heatmap tab (the tip's offsetParent), NOT the viewport: position:fixed
-// is unreliable here because ancestors with transforms/backdrop-filters
-// in the Canvas layout redefine the containing
-// block, which sent a fixed-position tooltip to the wrong part of the page.
-function gaHeatmapShowTip(tip, e, cell, avg) {
-    const d = cell.date;
-    const rows = cell.items.map(p =>
-        `<div style="margin-top:2px;color:var(--bctext-1);">${gaEscHtml(p.title)} — <b style="color:${gaHeatmapColor(p.pct)};">${p.pct.toFixed(2)}%</b></div>`).join("");
-    tip.innerHTML = `<b>${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}</b> — avg <b style="color:${gaHeatmapColor(avg)};">${avg.toFixed(2)}%</b><div style="margin-top:4px;font-size:11px;color:var(--bctext-1);">${cell.items.length} assignment${cell.items.length === 1 ? "" : "s"}:</div>${rows}`;
-    tip.style.display = "block";
-    const host = tip.offsetParent || tip.parentNode;
-    const hostRect = host.getBoundingClientRect();
-    const cellRect = e.target.getBoundingClientRect();
-    const tw = tip.offsetWidth, th = tip.offsetHeight;
-    // Beside the cell, vertically centered on it; flip to the left when the
-    // right edge is tight, and clamp inside the tab's box.
-    let left = cellRect.right - hostRect.left + 6;
-    if (left + tw > host.clientWidth - 4) left = Math.max(4, cellRect.left - hostRect.left - tw - 6);
-    let top = cellRect.top - hostRect.top + (cellRect.height - th) / 2;
-    top = Math.min(Math.max(4, top), Math.max(4, host.clientHeight - th - 4));
-    tip.style.left = left + "px";
-    tip.style.top = top + "px";
-}
-
-// Builds the GitHub-style calendar: weekday labels down the left (Mon/Wed/
-// Fri only), one column per Sunday–Saturday week, month labels across the
-// top, one colored square per day (that day's average score). Pure DOM (no
-// canvas) so it needs no redraw on resize; a token guards against rebuilds
-// when renderGradeAnalytics re-fires for the same data.
-function renderGaHeatmap() {
-    const panel = document.getElementById("canvasrefined-grade-analytics");
-    if (!panel) return;
-    const grid = panel.querySelector("#canvasrefined-ga-heatmap-grid");
-    const note = panel.querySelector("#canvasrefined-ga-heatmap-note");
-    const tip = panel.querySelector("#canvasrefined-ga-heatmap-tip");
-    if (!grid || !note || !tip) return;
-    const data = gaBuildHeatmapData();
-    const token = data ? `${gaCourseId}:${data.min.getTime()}:${data.max.getTime()}:${gaData.points.length}` : "none";
-    if (grid.childElementCount && gaHeatmapToken === token) return; // already built
-    gaHeatmapToken = token;
-    grid.textContent = "";
-    if (!data) {
-        note.textContent = "No graded assignments with due dates yet.";
-        return;
-    }
-    note.textContent = data.undated > 0
-        ? `${data.undated} graded assignment${data.undated === 1 ? "" : "s"} without a due date not shown.`
-        : "";
-    // Align the range out to full Sunday–Saturday weeks so columns never
-    // start mid-week.
-    const start = new Date(data.min);
-    start.setDate(start.getDate() - start.getDay());
-    const end = new Date(data.max);
-    end.setDate(end.getDate() + (6 - end.getDay()));
-    // Left weekday labels — sparse like GitHub's (Mon/Wed/Fri).
-    const labels = document.createElement("div");
-    labels.style.cssText = `display:flex;flex-direction:column;gap:${GA_HM_GAP}px;padding-top:${GA_HM_MONTH_H}px;`;
-    ["", "Mon", "", "Wed", "", "Fri", ""].forEach(t => {
-        const l = document.createElement("div");
-        l.style.cssText = `height:${GA_HM_CELL}px;font-size:9px;line-height:${GA_HM_CELL}px;color:var(--bctext-1);white-space:nowrap;`;
-        l.textContent = t;
-        labels.appendChild(l);
-    });
-    grid.appendChild(labels);
-    const wrap = document.createElement("div");
-    wrap.style.cssText = `position:relative;padding-top:${GA_HM_MONTH_H}px;`;
-    const cols = document.createElement("div");
-    cols.style.cssText = `display:flex;gap:${GA_HM_GAP}px;`;
-    wrap.appendChild(cols);
-    grid.appendChild(wrap);
-    const cursor = new Date(start);
-    let wk = 0, prevMonth = null;
-    while (cursor.getTime() <= end.getTime()) {
-        const col = document.createElement("div");
-        col.style.cssText = `display:flex;flex-direction:column;gap:${GA_HM_GAP}px;`;
-        // Month label across the top when this week's Thursday enters a new
-        // month (every month owns at least one Thursday, so none are
-        // skipped).
-        const thursday = new Date(cursor);
-        thursday.setDate(thursday.getDate() + 4);
-        if (prevMonth == null || thursday.getMonth() !== prevMonth) {
-            prevMonth = thursday.getMonth();
-            const lab = document.createElement("div");
-            lab.textContent = months[prevMonth];
-            lab.style.cssText = `position:absolute;top:0;left:${wk * (GA_HM_CELL + GA_HM_GAP)}px;font-size:10px;line-height:1;color:var(--bctext-1);white-space:nowrap;`;
-            wrap.appendChild(lab);
-        }
-        for (let d = 0; d < 7; d++) {
-            const cell = data.byDay.get(cursor.getTime());
-            const div = document.createElement("div");
-            div.className = "canvasrefined-ga-hcell";
-            div.style.cssText = `width:${GA_HM_CELL}px;height:${GA_HM_CELL}px;border-radius:3px;background:${cell ? gaHeatmapColor(cell.sum / cell.items.length) : "color-mix(in srgb, var(--bctext-1) 20%, transparent)"};`;
-            if (cell) {
-                const avg = cell.sum / cell.items.length;
-                div.addEventListener("mousemove", (e) => gaHeatmapShowTip(tip, e, cell, avg));
-                div.addEventListener("mouseleave", () => { tip.style.display = "none"; });
-            }
-            col.appendChild(div);
-            cursor.setDate(cursor.getDate() + 1);
-        }
-        cols.appendChild(col);
-        wk++;
-    }
 }
 
 // --- Canvas-drawn charts --------------------------------------------------
@@ -8400,26 +7654,18 @@ function gaDrawLine(canvas, tooltip) {
     }
     const X = (i) => pad.l + (pts.length === 1 ? (w - pad.l - pad.r) / 2 : (i / (pts.length - 1)) * (w - pad.l - pad.r));
     const Y = (v) => pad.t + (1 - (Math.max(yMin, Math.min(yMax, v)) - yMin) / (yMax - yMin)) * (h - pad.t - pad.b);
+    const zones = gaGradeZones(getCurrentCourseId(), yMin, yMax);
     // Full chart draw, parameterized by the hovered point index so mousemove
     // can cheaply redraw with a highlight on the active dot.
     const draw = (hover) => {
         ctx.clearRect(0, 0, w, h);
-        // Optional colored 5% zones behind the plot ("Colored grade zones"
-        // settings option), tinted red→green. With Fit Y axis on, bands are
-        // clipped to the visible range.
-        if (options.grade_analytics_zones) {
-            GA_ZONE_COLORS.forEach((color, i) => {
-                const top = Math.min(yMax, (i + 1) * 5);
-                const bottom = Math.max(yMin, i * 5);
-                if (top <= bottom) return;
-                const y1 = pad.t + (1 - (top - yMin) / (yMax - yMin)) * (h - pad.t - pad.b);
-                const y2 = pad.t + (1 - (bottom - yMin) / (yMax - yMin)) * (h - pad.t - pad.b);
-                ctx.globalAlpha = 0.3;
-                ctx.fillStyle = color;
-                ctx.fillRect(pad.l, y1, w - pad.l - pad.r, y2 - y1);
-                ctx.globalAlpha = 1;
-            });
-        }
+        // Always show solid grade zones behind the plot.
+        ctx.globalAlpha = 0.3;
+        zones.forEach(({ bottom, top, color }) => {
+            ctx.fillStyle = color;
+            ctx.fillRect(pad.l, Y(top), w - pad.l - pad.r, Y(bottom) - Y(top));
+        });
+        ctx.globalAlpha = 1;
         // Y grid: 5 evenly spaced lines across the current range.
         ctx.font = "11px Lato, sans-serif";
         ctx.textAlign = "right"; ctx.textBaseline = "middle";
@@ -8553,7 +7799,7 @@ window.addEventListener("resize", () => {
     if (panel && gaOpen && gaData) renderGradeAnalytics();
 });
 
-// --- Imagine-If mode ---------------------------------------------------------
+// --- What-If mode ---------------------------------------------------------
 //
 // A hypothetical-grade sandbox rendered directly on the grades table (never
 // inside the Grade Analytics panel): each assignment row gets inline
@@ -8565,7 +7811,7 @@ window.addEventListener("resize", () => {
 // (groups with counted work contribute pct × weight, scaled up to 100% when
 // the used weights total less than 100; point-based totals when no group has
 // weight) — and previewed by overwriting the table's Total row (the
-// tr.final_grade percentage span) with an obvious Imagine-If badge. Nothing is ever sent to Canvas; the page is
+// tr.final_grade percentage span) with an obvious What-If badge. Nothing is ever sent to Canvas; the page is
 // restored to the pixel the moment the mode is turned off.
 
 // Standard grading scheme for the hypothetical letter grade (a course's
@@ -8583,7 +7829,7 @@ function gaLetterFor(pct) {
 }
 
 // The table's Total row (tr.final_grade) — the recalculated grade
-// overwrites its percentage span while Imagine-If mode is on.
+// overwrites its percentage span while What-If mode is on.
 function gaFindTotalGradeSpan() {
     const row = document.querySelector("#grades_summary tr.final_grade");
     return row ? row.querySelector("td.assignment_score .tooltip .grade") : null;
@@ -8677,7 +7923,7 @@ function gaComputeImagineTotal() {
 }
 
 // Total-row content for the hypothetical grade — clearly not the real
-// grade: a purple Imagine-If badge and the hypothetical total (with letter)
+// grade: a purple What-If badge and the hypothetical total (with letter)
 // replace the percentage span, and an italic note under the "Total" label
 // restates the real grade.
 function gaImagineTotalHtml(pct) {
@@ -8687,7 +7933,7 @@ function gaImagineTotalHtml(pct) {
     // badge pill sits vertically centered with the grade text. No
     // flex-wrap: the narrow score cell would stack the items instead.
     return `<span style="display:inline-flex;align-items:center;gap:6px;">`
-        + `<span style="background:#7c3aed;color:#fff;font-size:10px;font-weight:700;letter-spacing:0.5px;padding:1px 6px;border-radius:999px;text-transform:uppercase;white-space:nowrap;">Imagine-If</span>`
+        + `<span style="background:#7c3aed;color:#fff;font-size:10px;font-weight:700;letter-spacing:0.5px;padding:1px 6px;border-radius:999px;text-transform:uppercase;white-space:nowrap;">What-If</span>`
         + `<span style="font-weight:700;color:#7c3aed;">${pctText}</span>`
         + (letter ? `<span style="color:#7c3aed;">(${letter})</span>` : "")
         + `</span>`;
@@ -8719,9 +7965,9 @@ function gaApplyImagineTotal() {
             note.style.cssText = "font-size:11px;font-style:italic;color:var(--bctext-1);margin-top:2px;";
             th.appendChild(note);
         }
-        if (note.dataset.gaIfHtml !== "Imagine-If scenario; not your actual grade.") {
-            note.dataset.gaIfHtml = "Imagine-If scenario; not your actual grade.";
-            note.textContent = "Imagine-If scenario; not your actual grade.";
+        if (note.dataset.gaIfHtml !== "What-If scenario; not your actual grade.") {
+            note.dataset.gaIfHtml = "What-If scenario; not your actual grade.";
+            note.textContent = "What-If scenario; not your actual grade.";
         }
     }
 }
@@ -8750,7 +7996,7 @@ const GA_IF_TD_BTN = GA_IF_TD_INPUT + "cursor:pointer;white-space:nowrap;";
 // user reassigns them.
 function gaIfSelectHtml(gid) {
     const groups = gaScenario ? gaScenario.groups.filter(g => !g.deleted) : [];
-    return `<select data-ga-if-groupsel title="Imagine-If assignment group" style="${GA_IF_TD_SEL}">`
+    return `<select data-ga-if-groupsel title="What-If assignment group" style="${GA_IF_TD_SEL}">`
         + `<option value="">— not counted —</option>`
         + groups.map(g => `<option value="${gaEscHtml(g.gid)}"${String(gid) === String(g.gid) ? " selected" : ""}>${gaEscHtml(g.name)}</option>`).join("")
         + `</select>`;
@@ -8795,9 +8041,9 @@ function gaIfBuildAssignmentControls(tr, a) {
     const edit = document.createElement("span");
     edit.className = "canvasrefined-ga-if-edit";
     edit.style.cssText = "display:inline-flex;align-items:center;gap:4px;";
-    edit.innerHTML = `<input data-ga-if-score type="number" step="any" placeholder="—" value="${a.score == null ? "" : a.score}" title="Imagine-If score (numerator); blank = not counted" style="${GA_IF_TD_NUM}">`
+    edit.innerHTML = `<input data-ga-if-score type="number" step="any" placeholder="—" value="${a.score == null ? "" : a.score}" title="What-If score (numerator); blank = not counted" style="${GA_IF_TD_NUM}">`
         + ` <span style="color:var(--bctext-1);">/</span> `
-        + `<input data-ga-if-pts type="number" step="any" min="0" placeholder="—" value="${a.points == null ? "" : a.points}" title="Imagine-If points possible (denominator)" style="${GA_IF_TD_NUM}">`;
+        + `<input data-ga-if-pts type="number" step="any" min="0" placeholder="—" value="${a.points == null ? "" : a.points}" title="What-If points possible (denominator)" style="${GA_IF_TD_NUM}">`;
     (scoreTd.querySelector(".score_holder") || scoreTd).appendChild(edit);
     const th = tr.querySelector("th.title");
     const ctx = th?.querySelector("div.context");
@@ -8825,7 +8071,7 @@ function gaIfBuildGroupControls(tr, g) {
     const edit = document.createElement("span");
     edit.className = "canvasrefined-ga-if-edit";
     edit.style.cssText = "display:inline-flex;align-items:center;gap:4px;margin-left:8px;";
-    edit.innerHTML = `<input data-ga-if-gweight type="number" min="0" max="100" step="0.1" value="${g.weight}" title="Imagine-If group weight (% of grade)" style="${GA_IF_TD_NUM}">`
+    edit.innerHTML = `<input data-ga-if-gweight type="number" min="0" max="100" step="0.1" value="${g.weight}" title="What-If group weight (% of grade)" style="${GA_IF_TD_NUM}">`
         + ` <span style="color:var(--bctext-1);">%</span>`;
     (scoreTd.querySelector(".score_holder") || scoreTd).appendChild(edit);
     // Icon-only remove button in the row's last cell.

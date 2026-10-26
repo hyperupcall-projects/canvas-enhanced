@@ -304,7 +304,9 @@ table.seas-homepage-table tr:nth-child(odd),
 .canvasrefined-skeleton-text,
 .canvasrefined-hover-preview,
 .canvasrefined-gpa-edit-btn,
+.canvasrefined-gpa-view-btn,
 .canvasrefined-gpa-customize-btn,
+.canvasrefined-gs-header-btn,
 div[style*='background-color: rgb(229, 242, 248)'],
 div[style*='background-color: rgb(245, 245, 245)'],
 .css-7naoe-textInp,
@@ -491,7 +493,9 @@ textarea,
 .ui-widget-content,
 .canvasrefined-custom-btn,
 .canvasrefined-gpa-edit-btn,
+.canvasrefined-gpa-view-btn,
 .canvasrefined-gpa-customize-btn,
+.canvasrefined-gs-header-btn,
 .css-26xxi8-view--block,
 .css-9fqfm7-view--block,
 .canvasrefined-todo-actions,
@@ -967,7 +971,9 @@ ic-tokeninput-input,
 .ac-token,
 span[style='color: #000000;'],
 .canvasrefined-gpa-edit-btn,
+.canvasrefined-gpa-view-btn,
 .canvasrefined-gpa-customize-btn,
+.canvasrefined-gs-header-btn,
 .css-um72cs-view-cell {
     color:var(--bctext-1)!important
 }
@@ -1334,6 +1340,38 @@ hr {
     background: var(--bcbackground-1) !important;
     border: none !important;
     color: var(--bctext-0) !important;
+}
+/* Grades filter Apply is an InstUI primary button, without the legacy
+   .Button classes. Theme the button and flatten its separately painted
+   content span so Canvas's blue surface and label colors cannot bleed in. */
+#apply_select_menus {
+    background: var(--bclinks) !important;
+    color: var(--bclink-text) !important;
+    border: 1px solid var(--bclinks) !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+}
+#apply_select_menus [class*="-baseButton__content"] {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+#apply_select_menus span {
+    color: inherit !important;
+}
+#apply_select_menus:not(:disabled):not([aria-disabled="true"]):hover {
+    background: color-mix(in srgb, var(--bclinks) 88%, #000) !important;
+}
+/* Use muted theme colors instead of fading the entire button and label. */
+#apply_select_menus:is(:disabled, [aria-disabled="true"]) {
+    background: var(--bcbackground-1) !important;
+    color: var(--bctext-2) !important;
+    border-color: var(--bcborders) !important;
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+}
+#apply_select_menus:is(:disabled, [aria-disabled="true"]) [class*="-baseButton__content"] {
+    opacity: 1 !important;
 }
 /* Dashboard list-view trays ("Add To Do" / "My Grades" opened from the
    header buttons): Instructure UI renders Tray panels as body-level

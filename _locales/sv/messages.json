@@ -62,9 +62,6 @@
   "24hrformat": {
     "message": "Använd 24 timmars format"
   },
-  "dashboard_notes": {
-    "message": "Anteckningar på instrumentpanelen"
-  },
   "gpa_calculator": {
     "message": "GPA-kalkylator"
   },
@@ -113,9 +110,6 @@
   "relative_due_dates": {
     "message": "Relativa förfallodatum"
   },
-  "equal_height_cards": {
-    "message": "Jämn höjd"
-  },
   "enter_multiple": {
     "message": "(Ange flera med komma)"
   },
@@ -133,12 +127,6 @@
   },
   "todo_colors": {
     "message": "Använd kortfärger"
-  },
-  "gpa_calc_cumulative": {
-    "message": "Visa kumulativ GPA"
-  },
-  "gpa_calc_weighted": {
-    "message": "Visa viktad GPA"
   },
   "device_dark": {
     "message": "Använd inställningarna för enhetens mörka läge"

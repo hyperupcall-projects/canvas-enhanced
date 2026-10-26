@@ -62,9 +62,6 @@
   "24hrformat": {
     "message": "使用 24 小时格式"
   },
-  "dashboard_notes": {
-    "message": "仪表板注释"
-  },
   "gpa_calculator": {
     "message": "平均绩点计算器"
   },
@@ -113,9 +110,6 @@
   "relative_due_dates": {
     "message": "相对到期日"
   },
-  "equal_height_cards": {
-    "message": "等高"
-  },
   "enter_multiple": {
     "message": "(用逗号输入多个)"
   },
@@ -133,12 +127,6 @@
   },
   "todo_colors": {
     "message": "使用卡片颜色"
-  },
-  "gpa_calc_cumulative": {
-    "message": "显示累积GPA"
-  },
-  "gpa_calc_weighted": {
-    "message": "显示权重GPA"
   },
   "device_dark": {
     "message": "使用设备暗色模式设置"

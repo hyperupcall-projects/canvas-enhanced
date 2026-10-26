@@ -29,7 +29,6 @@
         "js/domain-access.js",
         "css/darkmodecss.js",
         "js/themes.js",
-        "js/markdown.js",
         "js/content.js"
       ],
       "css": [

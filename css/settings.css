@@ -22,6 +22,7 @@ h2 {font-size:24px;}
 .option-container {font-size: 14px; margin-top: 8px;background: var(--containerbg);padding: 18px;border-radius: 14px;box-sizing:border-box}
 .options .option-container {padding: 14px;}
 .options .option-container > .option + .option, .card-display-settings > .option + .option {margin-top: 10px;}
+#card_method_dashboard {margin-top: 10px;}
 a.option-container {display: block;color:var(--settings-link);font-size: 14px;}
 a.option-container:hover {background:var(--settings-hover)}
 #customDomain {font-size: 12px; background: var(--inputbg); border: none;padding:8px;color: var(--settings-text);margin-top: 6px;border-radius: 7px; font-family: inherit;}
@@ -62,7 +63,14 @@ button:active {filter:brightness(85%)}
 .colors-button {min-width:90px}
 .preset-button.colors-button.selected {border-color: var(--settings-link); box-shadow: inset 0 0 0 1px var(--settings-link);}
 .sub-options {margin-top: 10px;margin-left: 3px}
+.sub-options.section-disabled {opacity: .45; filter: grayscale(1);}
+/* Dim the section once, including its labels, rather than dimming controls again. */
+.sub-options.section-disabled :is(input, select, textarea, button):disabled {opacity: 1;}
 .sub-option {display: flex; gap: 5px;margin-top: 2px;}
+.card-date-format {align-items:center;gap:8px;margin-bottom:10px;}
+#card_date_format {font-size:12px;background:var(--inputbg);color:var(--settings-text);border:none;border-radius:7px;padding:6px 8px;color-scheme:inherit;}
+.card-due-filters {border:0;padding:0;margin:0 0 10px;min-width:0;}
+.card-due-filters legend {padding:0;margin-bottom:3px;}
 h2 {margin-top: 20px;font-weight:600}
 .header-small {margin: 0 0 10px; font-weight: 600;font-size:16px;}
 .tab {padding: 16px 0 0;}

@@ -1,4 +1,4 @@
-/* Neutral settings surfaces; theme thumbnails retain their own colors. */
+/* Neutral settings surfaces with brown accents matching the extension icon. */
 :root {
     color-scheme: light;
     --settings-bg: #fff;
@@ -8,12 +8,12 @@
     --settings-muted: #60646c;
     --settings-border: #ccc;
     --settings-hover: #e6e6e6;
-    --settings-link: #0078e7;
-    --settings-success: #24663d;
-    --settings-success-bg: #e4f4e9;
-    --settings-success-hover: #d3ecdc;
-    --settings-success-border: #5b966f;
-    --settings-success-accent: #287a47;
+    --settings-link: #6b3026;
+    --settings-success: #682c24;
+    --settings-success-bg: #f4e8df;
+    --settings-success-hover: #ecd9cb;
+    --settings-success-border: #a96e50;
+    --settings-success-accent: #854331;
     --settings-on-success: #fff;
     --settings-error: #a61d35;
     --settings-error-bg: #fff0f2;
@@ -34,13 +34,13 @@
     --settings-muted: #b5b6bf;
     --settings-border: #505050;
     --settings-hover: #383838;
-    --settings-link: #82bfff;
-    --settings-success: #c5f5d7;
-    --settings-success-bg: #254b39;
-    --settings-success-hover: #2e5b45;
-    --settings-success-border: #6dab84;
-    --settings-success-accent: #8ddca7;
-    --settings-on-success: #183524;
+    --settings-link: #dfb18b;
+    --settings-success: #f1d5bd;
+    --settings-success-bg: #493025;
+    --settings-success-hover: #583a2d;
+    --settings-success-border: #ae7b58;
+    --settings-success-accent: #d3a078;
+    --settings-on-success: #2e1c15;
     --settings-error: #ffc1cb;
     --settings-error-bg: #542b35;
     --settings-error-border: #d78797;
@@ -64,7 +64,7 @@ input::placeholder, textarea::placeholder {color: var(--settings-muted); opacity
 /* Pure-inspired shared foundation for the settings page and welcome page. */
 :root {
     --settings-button: #e6e6e6;
-    --settings-primary: #0078e7;
+    --settings-primary: #753b2d;
     --settings-on-primary: #fff;
     --settings-radius: 2px;
     --settings-hover-border: #a3a3a3;
@@ -72,7 +72,7 @@ input::placeholder, textarea::placeholder {color: var(--settings-muted); opacity
 }
 :root[data-settings-theme="dark"] {
     --settings-button: #333;
-    --settings-primary: #176fc1;
+    --settings-primary: #985e3e;
     --settings-hover-border: #737373;
     --settings-hover-shadow: 0 2px 6px rgb(0 0 0 / 35%);
 }
@@ -194,8 +194,29 @@ html, *, *::before, *::after {
 
 /* Selected settings categories keep the existing button silhouette. */
 :root .more-options-container .tab-btn[aria-selected="true"] {
-    background-color: color-mix(in srgb, var(--settings-link) 16%, var(--settings-panel));
-    border-color: var(--settings-link);
-    color: var(--settings-link);
+    background-color: var(--settings-success-bg);
+    border-color: var(--settings-success-border);
+    color: var(--settings-success);
     box-shadow: 0 2px 6px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 25%);
+}
+.more-options-container .tab-btn:focus-visible {
+    outline-color: var(--settings-success-accent);
+}
+
+/* Debug actions share the compact GPA button border and hover shadow. */
+#debug-panel .big-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid var(--settings-border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+#debug-panel .big-button:not(:disabled):not([aria-disabled="true"]):hover {
+    border-color: color-mix(in srgb, var(--settings-border) 70%, var(--settings-text));
+    box-shadow: 0 2px 5px rgb(0 0 0 / 18%);
 }

@@ -1,4 +1,19 @@
 {
+    "date_format": {
+        "message": "Date format"
+    },
+    "date_format_relative": {
+        "message": "Relative"
+    },
+    "show_assignments": {
+        "message": "Show assignments"
+    },
+    "due_in_the_past": {
+        "message": "Due in the past"
+    },
+    "due_in_the_future": {
+        "message": "Due in the future"
+    },
     "card_overdue_always_red": {
         "message": "Always red overdue badges"
     },
@@ -77,9 +92,6 @@
     "better_todo": {
         "message": "Better todo list"
     },
-    "bold_sidebar_text": {
-        "message": "Bold sidebar text"
-    },
     "quiz_safe_mode": {
         "message": "Quiz Safe Mode"
     },
@@ -98,9 +110,6 @@
     "24hrformat": {
         "message": "Use 24 hr Format"
     },
-    "dashboard_notes": {
-        "message": "Dashboard Notes"
-    },
     "gpa_calculator": {
         "message": "GPA Calculator"
     },
@@ -111,7 +120,7 @@
         "message": "Calculator Settings"
     },
     "todo_list": {
-        "message": "Task List"
+        "message": "Todo List"
     },
     "gpa_settings": {
         "message": "GPA Settings"
@@ -167,9 +176,6 @@
     "relative_due_dates": {
         "message": "Relative Due Dates"
     },
-    "equal_height_cards": {
-        "message": "Equal Height"
-    },
     "enter_multiple": {
         "message": "(Enter Multiple With A Comma)"
     },
@@ -187,12 +193,6 @@
     },
     "todo_hide_feedback": {
         "message": "Hide Recent Feedback"
-    },
-    "gpa_calc_cumulative": {
-        "message": "Show Cumulative GPA"
-    },
-    "gpa_calc_weighted": {
-        "message": "Show Weighted GPA"
     },
     "device_dark": {
         "message": "Use Device Dark Mode Settings"
@@ -308,32 +308,8 @@
     "hide_sequence_footer": {
         "message": "Hide Next/Previous Buttons"
     },
-    "global_search": {
-        "message": "Global Canvas Search"
-    },
-    "grade_analytics": {
-        "message": "Grade Analytics"
-    },
-    "grade_analytics_desc": {
-        "message": "Adds tools to help you analyze your grades."
-    },
-    "grade_analytics_zones": {
-        "message": "Colored grade zones"
-    },
     "hide_completed_cards": {
         "message": "Hide Completed"
-    },
-    "dashboard_notes_desc": {
-        "message": "Adds a notes area to your Canvas dashboard with Markdown formatting and automatic saving."
-    },
-    "global_search_desc": {
-        "message": "Searches modules and assignments across your courses. Open search in Canvas with Ctrl+K or Command+K."
-    },
-    "grade_analytics_zones_desc": {
-        "message": "Adds colored grade ranges to the grade analytics chart to help you see where your grades fall."
-    },
-    "bold_sidebar_text_desc": {
-        "message": "Makes the text in the Canvas navigation sidebar bold for easier reading."
     },
     "remlogo_desc": {
         "message": "Hides the school logo at the top of the Canvas navigation sidebar."

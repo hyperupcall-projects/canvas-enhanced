@@ -52,7 +52,7 @@ test('saved themes render on setup and local changes, ignoring stale reads and p
     assert.equal(target.children.length, 0, 'deleted themes disappear');
 });
 
-test('Todo layout supports visible and hidden scrollbars and reserves dashboard spacing', () => {
+test('Todo layout always shows a separate scrollbar and reserves dashboard spacing', () => {
     const elements = new Map();
     const sidebar = { style: { removeProperty(key) { delete this[key]; } } };
     elements.set('right-side-wrapper', sidebar);
@@ -72,15 +72,16 @@ test('Todo layout supports visible and hidden scrollbars and reserves dashboard 
     assert.equal(sidebar.style.top, '24px');
     assert.equal(sidebar.style.height, 'calc(100vh - 48px)');
     assert.equal(sidebar.style.overflowY, 'auto');
-    assert.match(css(), /scrollbar-width: none/);
-    context.options.todo_show_scrollbar = true;
-    context.applyTodoSidebarLayout();
     assert.match(css(), /scrollbar-width: thin/);
     assert.match(css(), /width: 8px !important/);
     assert.doesNotMatch(css(), /display: none/);
+    context.options.todo_show_scrollbar = false;
+    context.applyTodoSidebarLayout();
+    assert.match(css(), /scrollbar-width: thin/, 'the obsolete saved preference cannot hide the scrollbar');
     context.options.todo_separate_scrollbar = false;
     context.options.todo_full_height = false;
     context.applyTodoSidebarLayout();
+    assert.match(css(), /scrollbar-width: none/);
     for (const key of ['position', 'top', 'height', 'minHeight', 'overflowY']) assert.equal(sidebar.style[key], '');
     context.isDashboardPage = () => false;
     context.todoViewportOffsetPx = () => 72;
