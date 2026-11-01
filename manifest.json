@@ -26,7 +26,6 @@
         "https://*.instructure.com/*"
       ],
       "js": [
-        "js/domain-access.js",
         "css/darkmodecss.js",
         "js/themes.js",
         "js/content.js"

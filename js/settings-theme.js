@@ -1,4 +1,3 @@
-// The settings pages share Canvas's existing Light / Dark / System preference.
 (() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     let preference = {};
