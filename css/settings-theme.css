@@ -76,6 +76,38 @@ input::placeholder, textarea::placeholder {color: var(--settings-muted); opacity
     --settings-hover-border: #737373;
     --settings-hover-shadow: 0 2px 6px rgb(0 0 0 / 35%);
 }
+
+/* Pages without a saved theme override follow the system preference. */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-settings-theme]) {
+        color-scheme: dark;
+        --settings-bg: #191919;
+        --settings-panel: #222;
+        --settings-input: #262626;
+        --settings-text: #eee;
+        --settings-muted: #b5b6bf;
+        --settings-border: #505050;
+        --settings-hover: #383838;
+        --settings-link: #dfb18b;
+        --settings-success: #f1d5bd;
+        --settings-success-bg: #493025;
+        --settings-success-hover: #583a2d;
+        --settings-success-border: #ae7b58;
+        --settings-success-accent: #d3a078;
+        --settings-on-success: #2e1c15;
+        --settings-error: #ffc1cb;
+        --settings-error-bg: #542b35;
+        --settings-error-border: #d78797;
+        --settings-warning: #ffe1a0;
+        --settings-warning-bg: #493b21;
+        --settings-warning-border: #ba9443;
+        --settings-button: #333;
+        --settings-primary: #985e3e;
+        --settings-hover-border: #737373;
+        --settings-hover-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+    }
+}
+
 html, body {
     font-family: Arial, Helvetica, sans-serif;
     line-height: 1.5;
