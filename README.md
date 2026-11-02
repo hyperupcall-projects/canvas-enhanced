@@ -7,18 +7,17 @@ Canvas LMS leaves much to be desired. The most popular extension providing addit
 ## Features
 
 - Themes
-	- Good built-in themes
-	- Light/dark mode
-	- Add custom themes
+  - Good built-in themes
+  - Light/dark mode
+  - Add custom themes
 - Improved dashboard view
-	- Show course grades
-	- Overdue assignments shown for each class card
-	- Custom styling of cards
+  - Show course grades
+  - Overdue assignments shown for each class card
+  - Custom styling of cards
 - GPA calculator
 - Grade analytics and history
 - Quiz safe mode
 - Canvas search for all courses/modules/assignments
-
 
 ## Canvas site access
 

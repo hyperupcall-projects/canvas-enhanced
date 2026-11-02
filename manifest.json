@@ -1,54 +1,42 @@
 {
-  "manifest_version": 3,
-  "name": "Canvas Enhanced",
-  "description": "Even More Feature packed extension for Canvas.",
-  "version": "0.5.0",
-  "icons": {
-    "16": "icon/icon-16.png",
-    "32": "icon/icon-32.png",
-    "48": "icon/icon-48.png",
-    "128": "icon/icon-128.png"
-  },
-  "action": {
-    "default_icon": {
-      "19": "icon/icon-19.png",
-      "38": "icon/icon-38.png"
-    },
-    "default_title": "Canvas Enhanced"
-  },
-  "background": {
-    "service_worker": "js/background.js"
-  },
-  "options_page": "html/options.html",
-  "content_scripts": [
-    {
-      "matches": [
-        "https://*.instructure.com/*"
-      ],
-      "js": [
-        "css/darkmodecss.js",
-        "js/themes.js",
-        "js/content.js"
-      ],
-      "css": [
-        "css/content.css"
-      ],
-      "run_at": "document_start"
-    }
-  ],
-  "permissions": [
-    "storage"
-  ],
-  "default_locale": "en",
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "canvasenhanced@edwinkofler.com",
-      "strict_min_version": "109.0",
-      "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
-      }
-    }
-  }
+	"manifest_version": 3,
+	"name": "Canvas Enhanced",
+	"description": "Even More Feature packed extension for Canvas.",
+	"version": "0.5.0",
+	"icons": {
+		"16": "icon/icon-16.png",
+		"32": "icon/icon-32.png",
+		"48": "icon/icon-48.png",
+		"128": "icon/icon-128.png"
+	},
+	"action": {
+		"default_icon": {
+			"19": "icon/icon-19.png",
+			"38": "icon/icon-38.png"
+		},
+		"default_title": "Canvas Enhanced"
+	},
+	"background": {
+		"service_worker": "js/background.js"
+	},
+	"options_page": "html/options.html",
+	"content_scripts": [
+		{
+			"matches": ["https://*.instructure.com/*"],
+			"js": ["css/darkmodecss.js", "js/themes.js", "js/content.js"],
+			"css": ["css/content.css"],
+			"run_at": "document_start"
+		}
+	],
+	"permissions": ["storage"],
+	"default_locale": "en",
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "canvasenhanced@edwinkofler.com",
+			"strict_min_version": "109.0",
+			"data_collection_permissions": {
+				"required": ["none"]
+			}
+		}
+	}
 }

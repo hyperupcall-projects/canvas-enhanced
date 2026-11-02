@@ -1634,4 +1634,4 @@ textarea {
     color: var(--bctext-0) !important;
     border-color: var(--bcborders) !important;
 }
-`;
+`

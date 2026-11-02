@@ -1,254 +1,400 @@
 /* Neutral settings surfaces with brown accents matching the extension icon. */
 :root {
-    color-scheme: light;
-    --settings-bg: #fff;
-    --settings-panel: #fafafa;
-    --settings-input: #fff;
-    --settings-text: #333;
-    --settings-muted: #60646c;
-    --settings-border: #ccc;
-    --settings-hover: #e6e6e6;
-    --settings-link: #6b3026;
-    --settings-success: #682c24;
-    --settings-success-bg: #f4e8df;
-    --settings-success-hover: #ecd9cb;
-    --settings-success-border: #a96e50;
-    --settings-success-accent: #854331;
-    --settings-on-success: #fff;
-    --settings-error: #a61d35;
-    --settings-error-bg: #fff0f2;
-    --settings-error-border: #c65c6e;
-    --settings-warning: #785000;
-    --settings-warning-bg: #fff5d6;
-    --settings-warning-border: #ad811b;
-    --inputbg: var(--settings-input);
-    --containerbg: var(--settings-panel);
-    --borders: var(--settings-border);
+	color-scheme: light;
+	--settings-bg: #fff;
+	--settings-panel: #fafafa;
+	--settings-input: #fff;
+	--settings-text: #333;
+	--settings-muted: #60646c;
+	--settings-border: #ccc;
+	--settings-hover: #e6e6e6;
+	--settings-link: #6b3026;
+	--settings-success: #682c24;
+	--settings-success-bg: #f4e8df;
+	--settings-success-hover: #ecd9cb;
+	--settings-success-border: #a96e50;
+	--settings-success-accent: #854331;
+	--settings-on-success: #fff;
+	--settings-error: #a61d35;
+	--settings-error-bg: #fff0f2;
+	--settings-error-border: #c65c6e;
+	--settings-warning: #785000;
+	--settings-warning-bg: #fff5d6;
+	--settings-warning-border: #ad811b;
+	--inputbg: var(--settings-input);
+	--containerbg: var(--settings-panel);
+	--borders: var(--settings-border);
 }
-:root[data-settings-theme="dark"] {
-    color-scheme: dark;
-    --settings-bg: #191919;
-    --settings-panel: #222;
-    --settings-input: #262626;
-    --settings-text: #eee;
-    --settings-muted: #b5b6bf;
-    --settings-border: #505050;
-    --settings-hover: #383838;
-    --settings-link: #dfb18b;
-    --settings-success: #f1d5bd;
-    --settings-success-bg: #493025;
-    --settings-success-hover: #583a2d;
-    --settings-success-border: #ae7b58;
-    --settings-success-accent: #d3a078;
-    --settings-on-success: #2e1c15;
-    --settings-error: #ffc1cb;
-    --settings-error-bg: #542b35;
-    --settings-error-border: #d78797;
-    --settings-warning: #ffe1a0;
-    --settings-warning-bg: #493b21;
-    --settings-warning-border: #ba9443;
+:root[data-settings-theme='dark'] {
+	color-scheme: dark;
+	--settings-bg: #191919;
+	--settings-panel: #222;
+	--settings-input: #262626;
+	--settings-text: #eee;
+	--settings-muted: #b5b6bf;
+	--settings-border: #505050;
+	--settings-hover: #383838;
+	--settings-link: #dfb18b;
+	--settings-success: #f1d5bd;
+	--settings-success-bg: #493025;
+	--settings-success-hover: #583a2d;
+	--settings-success-border: #ae7b58;
+	--settings-success-accent: #d3a078;
+	--settings-on-success: #2e1c15;
+	--settings-error: #ffc1cb;
+	--settings-error-bg: #542b35;
+	--settings-error-border: #d78797;
+	--settings-warning: #ffe1a0;
+	--settings-warning-bg: #493b21;
+	--settings-warning-border: #ba9443;
 }
-html, body {background: var(--settings-bg); color: var(--settings-text);}
-button:hover {background-color: var(--settings-hover);}
-input, select, textarea {color-scheme: inherit;}
-input::placeholder, textarea::placeholder {color: var(--settings-muted); opacity: 1;}
-.settings-export p {line-height: 1.5; margin-bottom: 12px;}
-#settings-export-output {display: block; min-height: 90px; margin: 10px 0;}
-#import-theme-dialog {background: var(--settings-bg); border-color: var(--settings-border);}
-.header {flex-wrap: wrap;}
-.header h1 {font-size: 22px;}
-.theme-button {color: #fff;}
+html,
+body {
+	background: var(--settings-bg);
+	color: var(--settings-text);
+}
+button:hover {
+	background-color: var(--settings-hover);
+}
+input,
+select,
+textarea {
+	color-scheme: inherit;
+}
+input::placeholder,
+textarea::placeholder {
+	color: var(--settings-muted);
+	opacity: 1;
+}
+.settings-export p {
+	line-height: 1.5;
+	margin-bottom: 12px;
+}
+#settings-export-output {
+	display: block;
+	min-height: 90px;
+	margin: 10px 0;
+}
+#import-theme-dialog {
+	background: var(--settings-bg);
+	border-color: var(--settings-border);
+}
+.header {
+	flex-wrap: wrap;
+}
+.header h1 {
+	font-size: 22px;
+}
+.theme-button {
+	color: #fff;
+}
 
-.cr-info-bubble-text {border-color: var(--settings-border);}
+.cr-info-bubble-text {
+	border-color: var(--settings-border);
+}
 
 /* Pure-inspired shared foundation for the settings page and welcome page. */
 :root {
-    --settings-button: #e6e6e6;
-    --settings-primary: #753b2d;
-    --settings-on-primary: #fff;
-    --settings-radius: 2px;
-    --settings-hover-border: #a3a3a3;
-    --settings-hover-shadow: 0 2px 5px rgb(0 0 0 / 12%);
+	--settings-button: #e6e6e6;
+	--settings-primary: #753b2d;
+	--settings-on-primary: #fff;
+	--settings-radius: 2px;
+	--settings-hover-border: #a3a3a3;
+	--settings-hover-shadow: 0 2px 5px rgb(0 0 0 / 12%);
 }
-:root[data-settings-theme="dark"] {
-    --settings-button: #333;
-    --settings-primary: #985e3e;
-    --settings-hover-border: #737373;
-    --settings-hover-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+:root[data-settings-theme='dark'] {
+	--settings-button: #333;
+	--settings-primary: #985e3e;
+	--settings-hover-border: #737373;
+	--settings-hover-shadow: 0 2px 6px rgb(0 0 0 / 35%);
 }
 
 /* Pages without a saved theme override follow the system preference. */
 @media (prefers-color-scheme: dark) {
-    :root:not([data-settings-theme]) {
-        color-scheme: dark;
-        --settings-bg: #191919;
-        --settings-panel: #222;
-        --settings-input: #262626;
-        --settings-text: #eee;
-        --settings-muted: #b5b6bf;
-        --settings-border: #505050;
-        --settings-hover: #383838;
-        --settings-link: #dfb18b;
-        --settings-success: #f1d5bd;
-        --settings-success-bg: #493025;
-        --settings-success-hover: #583a2d;
-        --settings-success-border: #ae7b58;
-        --settings-success-accent: #d3a078;
-        --settings-on-success: #2e1c15;
-        --settings-error: #ffc1cb;
-        --settings-error-bg: #542b35;
-        --settings-error-border: #d78797;
-        --settings-warning: #ffe1a0;
-        --settings-warning-bg: #493b21;
-        --settings-warning-border: #ba9443;
-        --settings-button: #333;
-        --settings-primary: #985e3e;
-        --settings-hover-border: #737373;
-        --settings-hover-shadow: 0 2px 6px rgb(0 0 0 / 35%);
-    }
+	:root:not([data-settings-theme]) {
+		color-scheme: dark;
+		--settings-bg: #191919;
+		--settings-panel: #222;
+		--settings-input: #262626;
+		--settings-text: #eee;
+		--settings-muted: #b5b6bf;
+		--settings-border: #505050;
+		--settings-hover: #383838;
+		--settings-link: #dfb18b;
+		--settings-success: #f1d5bd;
+		--settings-success-bg: #493025;
+		--settings-success-hover: #583a2d;
+		--settings-success-border: #ae7b58;
+		--settings-success-accent: #d3a078;
+		--settings-on-success: #2e1c15;
+		--settings-error: #ffc1cb;
+		--settings-error-bg: #542b35;
+		--settings-error-border: #d78797;
+		--settings-warning: #ffe1a0;
+		--settings-warning-bg: #493b21;
+		--settings-warning-border: #ba9443;
+		--settings-button: #333;
+		--settings-primary: #985e3e;
+		--settings-hover-border: #737373;
+		--settings-hover-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+	}
 }
 
-html, body {
-    font-family: Arial, Helvetica, sans-serif;
-    line-height: 1.5;
+html,
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	line-height: 1.5;
 }
-button, input, select, textarea {font-family: inherit;}
-a {color: var(--settings-link);}
-a:hover {text-decoration: underline;}
-button {line-height: 1.4;}
-.big-button, .colors-button, .customization-button,
-.submit-tab-btn, .help-link {
-    border: 1px solid transparent;
-    border-radius: var(--settings-radius);
-    background-color: var(--settings-button);
-    color: var(--settings-text);
-    font-weight: 400;
-    box-shadow: none;
-    text-shadow: none;
-    transition: background-color .15s, border-color .15s, box-shadow .15s;
+button,
+input,
+select,
+textarea {
+	font-family: inherit;
 }
-.big-button:hover, .colors-button:hover, .customization-button:hover,
-.submit-tab-btn:hover, .help-link:hover {
-    background-color: var(--settings-hover);
-    transform: none;
-    text-decoration: none;
+a {
+	color: var(--settings-link);
 }
-button:active {filter: none; box-shadow: inset 0 0 0 1px var(--settings-border);}
-button:disabled {opacity: .4; cursor: not-allowed;}
-button:focus-visible, a:focus-visible, input:focus-visible,
-select:focus-visible, textarea:focus-visible, summary:focus-visible {
-    outline: 2px solid var(--settings-link);
-    outline-offset: 2px;
+a:hover {
+	text-decoration: underline;
 }
-.option-container, .submitted-theme {
-    background: var(--settings-panel);
-    border: 1px solid var(--settings-border);
-    border-radius: var(--settings-radius);
-    box-shadow: none;
+button {
+	line-height: 1.4;
 }
-:is(#customDomain, #auto_dark_start, #auto_dark_end, #todo_progress_rings,
-#todo_timeframe, #appearance-mode, .card-input:not([type="color"]), .gpa-bounds-input,
-.domain-row input, .gpa-threshold-settings select, .card-file-input) {
-    box-sizing: border-box;
-    padding: .5em .6em;
-    border: 1px solid var(--settings-border);
-    border-radius: 4px;
-    background-color: var(--settings-input);
-    color: var(--settings-text);
-    box-shadow: inset 0 1px 3px #00000012;
+.big-button,
+.colors-button,
+.customization-button,
+.submit-tab-btn,
+.help-link {
+	border: 1px solid transparent;
+	border-radius: var(--settings-radius);
+	background-color: var(--settings-button);
+	color: var(--settings-text);
+	font-weight: 400;
+	box-shadow: none;
+	text-shadow: none;
+	transition:
+		background-color 0.15s,
+		border-color 0.15s,
+		box-shadow 0.15s;
 }
-.custom-card-inputs .card-input {border-color: var(--settings-border);}
-:is(#customDomain, #auto_dark_start, #auto_dark_end, #todo_progress_rings,
-#todo_timeframe, #appearance-mode, .card-input:not([type="color"]), .gpa-bounds-input,
-.domain-row input, .gpa-threshold-settings select):focus {
-    border-color: var(--settings-link);
+.big-button:hover,
+.colors-button:hover,
+.customization-button:hover,
+.submit-tab-btn:hover,
+.help-link:hover {
+	background-color: var(--settings-hover);
+	transform: none;
+	text-decoration: none;
 }
-.header {padding-bottom: 16px; border-bottom: 1px solid var(--settings-border);}
-.header h1 {font-weight: 400;}
-h2, .customization-header {font-weight: 400;}
+button:active {
+	filter: none;
+	box-shadow: inset 0 0 0 1px var(--settings-border);
+}
+button:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+	outline: 2px solid var(--settings-link);
+	outline-offset: 2px;
+}
+.option-container,
+.submitted-theme {
+	background: var(--settings-panel);
+	border: 1px solid var(--settings-border);
+	border-radius: var(--settings-radius);
+	box-shadow: none;
+}
+:is(
+	#customDomain,
+	#auto_dark_start,
+	#auto_dark_end,
+	#todo_progress_rings,
+	#todo_timeframe,
+	#appearance-mode,
+	.card-input:not([type='color']),
+	.gpa-bounds-input,
+	.domain-row input,
+	.gpa-threshold-settings select,
+	.card-file-input
+) {
+	box-sizing: border-box;
+	padding: 0.5em 0.6em;
+	border: 1px solid var(--settings-border);
+	border-radius: 4px;
+	background-color: var(--settings-input);
+	color: var(--settings-text);
+	box-shadow: inset 0 1px 3px #00000012;
+}
+.custom-card-inputs .card-input {
+	border-color: var(--settings-border);
+}
+:is(
+	#customDomain,
+	#auto_dark_start,
+	#auto_dark_end,
+	#todo_progress_rings,
+	#todo_timeframe,
+	#appearance-mode,
+	.card-input:not([type='color']),
+	.gpa-bounds-input,
+	.domain-row input,
+	.gpa-threshold-settings select
+):focus {
+	border-color: var(--settings-link);
+}
+.header {
+	padding-bottom: 16px;
+	border-bottom: 1px solid var(--settings-border);
+}
+.header h1 {
+	font-weight: 400;
+}
+h2,
+.customization-header {
+	font-weight: 400;
+}
 .cr-info-bubble-text {
-    border-radius: 3px;
-    box-shadow: 0 2px 8px #0002;
-    backdrop-filter: none;
+	border-radius: 3px;
+	box-shadow: 0 2px 8px #0002;
+	backdrop-filter: none;
 }
 .submit-tab-btn.active {
-    background: var(--settings-primary);
-    color: var(--settings-on-primary);
+	background: var(--settings-primary);
+	color: var(--settings-on-primary);
 }
-#alert, #import-theme-dialog, #theme-high-contrast-warning {
-    border-radius: 3px;
-    box-shadow: none;
+#alert,
+#import-theme-dialog,
+#theme-high-contrast-warning {
+	border-radius: 3px;
+	box-shadow: none;
 }
-input[type="checkbox"] {border-radius: 2px; flex-shrink: 0;}
-.sliderbg {border: 1px solid var(--settings-border); box-sizing: border-box; border-radius: 3px;}
-.sliderknob {border-radius: 2px;}
-.domain-row .domain-remove, .saved-theme, .theme-button {border-radius: 2px;}
+input[type='checkbox'] {
+	border-radius: 2px;
+	flex-shrink: 0;
+}
+.sliderbg {
+	border: 1px solid var(--settings-border);
+	box-sizing: border-box;
+	border-radius: 3px;
+}
+.sliderknob {
+	border-radius: 2px;
+}
+.domain-row .domain-remove,
+.saved-theme,
+.theme-button {
+	border-radius: 2px;
+}
 /* Preview tiles keep their theme images and colors. */
-.theme-button {color: #fff; text-shadow: 0 1px 3px #000;}
-.theme-button:hover {background-size: cover;}
-::-webkit-scrollbar-thumb {background: var(--settings-border);}
-
+.theme-button {
+	color: #fff;
+	text-shadow: 0 1px 3px #000;
+}
+.theme-button:hover {
+	background-size: cover;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--settings-border);
+}
 
 /* Color swatches are previews, not text fields. */
-.changer-container .card-input[type="color"] {padding: 0; border: 0; box-shadow: none;}
+.changer-container .card-input[type='color'] {
+	padding: 0;
+	border: 0;
+	box-shadow: none;
+}
 .card-file-input::file-selector-button {
-    border: 1px solid var(--settings-border);
-    border-radius: 2px;
-    font-weight: 400;
+	border: 1px solid var(--settings-border);
+	border-radius: 2px;
+	font-weight: 400;
 }
 
 /* Keep hover feedback subtle, without changing control dimensions. */
-:root :is(.big-button, .colors-button, .customization-button,
-.submit-tab-btn, .help-link, .saved-theme-action,
-.domain-remove, #updateCSS):not(:disabled):not([aria-disabled="true"]):hover {
-    border-color: var(--settings-hover-border);
-    box-shadow: var(--settings-hover-shadow);
+:root
+	:is(
+		.big-button,
+		.colors-button,
+		.customization-button,
+		.submit-tab-btn,
+		.help-link,
+		.saved-theme-action,
+		.domain-remove,
+		#updateCSS
+	):not(:disabled):not([aria-disabled='true']):hover {
+	border-color: var(--settings-hover-border);
+	box-shadow: var(--settings-hover-shadow);
 }
-:root :is(#customDomain, #auto_dark_start, #auto_dark_end, #todo_progress_rings,
-#todo_timeframe, #appearance-mode, .card-input:not([type="color"]), .gpa-bounds-input,
-.domain-row input, .gpa-threshold-settings select, .card-file-input):not(:disabled):not(:focus):hover {
-    border-color: var(--settings-hover-border);
-    box-shadow: inset 0 1px 3px #00000012, var(--settings-hover-shadow);
+:root
+	:is(
+		#customDomain,
+		#auto_dark_start,
+		#auto_dark_end,
+		#todo_progress_rings,
+		#todo_timeframe,
+		#appearance-mode,
+		.card-input:not([type='color']),
+		.gpa-bounds-input,
+		.domain-row input,
+		.gpa-threshold-settings select,
+		.card-file-input
+	):not(:disabled):not(:focus):hover {
+	border-color: var(--settings-hover-border);
+	box-shadow:
+		inset 0 1px 3px #00000012,
+		var(--settings-hover-shadow);
 }
 .option:not(.switch_disabled):hover .sliderbg,
 .option:not(.switch_disabled):focus-within .sliderbg {
-    border-color: var(--settings-hover-border);
-    box-shadow: var(--settings-hover-shadow);
+	border-color: var(--settings-hover-border);
+	box-shadow: var(--settings-hover-shadow);
 }
 
 /* All settings interactions update immediately. */
-html, *, *::before, *::after {
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
+html,
+*,
+*::before,
+*::after {
+	animation: none !important;
+	transition: none !important;
+	scroll-behavior: auto !important;
 }
-#opt-in-box {opacity: 1;}
+#opt-in-box {
+	opacity: 1;
+}
 
 /* Selected settings categories keep the existing button silhouette. */
-:root .more-options-container .tab-btn[aria-selected="true"] {
-    background-color: var(--settings-success-bg);
-    border-color: var(--settings-success-border);
-    color: var(--settings-success);
-    box-shadow: 0 2px 6px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 25%);
+:root .more-options-container .tab-btn[aria-selected='true'] {
+	background-color: var(--settings-success-bg);
+	border-color: var(--settings-success-border);
+	color: var(--settings-success);
+	box-shadow:
+		0 2px 6px rgb(0 0 0 / 22%),
+		inset 0 1px 0 rgb(255 255 255 / 25%);
 }
 .more-options-container .tab-btn:focus-visible {
-    outline-color: var(--settings-success-accent);
+	outline-color: var(--settings-success-accent);
 }
 
 /* Debug actions share the compact GPA button border and hover shadow. */
 #debug-panel .big-button {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 12px;
-    border: 1px solid var(--settings-border);
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1;
-    white-space: nowrap;
-    box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 12px;
+	border: 1px solid var(--settings-border);
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1;
+	white-space: nowrap;
+	box-sizing: border-box;
 }
-#debug-panel .big-button:not(:disabled):not([aria-disabled="true"]):hover {
-    border-color: color-mix(in srgb, var(--settings-border) 70%, var(--settings-text));
-    box-shadow: 0 2px 5px rgb(0 0 0 / 18%);
+#debug-panel .big-button:not(:disabled):not([aria-disabled='true']):hover {
+	border-color: color-mix(in srgb, var(--settings-border) 70%, var(--settings-text));
+	box-shadow: 0 2px 5px rgb(0 0 0 / 18%);
 }

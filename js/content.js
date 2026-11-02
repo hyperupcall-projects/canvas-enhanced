@@ -1,5 +1,5 @@
-const domain = window.location.origin;
-let current_page = window.location.pathname;
+const domain = window.location.origin
+let current_page = window.location.pathname
 
 // Canvas' "New Canvas" UI navigates client-side via history.pushState/
 // replaceState without a full page reload. current_page is captured once at
@@ -7,86 +7,86 @@ let current_page = window.location.pathname;
 // (Back to Assignment button, sequence-footer hiding, profile logout button)
 // never activate when the user clicks into a page instead of loading it directly.
 function setupNavigationListener() {
-    const update = () => {
-        const next = window.location.pathname;
-        if (next === current_page) return;
-        current_page = next;
-        // Re-run the page-scoped watchers so they evaluate against the new URL.
-        watchSequenceFooter();
-        watchSubmissionPageButton();
-        watchProfileLogoutPageButton();
-        watchGradeAnalytics();
-        // Show/hide the Better Todo sidebar for the new page (course home vs
-        // sub-page) without needing a full reload.
-        updateTodoSidebarVisibility();
-    };
-    for (const method of ["pushState", "replaceState"]) {
-        const orig = history[method];
-        history[method] = function (...args) {
-            const ret = orig.apply(this, args);
-            update();
-            return ret;
-        };
-    }
-    window.addEventListener("popstate", update);
+	const update = () => {
+		const next = window.location.pathname
+		if (next === current_page) return
+		current_page = next
+		// Re-run the page-scoped watchers so they evaluate against the new URL.
+		watchSequenceFooter()
+		watchSubmissionPageButton()
+		watchProfileLogoutPageButton()
+		watchGradeAnalytics()
+		// Show/hide the Better Todo sidebar for the new page (course home vs
+		// sub-page) without needing a full reload.
+		updateTodoSidebarVisibility()
+	}
+	for (const method of ['pushState', 'replaceState']) {
+		const orig = history[method]
+		history[method] = function (...args) {
+			const ret = orig.apply(this, args)
+			update()
+			return ret
+		}
+	}
+	window.addEventListener('popstate', update)
 }
 
 function getCurrentCourseId() {
-    const match = current_page.match(/^\/courses\/(\d+)(?:\/|$)/);
-    return match ? parseInt(match[1]) : null;
+	const match = current_page.match(/^\/courses\/(\d+)(?:\/|$)/)
+	return match ? parseInt(match[1]) : null
 }
 
 function isGradesPage() {
-    return /^\/courses\/\d+\/grades(?:\/|$)/.test(current_page);
+	return /^\/courses\/\d+\/grades(?:\/|$)/.test(current_page)
 }
 
 function isCoursesIndexPage() {
-    return /^\/courses\/?$/.test(current_page);
+	return /^\/courses\/?$/.test(current_page)
 }
 
 function isGroupsIndexPage() {
-    return /^\/groups\/?$/.test(current_page);
+	return /^\/groups\/?$/.test(current_page)
 }
 
 function isConversationsPage() {
-    return /^\/conversations(?:\/|$)/.test(current_page);
+	return /^\/conversations(?:\/|$)/.test(current_page)
 }
 
 function isProfilePage() {
-    return /^\/profile(?:\/|$)/.test(current_page);
+	return /^\/profile(?:\/|$)/.test(current_page)
 }
 
 // The Better Todo sidebar belongs only on the main dashboard and each
 // course's homepage (/courses/<id>, optional trailing slash) — not on
 // sub-pages like assignments, modules, quizzes or the syllabus.
 function isTodoAllowedPage() {
-    if (current_page === "/" || current_page === "") return true;
-    return /^\/courses\/\d+\/?$/.test(current_page);
+	if (current_page === '/' || current_page === '') return true
+	return /^\/courses\/\d+\/?$/.test(current_page)
 }
 
 // Show/hide an already-mounted Better Todo sidebar when the user navigates
 // client-side into or out of an allowed page (Canvas' New UI doesn't reload).
 function updateTodoSidebarVisibility() {
-    const list = document.getElementById("canvasrefined-todo-list");
-    if (!list) return;
-    list.style.display = isTodoAllowedPage() ? "" : "none";
+	const list = document.getElementById('canvasrefined-todo-list')
+	if (!list) return
+	list.style.display = isTodoAllowedPage() ? '' : 'none'
 }
 
 // Quiz pages: /courses/123/quizzes/456 (pre-take/intro) and
 // /courses/123/quizzes/456/take (the actual quiz).
 function isQuizPage() {
-    return /^\/courses\/\d+\/quizzes\/\d+(?:\/|$)/.test(current_page);
+	return /^\/courses\/\d+\/quizzes\/\d+(?:\/|$)/.test(current_page)
 }
 function isQuizTakePage() {
-    return /^\/courses\/\d+\/quizzes\/\d+\/take(?:\/|$)/.test(current_page);
+	return /^\/courses\/\d+\/quizzes\/\d+\/take(?:\/|$)/.test(current_page)
 }
 function isQuizPreTakePage() {
-    return isQuizPage() && !isQuizTakePage();
+	return isQuizPage() && !isQuizTakePage()
 }
 // "Quiz safe mode" disables features that interfere with the default Canvas
 // quiz experience. Only active on quiz pages when the user has opted in.
 function quizSafeModeActive() {
-    return isQuizPage() && options.quiz_safe_mode === true;
+	return isQuizPage() && options.quiz_safe_mode === true
 }
 
 // Read the URL live: Canvas' "New Canvas" UI navigates client-side via
@@ -94,9 +94,11 @@ function quizSafeModeActive() {
 // can be stale when the user clicks into a submission page. Reading
 // window.location.pathname at check time makes this correct regardless.
 function getSubmissionAssignmentLink() {
-    const match = window.location.pathname.match(/^\/courses\/(\d+)\/assignments\/(\d+)\/submissions\/(\d+)(?:\/|$)/);
-    if (!match) return null;
-    return `${domain}/courses/${match[1]}/assignments/${match[2]}/`;
+	const match = window.location.pathname.match(
+		/^\/courses\/(\d+)\/assignments\/(\d+)\/submissions\/(\d+)(?:\/|$)/,
+	)
+	if (!match) return null
+	return `${domain}/courses/${match[1]}/assignments/${match[2]}/`
 }
 
 // The content container isn't always #content on every Canvas layout (submission
@@ -104,173 +106,191 @@ function getSubmissionAssignmentLink() {
 // quiz-safe-mode banner's container finder so the button lands in the visible
 // content area; fall back to <body> so injection never silently no-ops.
 function findContentContainer() {
-    return document.querySelector(".ic-Layout-contentMain")
-        || document.getElementById("content")
-        || document.querySelector("#main")
-        || document.body;
+	return (
+		document.querySelector('.ic-Layout-contentMain') ||
+		document.getElementById('content') ||
+		document.querySelector('#main') ||
+		document.body
+	)
 }
 
-let submissionPageButtonObserver = null;
-let submissionButtonScheduled = false;
-let assignmentButtonScheduled = false;
-let profileLogoutButtonObserver = null;
-let newCanvasButtonObserver = null;
+let submissionPageButtonObserver = null
+let submissionButtonScheduled = false
+let assignmentButtonScheduled = false
+let profileLogoutButtonObserver = null
+let newCanvasButtonObserver = null
 
 // Current user id, needed to build "Go to Grades" links on assignment pages.
 // The page's ENV global isn't visible to content scripts (isolated world), so
 // ask the Canvas API once and cache the result.
 // undefined = not fetched yet, null = fetch failed, number = ok.
-let currentUserIdCache;
-let currentUserIdPromise = null;
+let currentUserIdCache
+let currentUserIdPromise = null
 function ensureCurrentUserId() {
-    if (currentUserIdCache !== undefined) return Promise.resolve(currentUserIdCache);
-    if (!currentUserIdPromise) {
-        currentUserIdPromise = getData(`${domain}/api/v1/users/self`)
-            .then(user => {
-                currentUserIdCache = (user && user.id) || null;
-            })
-            .catch(() => {
-                currentUserIdCache = null;
-            })
-            .then(() => {
-                currentUserIdPromise = null;
-                return currentUserIdCache;
-            });
-    }
-    return currentUserIdPromise;
+	if (currentUserIdCache !== undefined) return Promise.resolve(currentUserIdCache)
+	if (!currentUserIdPromise) {
+		currentUserIdPromise = getData(`${domain}/api/v1/users/self`)
+			.then((user) => {
+				currentUserIdCache = (user && user.id) || null
+			})
+			.catch(() => {
+				currentUserIdCache = null
+			})
+			.then(() => {
+				currentUserIdPromise = null
+				return currentUserIdCache
+			})
+	}
+	return currentUserIdPromise
 }
 
 // Assignment pages (/courses/123/assignments/456) link to the current user's
 // submission ("grades") page for that assignment. The lookahead keeps this
 // from matching the submission pages themselves (/.../submissions/678).
 function getAssignmentGradesLink() {
-    const match = window.location.pathname.match(/^\/courses\/(\d+)\/assignments\/(\d+)(?!\/submissions)(?:\/|$)/);
-    if (!match || currentUserIdCache == null) return null;
-    return `${domain}/courses/${match[1]}/assignments/${match[2]}/submissions/${currentUserIdCache}`;
+	const match = window.location.pathname.match(
+		/^\/courses\/(\d+)\/assignments\/(\d+)(?!\/submissions)(?:\/|$)/,
+	)
+	if (!match || currentUserIdCache == null) return null
+	return `${domain}/courses/${match[1]}/assignments/${match[2]}/submissions/${currentUserIdCache}`
 }
 
 function addSubmissionPageButton() {
-    const assignmentLink = getSubmissionAssignmentLink();
-    if (!assignmentLink) return;
-    // Place the button inline with the "Submission Details" heading and the
-    // grade-values table, inside the .submission-details-header__heading-and-grades
-    // flex row (appended so it sits to the right of the grade summary). Only inject
-    // once that row exists; if it's not there yet the persistent MutationObserver
-    // re-tries on the next DOM change so we never fall back to body/#content
-    // (which would put the button at the bottom of the page).
-    const row = document.querySelector(".submission-details-header__heading-and-grades")
-        || document.querySelector(".submission-details-header")
-        || document.querySelector(".submission_details");
-    if (!row || row.querySelector("#canvasrefined-assignment-return")) return;
+	const assignmentLink = getSubmissionAssignmentLink()
+	if (!assignmentLink) return
+	// Place the button inline with the "Submission Details" heading and the
+	// grade-values table, inside the .submission-details-header__heading-and-grades
+	// flex row (appended so it sits to the right of the grade summary). Only inject
+	// once that row exists; if it's not there yet the persistent MutationObserver
+	// re-tries on the next DOM change so we never fall back to body/#content
+	// (which would put the button at the bottom of the page).
+	const row =
+		document.querySelector('.submission-details-header__heading-and-grades') ||
+		document.querySelector('.submission-details-header') ||
+		document.querySelector('.submission_details')
+	if (!row || row.querySelector('#canvasrefined-assignment-return')) return
 
-    // Insert between the h1 heading and the grade-summary div so it reads
-    // [Heading] [Back to Assignment] [Grade]. Falls back to appending if the
-    // grade-summary div isn't found for some reason.
-    const gradeSummary = row.querySelector(".submission-details-header__grade-summary");
-    const btn = makeElement("a", row, {
-        id: "canvasrefined-assignment-return",
-        className: "canvasrefined-custom-btn",
-        href: assignmentLink,
-        textContent: "Back to Assignment",
-        style: "display:inline-flex;align-items:center;justify-content:center;align-self:center;margin-left:auto;margin-right:12px;padding:6px 12px;text-decoration:none;font-weight:700;color:inherit!important;",
-    });
-    if (gradeSummary && gradeSummary.parentNode === row) {
-        row.insertBefore(btn, gradeSummary);
-    }
+	// Insert between the h1 heading and the grade-summary div so it reads
+	// [Heading] [Back to Assignment] [Grade]. Falls back to appending if the
+	// grade-summary div isn't found for some reason.
+	const gradeSummary = row.querySelector('.submission-details-header__grade-summary')
+	const btn = makeElement('a', row, {
+		id: 'canvasrefined-assignment-return',
+		className: 'canvasrefined-custom-btn',
+		href: assignmentLink,
+		textContent: 'Back to Assignment',
+		style:
+			'display:inline-flex;align-items:center;justify-content:center;align-self:center;margin-left:auto;margin-right:12px;padding:6px 12px;text-decoration:none;font-weight:700;color:inherit!important;',
+	})
+	if (gradeSummary && gradeSummary.parentNode === row) {
+		row.insertBefore(btn, gradeSummary)
+	}
 }
 
 // Assignment pages: /courses/123/assignments/456 — add a "Go to Grades" button
 // to the right edge of the title row.
 function addAssignmentPageButton() {
-    const link = getAssignmentGradesLink();
-    if (!link) return;
-    // Place the button inside the assignment header's .title-content block,
-    // pinned to its right edge on the title's line. .title-content is a plain
-    // block wrapping the <h1>, so switch it to a flex row (h1 left, button
-    // right); the h1 still wraps its text when long.
-    const titleContent = document.querySelector(".assignment-title .title-content")
-        || document.querySelector(".title-content");
-    if (!titleContent || titleContent.querySelector("#canvasrefined-assignment-grades")) return;
+	const link = getAssignmentGradesLink()
+	if (!link) return
+	// Place the button inside the assignment header's .title-content block,
+	// pinned to its right edge on the title's line. .title-content is a plain
+	// block wrapping the <h1>, so switch it to a flex row (h1 left, button
+	// right); the h1 still wraps its text when long.
+	const titleContent =
+		document.querySelector('.assignment-title .title-content') ||
+		document.querySelector('.title-content')
+	if (!titleContent || titleContent.querySelector('#canvasrefined-assignment-grades'))
+		return
 
-    titleContent.style.display = "flex";
-    titleContent.style.alignItems = "center";
-    titleContent.style.gap = "12px";
-    makeElement("a", titleContent, {
-        id: "canvasrefined-assignment-grades",
-        className: "canvasrefined-custom-btn",
-        href: link,
-        textContent: "Go to Grades",
-        style: "display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:auto;padding:6px 12px;text-decoration:none;font-weight:700;font-size:16px;color:inherit!important;white-space:nowrap;",
-    });
+	titleContent.style.display = 'flex'
+	titleContent.style.alignItems = 'center'
+	titleContent.style.gap = '12px'
+	makeElement('a', titleContent, {
+		id: 'canvasrefined-assignment-grades',
+		className: 'canvasrefined-custom-btn',
+		href: link,
+		textContent: 'Go to Grades',
+		style:
+			'display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:auto;padding:6px 12px;text-decoration:none;font-weight:700;font-size:16px;color:inherit!important;white-space:nowrap;',
+	})
 }
 
 function addProfileLogoutPageButton() {
-    if (!isProfilePage()) return;
-    const content = document.getElementById("content");
-    if (!content || content.querySelector("#canvasrefined-profile-logout")) return;
+	if (!isProfilePage()) return
+	const content = document.getElementById('content')
+	if (!content || content.querySelector('#canvasrefined-profile-logout')) return
 
-    makeElement("a", content, {
-        id: "canvasrefined-profile-logout",
-        className: "canvasrefined-custom-btn",
-        href: `${domain}/logout`,
-        textContent: "Logout",
-        style: "display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;margin:0 0 12px 0;padding:10px 14px;text-decoration:none;font-weight:700;",
-    }, true);
+	makeElement(
+		'a',
+		content,
+		{
+			id: 'canvasrefined-profile-logout',
+			className: 'canvasrefined-custom-btn',
+			href: `${domain}/logout`,
+			textContent: 'Logout',
+			style:
+				'display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;margin:0 0 12px 0;padding:10px 14px;text-decoration:none;font-weight:700;',
+		},
+		true,
+	)
 }
 
 function ensureProfileLogoutPageButton() {
-    if (!isProfilePage()) return false;
-    const content = document.getElementById("content");
-    if (!content) return false;
-    if (content.querySelector("#canvasrefined-profile-logout")) return true;
-    addProfileLogoutPageButton();
-    return Boolean(content.querySelector("#canvasrefined-profile-logout"));
+	if (!isProfilePage()) return false
+	const content = document.getElementById('content')
+	if (!content) return false
+	if (content.querySelector('#canvasrefined-profile-logout')) return true
+	addProfileLogoutPageButton()
+	return Boolean(content.querySelector('#canvasrefined-profile-logout'))
 }
 
 function watchProfileLogoutPageButton() {
-    if (!isProfilePage()) {
-        document.getElementById("canvasrefined-profile-logout")?.remove();
-        return;
-    }
-    if (ensureProfileLogoutPageButton()) return;
-    if (profileLogoutButtonObserver) return;
+	if (!isProfilePage()) {
+		document.getElementById('canvasrefined-profile-logout')?.remove()
+		return
+	}
+	if (ensureProfileLogoutPageButton()) return
+	if (profileLogoutButtonObserver) return
 
-    profileLogoutButtonObserver = new MutationObserver(() => {
-        if (ensureProfileLogoutPageButton() && profileLogoutButtonObserver) {
-            profileLogoutButtonObserver.disconnect();
-            profileLogoutButtonObserver = null;
-        }
-    });
+	profileLogoutButtonObserver = new MutationObserver(() => {
+		if (ensureProfileLogoutPageButton() && profileLogoutButtonObserver) {
+			profileLogoutButtonObserver.disconnect()
+			profileLogoutButtonObserver = null
+		}
+	})
 
-    profileLogoutButtonObserver.observe(document.documentElement, { childList: true, subtree: true });
-    setTimeout(() => {
-        if (profileLogoutButtonObserver) {
-            profileLogoutButtonObserver.disconnect();
-            profileLogoutButtonObserver = null;
-        }
-    }, 10000);
+	profileLogoutButtonObserver.observe(document.documentElement, {
+		childList: true,
+		subtree: true,
+	})
+	setTimeout(() => {
+		if (profileLogoutButtonObserver) {
+			profileLogoutButtonObserver.disconnect()
+			profileLogoutButtonObserver = null
+		}
+	}, 10000)
 }
 
 // Reconcile the button against the current page on a rAF-throttled schedule.
 // Canvas (React-based "New Canvas" UI) re-renders the content area on SPA
 // navigation and can wipe our injected node; a persistent observer re-adds it.
 function maintainSubmissionPageButton() {
-    if (submissionButtonScheduled) return;
-    submissionButtonScheduled = true;
-    requestAnimationFrame(() => {
-        submissionButtonScheduled = false;
-        const link = getSubmissionAssignmentLink();
-        const existing = document.getElementById("canvasrefined-assignment-return");
-        if (!link) {
-            existing?.remove();
-            return;
-        }
-        if (existing) {
-            if (existing.href !== link) existing.href = link;
-            return;
-        }
-        addSubmissionPageButton();
-    });
+	if (submissionButtonScheduled) return
+	submissionButtonScheduled = true
+	requestAnimationFrame(() => {
+		submissionButtonScheduled = false
+		const link = getSubmissionAssignmentLink()
+		const existing = document.getElementById('canvasrefined-assignment-return')
+		if (!link) {
+			existing?.remove()
+			return
+		}
+		if (existing) {
+			if (existing.href !== link) existing.href = link
+			return
+		}
+		addSubmissionPageButton()
+	})
 }
 
 // Same reconciliation pattern as maintainSubmissionPageButton, but for the
@@ -278,41 +298,44 @@ function maintainSubmissionPageButton() {
 // current user id, so on the first assignment page visit we kick off the API
 // fetch and re-run once it resolves.
 function maintainAssignmentPageButton() {
-    if (assignmentButtonScheduled) return;
-    assignmentButtonScheduled = true;
-    requestAnimationFrame(() => {
-        assignmentButtonScheduled = false;
-        const isAssignmentPage = /^\/courses\/\d+\/assignments\/\d+(?!\/submissions)(?:\/|$)/.test(window.location.pathname);
-        const existing = document.getElementById("canvasrefined-assignment-grades");
-        if (!isAssignmentPage) {
-            if (existing) {
-                const titleContent = existing.closest(".title-content");
-                existing.remove();
-                // Undo the flex-row layout we applied to the title block.
-                if (titleContent) {
-                    titleContent.style.display = "";
-                    titleContent.style.alignItems = "";
-                    titleContent.style.gap = "";
-                }
-            }
-            return;
-        }
-        if (currentUserIdCache === undefined) {
-            ensureCurrentUserId().then(() => maintainAssignmentPageButton());
-            return;
-        }
-        const link = getAssignmentGradesLink();
-        if (!link) return;
-        if (existing) {
-            if (existing.href !== link) existing.href = link;
-            return;
-        }
-        addAssignmentPageButton();
-    });
+	if (assignmentButtonScheduled) return
+	assignmentButtonScheduled = true
+	requestAnimationFrame(() => {
+		assignmentButtonScheduled = false
+		const isAssignmentPage =
+			/^\/courses\/\d+\/assignments\/\d+(?!\/submissions)(?:\/|$)/.test(
+				window.location.pathname,
+			)
+		const existing = document.getElementById('canvasrefined-assignment-grades')
+		if (!isAssignmentPage) {
+			if (existing) {
+				const titleContent = existing.closest('.title-content')
+				existing.remove()
+				// Undo the flex-row layout we applied to the title block.
+				if (titleContent) {
+					titleContent.style.display = ''
+					titleContent.style.alignItems = ''
+					titleContent.style.gap = ''
+				}
+			}
+			return
+		}
+		if (currentUserIdCache === undefined) {
+			ensureCurrentUserId().then(() => maintainAssignmentPageButton())
+			return
+		}
+		const link = getAssignmentGradesLink()
+		if (!link) return
+		if (existing) {
+			if (existing.href !== link) existing.href = link
+			return
+		}
+		addAssignmentPageButton()
+	})
 }
 
 function isAssignmentPage() {
-    return /^\/courses\/\d+\/assignments(?:\/\d+)?(?:\/|$)/.test(current_page);
+	return /^\/courses\/\d+\/assignments(?:\/\d+)?(?:\/|$)/.test(current_page)
 }
 
 // CSS-based hiding is the only mechanism: the style element persists across
@@ -323,26 +346,26 @@ function isAssignmentPage() {
 // footer gaplessly anyway — verified the content panel height shrinks by
 // exactly the footer height.)
 function applyHideSequenceFooter() {
-    let style = document.getElementById("canvasrefined-hide-sequence-footer");
-    if (options.hide_sequence_footer === true) {
-        if (!style) {
-            style = document.createElement("style");
-            style.id = "canvasrefined-hide-sequence-footer";
-            (document.head || document.documentElement).appendChild(style);
-        }
-        // #sequence_footer is the wrapper Canvas uses on assignment, discussion
-        // and quiz show pages; page show (/courses/:id/pages/:slug) renders the
-        // same Previous/Next bar without that wrapper, as a bare
-        // .module-sequence-footer inside #module_navigation_target — so both
-        // selectors are needed.
-        style.textContent = "#sequence_footer,.module-sequence-footer{display:none!important}";
-    } else if (style) {
-        style.remove();
-    }
+	let style = document.getElementById('canvasrefined-hide-sequence-footer')
+	if (options.hide_sequence_footer === true) {
+		if (!style) {
+			style = document.createElement('style')
+			style.id = 'canvasrefined-hide-sequence-footer'
+			;(document.head || document.documentElement).appendChild(style)
+		}
+		// #sequence_footer is the wrapper Canvas uses on assignment, discussion
+		// and quiz show pages; page show (/courses/:id/pages/:slug) renders the
+		// same Previous/Next bar without that wrapper, as a bare
+		// .module-sequence-footer inside #module_navigation_target — so both
+		// selectors are needed.
+		style.textContent = '#sequence_footer,.module-sequence-footer{display:none!important}'
+	} else if (style) {
+		style.remove()
+	}
 }
 
 function watchSequenceFooter() {
-    applyHideSequenceFooter();
+	applyHideSequenceFooter()
 }
 
 // One persistent, rAF-throttled observer that keeps both assignment-page
@@ -353,65 +376,76 @@ function watchSequenceFooter() {
 // that wipes the button after our first add without emitting any later mutation
 // for the observer to catch.
 function maintainAssignmentNavButtons() {
-    maintainSubmissionPageButton();
-    maintainAssignmentPageButton();
+	maintainSubmissionPageButton()
+	maintainAssignmentPageButton()
 }
 
 function watchSubmissionPageButton() {
-    if (submissionPageButtonObserver) return;
-    maintainAssignmentNavButtons();
-    submissionPageButtonObserver = new MutationObserver(maintainAssignmentNavButtons);
-    submissionPageButtonObserver.observe(document.documentElement, { childList: true, subtree: true });
-    for (const ms of [300, 800, 1600, 3000, 5000]) {
-        setTimeout(maintainAssignmentNavButtons, ms);
-    }
+	if (submissionPageButtonObserver) return
+	maintainAssignmentNavButtons()
+	submissionPageButtonObserver = new MutationObserver(maintainAssignmentNavButtons)
+	submissionPageButtonObserver.observe(document.documentElement, {
+		childList: true,
+		subtree: true,
+	})
+	for (const ms of [300, 800, 1600, 3000, 5000]) {
+		setTimeout(maintainAssignmentNavButtons, ms)
+	}
 }
 
 function removeNewCanvasButton() {
-    document.querySelectorAll('[data-testid="switch-to-new-dashboard-button"]').forEach(btn => btn.remove());
+	document
+		.querySelectorAll('[data-testid="switch-to-new-dashboard-button"]')
+		.forEach((btn) => btn.remove())
 }
 
 function watchNewCanvasButton() {
-    if (newCanvasButtonObserver) {
-        newCanvasButtonObserver.disconnect();
-        newCanvasButtonObserver = null;
-    }
-    if (options.hide_new_canvas !== true) return;
-    removeNewCanvasButton();
-    let newCanvasButtonScheduled = false;
-    newCanvasButtonObserver = new MutationObserver((mutationList) => {
-        if (options.hide_new_canvas !== true) {
-            if (newCanvasButtonObserver) {
-                newCanvasButtonObserver.disconnect();
-                newCanvasButtonObserver = null;
-            }
-            return;
-        }
-        // Only scan when nodes were actually added, and coalesce to one pass per frame.
-        let added = false;
-        for (const mutation of mutationList) {
-            if (mutation.addedNodes && mutation.addedNodes.length) { added = true; break; }
-        }
-        if (!added || newCanvasButtonScheduled) return;
-        newCanvasButtonScheduled = true;
-        requestAnimationFrame(() => {
-            newCanvasButtonScheduled = false;
-            if (options.hide_new_canvas !== true) return;
-            removeNewCanvasButton();
-        });
-    });
-    newCanvasButtonObserver.observe(document.documentElement, { childList: true, subtree: true });
+	if (newCanvasButtonObserver) {
+		newCanvasButtonObserver.disconnect()
+		newCanvasButtonObserver = null
+	}
+	if (options.hide_new_canvas !== true) return
+	removeNewCanvasButton()
+	let newCanvasButtonScheduled = false
+	newCanvasButtonObserver = new MutationObserver((mutationList) => {
+		if (options.hide_new_canvas !== true) {
+			if (newCanvasButtonObserver) {
+				newCanvasButtonObserver.disconnect()
+				newCanvasButtonObserver = null
+			}
+			return
+		}
+		// Only scan when nodes were actually added, and coalesce to one pass per frame.
+		let added = false
+		for (const mutation of mutationList) {
+			if (mutation.addedNodes && mutation.addedNodes.length) {
+				added = true
+				break
+			}
+		}
+		if (!added || newCanvasButtonScheduled) return
+		newCanvasButtonScheduled = true
+		requestAnimationFrame(() => {
+			newCanvasButtonScheduled = false
+			if (options.hide_new_canvas !== true) return
+			removeNewCanvasButton()
+		})
+	})
+	newCanvasButtonObserver.observe(document.documentElement, {
+		childList: true,
+		subtree: true,
+	})
 }
 
 function isDashboardPage() {
-    return !!document.querySelector("#DashboardCard_Container");
+	return !!document.querySelector('#DashboardCard_Container')
 }
 
-let assignments = null;
-let grades = null;
-let announcements = [];
-let completed = [];
-let assignmentsDue = [];
+let assignments = null
+let grades = null
+let announcements = []
+let completed = []
+let assignmentsDue = []
 // Render-generation counters. createTodoSections/loadCardAssignments render
 // asynchronously (inside a .then), while several code paths re-render by
 // calling clearTodoList() + createTodoSections() again. Without a guard, a
@@ -420,14 +454,14 @@ let assignmentsDue = [];
 // — the reported "todo list is all doubled" glitch. Each render captures the
 // counter at call time and aborts if a newer render has started by the time
 // its data arrives.
-let todoRenderGen = 0;
-let cardRenderGen = 0;
-let options = {};
-let reminderCheck = null;
+let todoRenderGen = 0
+let cardRenderGen = 0
+let options = {}
+let reminderCheck = null
 // Set while a background planner-cache refresh is in flight so overlapping
 // schedules (multiple loads, multiple tabs) can't run concurrently.
-let plannerRefreshRunning = false;
-let dashboardReadyTimer = null;
+let plannerRefreshRunning = false
+let dashboardReadyTimer = null
 // Signature of the dashboard card set last time we ran the full setup pass.
 // The MutationObserver in checkDashboardReady fires on every childList change
 // in the document — including the ones our own setup pass (loadCardAssignments,
@@ -435,977 +469,1189 @@ let dashboardReadyTimer = null;
 // and re-runs the whole pass every animation frame (an infinite reflow loop).
 // We only need to re-run when Canvas actually changes the dashboard cards, so
 // we skip the heavy pass whenever the card set is unchanged.
-let lastDashboardCardSignature = null;
+let lastDashboardCardSignature = null
 
 /*
 Start
 */
 
-
 /*
 Todo Reminders
 */
 
-const canvas_svg = `<svg xmlns="http://www.w3.org/2000/svg" fill="#ff4545" width="25px" height="25px" viewBox="-192 -192 2304.00 2304.00" stroke="white"><g stroke-width="0"><rect x="-192" y="-192" width="2304.00" height="2304.00" rx="0" fill="none" strokewidth="0"/></g><g stroke-linecap="round" stroke-linejoin="round"/><g> <path d="M958.568 277.97C1100.42 277.97 1216.48 171.94 1233.67 34.3881 1146.27 12.8955 1054.57 0 958.568 0 864.001 0 770.867 12.8955 683.464 34.3881 700.658 171.94 816.718 277.97 958.568 277.97ZM35.8207 682.031C173.373 699.225 279.403 815.285 279.403 957.136 279.403 1098.99 173.373 1215.05 35.8207 1232.24 12.8953 1144.84 1.43262 1051.7 1.43262 957.136 1.43262 862.569 12.8953 769.434 35.8207 682.031ZM528.713 957.142C528.713 1005.41 489.581 1044.55 441.31 1044.55 393.038 1044.55 353.907 1005.41 353.907 957.142 353.907 908.871 393.038 869.74 441.31 869.74 489.581 869.74 528.713 908.871 528.713 957.142ZM1642.03 957.136C1642.03 1098.99 1748.06 1215.05 1885.61 1232.24 1908.54 1144.84 1920 1051.7 1920 957.136 1920 862.569 1908.54 769.434 1885.61 682.031 1748.06 699.225 1642.03 815.285 1642.03 957.136ZM1567.51 957.142C1567.51 1005.41 1528.38 1044.55 1480.11 1044.55 1431.84 1044.55 1392.71 1005.41 1392.71 957.142 1392.71 908.871 1431.84 869.74 1480.11 869.74 1528.38 869.74 1567.51 908.871 1567.51 957.142ZM958.568 1640.6C816.718 1640.6 700.658 1746.63 683.464 1884.18 770.867 1907.11 864.001 1918.57 958.568 1918.57 1053.14 1918.57 1146.27 1907.11 1233.67 1884.18 1216.48 1746.63 1100.42 1640.6 958.568 1640.6ZM1045.98 1480.11C1045.98 1528.38 1006.85 1567.51 958.575 1567.51 910.304 1567.51 871.172 1528.38 871.172 1480.11 871.172 1431.84 910.304 1392.71 958.575 1392.71 1006.85 1392.71 1045.98 1431.84 1045.98 1480.11ZM1045.98 439.877C1045.98 488.148 1006.85 527.28 958.575 527.28 910.304 527.28 871.172 488.148 871.172 439.877 871.172 391.606 910.304 352.474 958.575 352.474 1006.85 352.474 1045.98 391.606 1045.98 439.877ZM1441.44 1439.99C1341.15 1540.29 1333.98 1697.91 1418.52 1806.8 1579 1712.23 1713.68 1577.55 1806.82 1418.5 1699.35 1332.53 1541.74 1339.7 1441.44 1439.99ZM1414.21 1325.37C1414.21 1373.64 1375.08 1412.77 1326.8 1412.77 1278.53 1412.77 1239.4 1373.64 1239.4 1325.37 1239.4 1277.1 1278.53 1237.97 1326.8 1237.97 1375.08 1237.97 1414.21 1277.1 1414.21 1325.37ZM478.577 477.145C578.875 376.846 586.039 219.234 501.502 110.339 341.024 204.906 206.338 339.592 113.203 498.637 220.666 584.607 378.278 576.01 478.577 477.145ZM679.155 590.32C679.155 638.591 640.024 677.723 591.752 677.723 543.481 677.723 504.349 638.591 504.349 590.32 504.349 542.048 543.481 502.917 591.752 502.917 640.024 502.917 679.155 542.048 679.155 590.32ZM1440 475.712C1540.3 576.01 1697.91 583.174 1806.8 498.637 1712.24 338.159 1577.55 203.473 1418.51 110.339 1332.54 217.801 1341.13 375.413 1440 475.712ZM1414.21 590.32C1414.21 638.591 1375.08 677.723 1326.8 677.723 1278.53 677.723 1239.4 638.591 1239.4 590.32 1239.4 542.048 1278.53 502.917 1326.8 502.917 1375.08 502.917 1414.21 542.048 1414.21 590.32ZM477.145 1438.58C376.846 1338.28 219.234 1331.12 110.339 1415.65 204.906 1576.13 339.593 1710.82 498.637 1805.39 584.607 1696.49 577.443 1538.88 477.145 1438.58ZM679.155 1325.37C679.155 1373.64 640.024 1412.77 591.752 1412.77 543.481 1412.77 504.349 1373.64 504.349 1325.37 504.349 1277.1 543.481 1237.97 591.752 1237.97 640.024 1237.97 679.155 1277.1 679.155 1325.37Z"/></g></svg>`;
+const canvas_svg = `<svg xmlns="http://www.w3.org/2000/svg" fill="#ff4545" width="25px" height="25px" viewBox="-192 -192 2304.00 2304.00" stroke="white"><g stroke-width="0"><rect x="-192" y="-192" width="2304.00" height="2304.00" rx="0" fill="none" strokewidth="0"/></g><g stroke-linecap="round" stroke-linejoin="round"/><g> <path d="M958.568 277.97C1100.42 277.97 1216.48 171.94 1233.67 34.3881 1146.27 12.8955 1054.57 0 958.568 0 864.001 0 770.867 12.8955 683.464 34.3881 700.658 171.94 816.718 277.97 958.568 277.97ZM35.8207 682.031C173.373 699.225 279.403 815.285 279.403 957.136 279.403 1098.99 173.373 1215.05 35.8207 1232.24 12.8953 1144.84 1.43262 1051.7 1.43262 957.136 1.43262 862.569 12.8953 769.434 35.8207 682.031ZM528.713 957.142C528.713 1005.41 489.581 1044.55 441.31 1044.55 393.038 1044.55 353.907 1005.41 353.907 957.142 353.907 908.871 393.038 869.74 441.31 869.74 489.581 869.74 528.713 908.871 528.713 957.142ZM1642.03 957.136C1642.03 1098.99 1748.06 1215.05 1885.61 1232.24 1908.54 1144.84 1920 1051.7 1920 957.136 1920 862.569 1908.54 769.434 1885.61 682.031 1748.06 699.225 1642.03 815.285 1642.03 957.136ZM1567.51 957.142C1567.51 1005.41 1528.38 1044.55 1480.11 1044.55 1431.84 1044.55 1392.71 1005.41 1392.71 957.142 1392.71 908.871 1431.84 869.74 1480.11 869.74 1528.38 869.74 1567.51 908.871 1567.51 957.142ZM958.568 1640.6C816.718 1640.6 700.658 1746.63 683.464 1884.18 770.867 1907.11 864.001 1918.57 958.568 1918.57 1053.14 1918.57 1146.27 1907.11 1233.67 1884.18 1216.48 1746.63 1100.42 1640.6 958.568 1640.6ZM1045.98 1480.11C1045.98 1528.38 1006.85 1567.51 958.575 1567.51 910.304 1567.51 871.172 1528.38 871.172 1480.11 871.172 1431.84 910.304 1392.71 958.575 1392.71 1006.85 1392.71 1045.98 1431.84 1045.98 1480.11ZM1045.98 439.877C1045.98 488.148 1006.85 527.28 958.575 527.28 910.304 527.28 871.172 488.148 871.172 439.877 871.172 391.606 910.304 352.474 958.575 352.474 1006.85 352.474 1045.98 391.606 1045.98 439.877ZM1441.44 1439.99C1341.15 1540.29 1333.98 1697.91 1418.52 1806.8 1579 1712.23 1713.68 1577.55 1806.82 1418.5 1699.35 1332.53 1541.74 1339.7 1441.44 1439.99ZM1414.21 1325.37C1414.21 1373.64 1375.08 1412.77 1326.8 1412.77 1278.53 1412.77 1239.4 1373.64 1239.4 1325.37 1239.4 1277.1 1278.53 1237.97 1326.8 1237.97 1375.08 1237.97 1414.21 1277.1 1414.21 1325.37ZM478.577 477.145C578.875 376.846 586.039 219.234 501.502 110.339 341.024 204.906 206.338 339.592 113.203 498.637 220.666 584.607 378.278 576.01 478.577 477.145ZM679.155 590.32C679.155 638.591 640.024 677.723 591.752 677.723 543.481 677.723 504.349 638.591 504.349 590.32 504.349 542.048 543.481 502.917 591.752 502.917 640.024 502.917 679.155 542.048 679.155 590.32ZM1440 475.712C1540.3 576.01 1697.91 583.174 1806.8 498.637 1712.24 338.159 1577.55 203.473 1418.51 110.339 1332.54 217.801 1341.13 375.413 1440 475.712ZM1414.21 590.32C1414.21 638.591 1375.08 677.723 1326.8 677.723 1278.53 677.723 1239.4 638.591 1239.4 590.32 1239.4 542.048 1278.53 502.917 1326.8 502.917 1375.08 502.917 1414.21 542.048 1414.21 590.32ZM477.145 1438.58C376.846 1338.28 219.234 1331.12 110.339 1415.65 204.906 1576.13 339.593 1710.82 498.637 1805.39 584.607 1696.49 577.443 1538.88 477.145 1438.58ZM679.155 1325.37C679.155 1373.64 640.024 1412.77 591.752 1412.77 543.481 1412.77 504.349 1373.64 504.349 1325.37 504.349 1277.1 543.481 1237.97 591.752 1237.97 640.024 1237.97 679.155 1277.1 679.155 1325.37Z"/></g></svg>`
 
 async function insertReminders(reminders) {
-    const storage = await chrome.storage.sync.get("reminders");
-    const stored = Array.isArray(storage["reminders"]) ? storage["reminders"] : [];
-    // Keyed by link ("h"). Dedupes while loading: older versions replaced a
-    // matching entry in place for submitted items (c === -1) but ALSO appended
-    // the insert again, so one extra copy accumulated in storage on every
-    // load/refresh. Rebuilding the map here heals already-duplicated storage.
-    const byHref = new Map();
-    for (const r of stored) {
-        if (!r || !r.h) continue;
-        const prev = byHref.get(r.h);
-        if (!prev || (prev.c !== -1 && r.c === -1)) byHref.set(r.h, r);
-    }
-    let changed = byHref.size !== stored.length;
-    for (const insert of reminders) {
-        if (!insert || !insert.h) continue;
-        const prev = byHref.get(insert.h);
-        if (!prev) {
-            byHref.set(insert.h, insert);
-            changed = true;
-        } else if (insert.c === -1 && prev.c !== -1) {
-            // Recently submitted: update the existing entry in place instead of
-            // adding a second copy. An unsubmitted insert never overwrites an
-            // existing entry, and a submitted entry stays submitted.
-            byHref.set(insert.h, insert);
-            changed = true;
-        }
-    }
-    if (changed) chrome.storage.sync.set({ "reminders": [...byHref.values()] });
+	const storage = await chrome.storage.sync.get('reminders')
+	const stored = Array.isArray(storage['reminders']) ? storage['reminders'] : []
+	// Keyed by link ("h"). Dedupes while loading: older versions replaced a
+	// matching entry in place for submitted items (c === -1) but ALSO appended
+	// the insert again, so one extra copy accumulated in storage on every
+	// load/refresh. Rebuilding the map here heals already-duplicated storage.
+	const byHref = new Map()
+	for (const r of stored) {
+		if (!r || !r.h) continue
+		const prev = byHref.get(r.h)
+		if (!prev || (prev.c !== -1 && r.c === -1)) byHref.set(r.h, r)
+	}
+	let changed = byHref.size !== stored.length
+	for (const insert of reminders) {
+		if (!insert || !insert.h) continue
+		const prev = byHref.get(insert.h)
+		if (!prev) {
+			byHref.set(insert.h, insert)
+			changed = true
+		} else if (insert.c === -1 && prev.c !== -1) {
+			// Recently submitted: update the existing entry in place instead of
+			// adding a second copy. An unsubmitted insert never overwrites an
+			// existing entry, and a submitted entry stays submitted.
+			byHref.set(insert.h, insert)
+			changed = true
+		}
+	}
+	if (changed) chrome.storage.sync.set({ reminders: [...byHref.values()] })
 }
 
 async function hideReminder(href) {
-    const storage = await chrome.storage.sync.get("reminders");
+	const storage = await chrome.storage.sync.get('reminders')
 
-    for (let i = 0; i < storage["reminders"].length; i++) {
-        if (storage["reminders"][i]["h"] === href) {
-            storage["reminders"][i]["c"]++;
-            chrome.storage.sync.set({ "reminders": storage["reminders"] });
-            break;
-        }
-    }
+	for (let i = 0; i < storage['reminders'].length; i++) {
+		if (storage['reminders'][i]['h'] === href) {
+			storage['reminders'][i]['c']++
+			chrome.storage.sync.set({ reminders: storage['reminders'] })
+			break
+		}
+	}
 }
 
 function createReminder(reminder, location) {
-    const remaining = getRelativeDate(new Date(reminder.d));
-    const wrapper = makeElement("div", location, { "className": "canvasrefined-reminder-wrapper" });
-    const container = makeElement("div", wrapper, { "className": "canvasrefined-reminder-container" });
-    const svg = makeElement("div", container, { "innerHTML": canvas_svg });
-    const content = makeElement("a", container, { "className": "canvasrefined-reminder-content", "href": reminder.h, "target": "_blank" });
-    const title = makeElement("h2", content, { "className": "canvasrefined-reminder-title", "textContent": reminder.t });
-    const due = makeElement("p", content, { "className": "canvasrefined-reminder-due", "textContent": `Assignment due in ${remaining.time}` });
-    const hidebtn = makeElement("btn", wrapper, { "className": "canvasrefined-reminder-hide", "textContent": "x" });
-    hidebtn.addEventListener("click", () => {
-        hideReminder(reminder.h);
-        wrapper.remove();
-    });
-    return container;
+	const remaining = getRelativeDate(new Date(reminder.d))
+	const wrapper = makeElement('div', location, {
+		className: 'canvasrefined-reminder-wrapper',
+	})
+	const container = makeElement('div', wrapper, {
+		className: 'canvasrefined-reminder-container',
+	})
+	const svg = makeElement('div', container, { innerHTML: canvas_svg })
+	const content = makeElement('a', container, {
+		className: 'canvasrefined-reminder-content',
+		href: reminder.h,
+		target: '_blank',
+	})
+	const title = makeElement('h2', content, {
+		className: 'canvasrefined-reminder-title',
+		textContent: reminder.t,
+	})
+	const due = makeElement('p', content, {
+		className: 'canvasrefined-reminder-due',
+		textContent: `Assignment due in ${remaining.time}`,
+	})
+	const hidebtn = makeElement('btn', wrapper, {
+		className: 'canvasrefined-reminder-hide',
+		textContent: 'x',
+	})
+	hidebtn.addEventListener('click', () => {
+		hideReminder(reminder.h)
+		wrapper.remove()
+	})
+	return container
 }
 
 async function reminderWatch() {
-    const sync = await chrome.storage.sync.get("remind");
-    if (sync["remind"] !== true) {
-        if (document.getElementById("canvasrefined-reminders")) document.getElementById("canvasrefined-reminders").style.display = "none";
-        return;
-    }
-    const container = document.getElementById("canvasrefined-reminders") || makeElement("div", document.body, { "id": "canvasrefined-reminders" });
-    container.style.display = "flex";
-    container.textContent = "";
-    const alertPeriod = 1000 * 60 * 60 * 6; // 6 hours
-    const alertPeriod2 = 1000 * 60 * 60 * 2; // 2 hours
-    const storage = await chrome.storage.sync.get(["reminders", "reminder_count"]);
-    const now = (new Date()).getTime();
-    storage["reminders"].forEach((reminder, index) => {
-        if (reminder.d < now) {
-            storage["reminders"].splice(index, 1);
-        } else if ((reminder.c == 0 && reminder.d < now + alertPeriod) || (reminder.c == 1 && reminder.d < now + alertPeriod2)) {
-            createReminder(reminder, container);
-        }
-    });
-    chrome.storage.sync.set({ "reminders": storage["reminders"] });
+	const sync = await chrome.storage.sync.get('remind')
+	if (sync['remind'] !== true) {
+		if (document.getElementById('canvasrefined-reminders'))
+			document.getElementById('canvasrefined-reminders').style.display = 'none'
+		return
+	}
+	const container =
+		document.getElementById('canvasrefined-reminders') ||
+		makeElement('div', document.body, { id: 'canvasrefined-reminders' })
+	container.style.display = 'flex'
+	container.textContent = ''
+	const alertPeriod = 1000 * 60 * 60 * 6 // 6 hours
+	const alertPeriod2 = 1000 * 60 * 60 * 2 // 2 hours
+	const storage = await chrome.storage.sync.get(['reminders', 'reminder_count'])
+	const now = new Date().getTime()
+	storage['reminders'].forEach((reminder, index) => {
+		if (reminder.d < now) {
+			storage['reminders'].splice(index, 1)
+		} else if (
+			(reminder.c == 0 && reminder.d < now + alertPeriod) ||
+			(reminder.c == 1 && reminder.d < now + alertPeriod2)
+		) {
+			createReminder(reminder, container)
+		}
+	})
+	chrome.storage.sync.set({ reminders: storage['reminders'] })
 }
 
 function updateReminders() {
-    if (!assignments || typeof assignments.then !== "function") return;
-    const fiveDays = 1000 * 60 * 60 * 24 * 5;
-    const now = (new Date()).getTime();
-    const list = [];
-    return assignments.then(data => {
-        if (!Array.isArray(data)) return;
-        data.forEach(item => {
-            // Planner responses can include incomplete entries without a plannable.
-            if (!item?.plannable?.title || !item.html_url) return;
-            const due = (new Date(item.plannable_date)).getTime();
-            if (!Number.isFinite(due)) return;
-            if (item.plannable_type === "announcement") return;
-            if (due < now) return;
-            if (due > now + fiveDays * 2) return;
-            // { due, title, href, hide count }
-            // hide count of -1 indicates the item has a submission
-            list.push({ "d": due, "t": item.plannable.title, "h": domain + item.html_url, "c": item.submissions?.submitted ? -1 : 0 });
-        });
-        insertReminders(list);
-    });
+	if (!assignments || typeof assignments.then !== 'function') return
+	const fiveDays = 1000 * 60 * 60 * 24 * 5
+	const now = new Date().getTime()
+	const list = []
+	return assignments.then((data) => {
+		if (!Array.isArray(data)) return
+		data.forEach((item) => {
+			// Planner responses can include incomplete entries without a plannable.
+			if (!item?.plannable?.title || !item.html_url) return
+			const due = new Date(item.plannable_date).getTime()
+			if (!Number.isFinite(due)) return
+			if (item.plannable_type === 'announcement') return
+			if (due < now) return
+			if (due > now + fiveDays * 2) return
+			// { due, title, href, hide count }
+			// hide count of -1 indicates the item has a submission
+			list.push({
+				d: due,
+				t: item.plannable.title,
+				h: domain + item.html_url,
+				c: item.submissions?.submitted ? -1 : 0,
+			})
+		})
+		insertReminders(list)
+	})
 }
 
 function showExampleReminder() {
-    const location = document.getElementById("canvasrefined-reminders") || makeElement("div", document.body, { "id": "canvasrefined-reminders" });
-    if (options.remind !== true) {
-        location.remove();
-        return;
-    }
-    location.textContent = "";
-    const example = createReminder({ "d": new Date(), "t": "This is an example reminder", }, location);
-    example.querySelector(".canvasrefined-reminder-due").textContent = "This notification will pop up in other pages to remind you of incomplete assignments that are due in less than 6 hours." /*It will notify again at 2 hours if the 'Remind 2x' option is on."*/;
+	const location =
+		document.getElementById('canvasrefined-reminders') ||
+		makeElement('div', document.body, { id: 'canvasrefined-reminders' })
+	if (options.remind !== true) {
+		location.remove()
+		return
+	}
+	location.textContent = ''
+	const example = createReminder(
+		{ d: new Date(), t: 'This is an example reminder' },
+		location,
+	)
+	example.querySelector('.canvasrefined-reminder-due').textContent =
+		'This notification will pop up in other pages to remind you of incomplete assignments that are due in less than 6 hours.' /*It will notify again at 2 hours if the 'Remind 2x' option is on."*/
 }
-
 
 // Canvas detection: if the domain is in the user's list, start normally.
 // Otherwise probe it (unless detection was declined for it); an empty list
 // auto-adds the first canvas, and with canvases already in the list the user
 // is asked once per domain.
-isDomainCanvasPage();
+isDomainCanvasPage()
 
 function isDomainCanvasPage() {
-    chrome.storage.sync.get(['custom_domain', 'custom_domain_denied', 'auto_detect_disabled', 'dark_mode', 'dark_preset', 'device_dark', 'remind'], result => {
-        options = result;
-        const domains = (result.custom_domain || []).filter(d => d && d !== "");
-        const denied = result.custom_domain_denied || [];
-        if (domains.some(d => normalizeCanvasDomain(d) === window.location.hostname)) {
-            startExtension();
-            return;
-        }
+	chrome.storage.sync.get(
+		[
+			'custom_domain',
+			'custom_domain_denied',
+			'auto_detect_disabled',
+			'dark_mode',
+			'dark_preset',
+			'device_dark',
+			'remind',
+		],
+		(result) => {
+			options = result
+			const domains = (result.custom_domain || []).filter((d) => d && d !== '')
+			const denied = result.custom_domain_denied || []
+			if (domains.some((d) => normalizeCanvasDomain(d) === window.location.hostname)) {
+				startExtension()
+				return
+			}
 
-        // not in the list — no prompting/probing if the user turned auto detect
-        // off, or already said no here; just run reminders
-        if (result.auto_detect_disabled === true || denied.some(d => normalizeCanvasDomain(d) === window.location.hostname)) {
-            startReminderMode();
-            return;
-        }
+			// not in the list — no prompting/probing if the user turned auto detect
+			// off, or already said no here; just run reminders
+			if (
+				result.auto_detect_disabled === true ||
+				denied.some((d) => normalizeCanvasDomain(d) === window.location.hostname)
+			) {
+				startReminderMode()
+				return
+			}
 
-        detectCanvasPage().then(({ isCanvas, courses }) => {
-            if (!isCanvas) {
-                startReminderMode();
-                return;
-            }
-            if (domains.length === 0) {
-                // first canvas ever — add it automatically (original first-run
-                // behavior) and reload so the extension starts
-                addCanvasDomain(courses).then(() => location.reload());
-            } else {
-                // at least one canvas already in the list: ask the first time
-                // this page is seen. Saying no means we never ask again here.
-                promptAddCanvasDomain(courses);
-            }
-        });
-    });
+			detectCanvasPage().then(({ isCanvas, courses }) => {
+				if (!isCanvas) {
+					startReminderMode()
+					return
+				}
+				if (domains.length === 0) {
+					// first canvas ever — add it automatically (original first-run
+					// behavior) and reload so the extension starts
+					addCanvasDomain(courses).then(() => location.reload())
+				} else {
+					// at least one canvas already in the list: ask the first time
+					// this page is seen. Saying no means we never ask again here.
+					promptAddCanvasDomain(courses)
+				}
+			})
+		},
+	)
 }
 
 function startReminderMode() {
-    setTimeout(reminderWatch, 2000);
-    setInterval(reminderWatch, 60000);
-    // turn the reminders on/off if the option is changed
-    chrome.storage.onChanged.addListener((changes) => {
-        Object.keys(changes).forEach(key => {
-            if (key === "remind") reminderWatch();
-        })
-    })
+	setTimeout(reminderWatch, 2000)
+	setInterval(reminderWatch, 60000)
+	// turn the reminders on/off if the option is changed
+	chrome.storage.onChanged.addListener((changes) => {
+		Object.keys(changes).forEach((key) => {
+			if (key === 'remind') reminderWatch()
+		})
+	})
 }
 
 // The courses API only answers on real Canvas installs. Resolves { isCanvas, courses }.
 async function detectCanvasPage() {
-    try {
-        const courses = await getData(`${domain}/api/v1/courses?${/*enrollment_state=active&*/""}per_page=100`);
-        if (Array.isArray(courses) && courses.length) {
-            return { isCanvas: true, courses };
-        }
-        console.log("Canvas Enhanced - this url doesn't seem to be a canvas url (1)");
-        return { isCanvas: false, courses: null };
-    } catch (err) {
-        console.log("Canvas Enhanced - this url doesn't seem to be a canvas url (2)");
-        return { isCanvas: false, courses: null };
-    }
+	try {
+		const courses = await getData(
+			`${domain}/api/v1/courses?${/*enrollment_state=active&*/ ''}per_page=100`,
+		)
+		if (Array.isArray(courses) && courses.length) {
+			return { isCanvas: true, courses }
+		}
+		console.log("Canvas Enhanced - this url doesn't seem to be a canvas url (1)")
+		return { isCanvas: false, courses: null }
+	} catch (err) {
+		console.log("Canvas Enhanced - this url doesn't seem to be a canvas url (2)")
+		return { isCanvas: false, courses: null }
+	}
 }
 
 // Register the domain in the canvas list. `courses` (from detectCanvasPage) is
 // passed to getCards so this school's courses are indexed before the reload,
 // exactly like the original first-run flow did.
 function addCanvasDomain(courses) {
-    return getCards(courses).then(() => new Promise(resolve => {
-        setTimeout(() => {
-            console.log("Canvas Enhanced - setting custom domain to " + domain);
-            chrome.storage.sync.get(["custom_domain"], storage => {
-                const domains = (storage.custom_domain || []).filter(d => d && d !== "");
-                domains.push(domain);
-                // the domain was just accepted — make sure it isn't on the
-                // "don't ask again" list
-                chrome.storage.sync.get(["custom_domain_denied"], deniedStorage => {
-                    const denied = (deniedStorage.custom_domain_denied || []).filter(d => normalizeCanvasDomain(d) !== window.location.hostname);
-                    chrome.storage.sync.set({ custom_domain: domains, custom_domain_denied: denied }).then(resolve);
-                });
-            });
-        }, 100);
-    }));
+	return getCards(courses).then(
+		() =>
+			new Promise((resolve) => {
+				setTimeout(() => {
+					console.log('Canvas Enhanced - setting custom domain to ' + domain)
+					chrome.storage.sync.get(['custom_domain'], (storage) => {
+						const domains = (storage.custom_domain || []).filter((d) => d && d !== '')
+						domains.push(domain)
+						// the domain was just accepted — make sure it isn't on the
+						// "don't ask again" list
+						chrome.storage.sync.get(['custom_domain_denied'], (deniedStorage) => {
+							const denied = (deniedStorage.custom_domain_denied || []).filter(
+								(d) => normalizeCanvasDomain(d) !== window.location.hostname,
+							)
+							chrome.storage.sync
+								.set({ custom_domain: domains, custom_domain_denied: denied })
+								.then(resolve)
+						})
+					})
+				}, 100)
+			}),
+	)
 }
 
 function promptAddCanvasDomain(courses) {
-    // content scripts run at document_start, so the body may not exist yet
-    const show = () => showCanvasPrompt(courses);
-    if (document.body) show();
-    else document.addEventListener("DOMContentLoaded", show, { once: true });
+	// content scripts run at document_start, so the body may not exist yet
+	const show = () => showCanvasPrompt(courses)
+	if (document.body) show()
+	else document.addEventListener('DOMContentLoaded', show, { once: true })
 }
 
 function showCanvasPrompt(courses) {
-    if (document.getElementById("canvasrefined-domain-prompt-backdrop")) return;
+	if (document.getElementById('canvasrefined-domain-prompt-backdrop')) return
 
-    const host = domain.replace(/^https?:\/\//, "");
-    // modal with a backdrop so the ask is impossible to miss
-    const backdrop = makeElement("div", document.body, { "id": "canvasrefined-domain-prompt-backdrop" });
-    const prompt = makeElement("div", backdrop, { "id": "canvasrefined-domain-prompt" });
-    makeElement("h3", prompt, { "textContent": "New Canvas detected" });
-    const text = makeElement("p", prompt, {});
-    text.append("Canvas Enhanced detected a Canvas page at ");
-    makeElement("span", text, { "className": "canvasrefined-domain-host", "textContent": host });
-    text.append(". Add it to your canvas list?");
-    const actions = makeElement("div", prompt, { "className": "canvasrefined-domain-prompt-actions" });
-    const yes = makeElement("button", actions, { "textContent": chrome.i18n.getMessage("add_to_list") || "Add to list", "className": "canvasrefined-domain-yes" });
-    const no = makeElement("button", actions, { "textContent": chrome.i18n.getMessage("no_thanks") || "No thanks", "className": "canvasrefined-domain-no" });
+	const host = domain.replace(/^https?:\/\//, '')
+	// modal with a backdrop so the ask is impossible to miss
+	const backdrop = makeElement('div', document.body, {
+		id: 'canvasrefined-domain-prompt-backdrop',
+	})
+	const prompt = makeElement('div', backdrop, { id: 'canvasrefined-domain-prompt' })
+	makeElement('h3', prompt, { textContent: 'New Canvas detected' })
+	const text = makeElement('p', prompt, {})
+	text.append('Canvas Enhanced detected a Canvas page at ')
+	makeElement('span', text, { className: 'canvasrefined-domain-host', textContent: host })
+	text.append('. Add it to your canvas list?')
+	const actions = makeElement('div', prompt, {
+		className: 'canvasrefined-domain-prompt-actions',
+	})
+	const yes = makeElement('button', actions, {
+		textContent: chrome.i18n.getMessage('add_to_list') || 'Add to list',
+		className: 'canvasrefined-domain-yes',
+	})
+	const no = makeElement('button', actions, {
+		textContent: chrome.i18n.getMessage('no_thanks') || 'No thanks',
+		className: 'canvasrefined-domain-no',
+	})
 
-    const dismiss = () => backdrop.remove();
+	const dismiss = () => backdrop.remove()
 
-    yes.addEventListener("click", () => {
-        dismiss();
-        addCanvasDomain(courses).then(() => location.reload());
-    });
-    no.addEventListener("click", () => {
-        dismiss();
-        chrome.storage.sync.get(["custom_domain_denied"], storage => {
-            const denied = storage.custom_domain_denied || [];
-            if (!denied.some(d => normalizeCanvasDomain(d) === window.location.hostname)) denied.push(domain);
-            chrome.storage.sync.set({ custom_domain_denied: denied });
-        });
-        startReminderMode();
-    });
+	yes.addEventListener('click', () => {
+		dismiss()
+		addCanvasDomain(courses).then(() => location.reload())
+	})
+	no.addEventListener('click', () => {
+		dismiss()
+		chrome.storage.sync.get(['custom_domain_denied'], (storage) => {
+			const denied = storage.custom_domain_denied || []
+			if (!denied.some((d) => normalizeCanvasDomain(d) === window.location.hostname))
+				denied.push(domain)
+			chrome.storage.sync.set({ custom_domain_denied: denied })
+		})
+		startReminderMode()
+	})
 }
 
 function startExtension() {
-    // Remove footer robustly - run first so a crash below can't block it
-    const removeFooter = () => {
-        const footer = document.querySelector('footer#footer.ic-app-footer, footer#footer');
-        if (footer) footer.remove();
-    };
-    removeFooter();
-    let footerScheduled = false;
-    const footerObserver = new MutationObserver(() => {
-        // Canvas mutates the DOM constantly; only check for the footer at most once
-        // per animation frame instead of running a querySelector on every mutation.
-        if (footerScheduled) return;
-        footerScheduled = true;
-        requestAnimationFrame(() => {
-            footerScheduled = false;
-            removeFooter();
-        });
-    });
-    footerObserver.observe(document.documentElement, { childList: true, subtree: true });
+	// Remove footer robustly - run first so a crash below can't block it
+	const removeFooter = () => {
+		const footer = document.querySelector('footer#footer.ic-app-footer, footer#footer')
+		if (footer) footer.remove()
+	}
+	removeFooter()
+	let footerScheduled = false
+	const footerObserver = new MutationObserver(() => {
+		// Canvas mutates the DOM constantly; only check for the footer at most once
+		// per animation frame instead of running a querySelector on every mutation.
+		if (footerScheduled) return
+		footerScheduled = true
+		requestAnimationFrame(() => {
+			footerScheduled = false
+			removeFooter()
+		})
+	})
+	footerObserver.observe(document.documentElement, { childList: true, subtree: true })
 
-    // Start the submission-page "Back to Assignment" button watcher and the SPA
-    // navigation hook immediately, before the async storage callbacks below.
-    // These don't depend on `options`, and running them first means a throw in
-    // any later init step can't prevent the button from appearing. The watcher
-    // reads window.location.pathname live and uses a persistent MutationObserver
-    // to (re)inject the button once the content container exists.
-    setupNavigationListener();
-    watchSubmissionPageButton();
+	// Start the submission-page "Back to Assignment" button watcher and the SPA
+	// navigation hook immediately, before the async storage callbacks below.
+	// These don't depend on `options`, and running them first means a throw in
+	// any later init step can't prevent the button from appearing. The watcher
+	// reads window.location.pathname live and uses a persistent MutationObserver
+	// to (re)inject the button once the content container exists.
+	setupNavigationListener()
+	watchSubmissionPageButton()
 
-    toggleDarkMode();
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-        if (options.device_dark === true) {
-            applyOptionsChanges({ device_dark: { newValue: true } });
-        }
-    });
+	toggleDarkMode()
+	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+		if (options.device_dark === true) {
+			applyOptionsChanges({ device_dark: { newValue: true } })
+		}
+	})
 
-    chrome.storage.sync.get(null, result => {
-        options = { ...options, ...result };
-        applyTodoAlternateColors();
-        // toggleScheduledReminders();
-        getApiData();
-        checkDashboardReady();
-        applyAestheticChanges();
-        watchNewCanvasButton();
-        changeFavicon();
-        updateReminders();
-        watchSequenceFooter();
-        watchProfileLogoutPageButton();
-        watchGradeAnalytics();
-        setupPersonalDetailsHiding();
+	chrome.storage.sync.get(null, (result) => {
+		options = { ...options, ...result }
+		applyTodoAlternateColors()
+		// toggleScheduledReminders();
+		getApiData()
+		checkDashboardReady()
+		applyAestheticChanges()
+		watchNewCanvasButton()
+		changeFavicon()
+		updateReminders()
+		watchSequenceFooter()
+		watchProfileLogoutPageButton()
+		watchGradeAnalytics()
+		setupPersonalDetailsHiding()
 
-        setupQuizSafeModeBanner();
+		setupQuizSafeModeBanner()
 
-        setupGlobalSearch();
+		setupGlobalSearch()
+	})
 
+	chrome.runtime.onMessage.addListener(recieveMessage)
 
+	chrome.storage.onChanged.addListener(applyOptionsChanges)
 
-    });
-
-    chrome.runtime.onMessage.addListener(recieveMessage);
-
-    chrome.storage.onChanged.addListener(applyOptionsChanges);
-
-    console.log("Canvas Enhanced - running");
+	console.log('Canvas Enhanced - running')
 }
 
 function applyOptionsChanges(changes) {
-    let rewrite = {};
-    Object.keys(changes).forEach(key => {
-        rewrite[key] = changes[key].newValue;
-    });
-    options = { ...options, ...rewrite };
+	let rewrite = {}
+	Object.keys(changes).forEach((key) => {
+		rewrite[key] = changes[key].newValue
+	})
+	options = { ...options, ...rewrite }
 
-    // when an option is updated it will call the necessary functions again
-    // so any changes made in the menu no longer require a refresh to apply
+	// when an option is updated it will call the necessary functions again
+	// so any changes made in the menu no longer require a refresh to apply
 
-    Object.keys(changes).forEach(key => {
-        switch (key) {
-			case "dark_mode":
-			case "dark_preset":
-			case "device_dark":
-				toggleDarkMode();
-				applyTodoAlternateColors();
+	Object.keys(changes).forEach((key) => {
+		switch (key) {
+			case 'dark_mode':
+			case 'dark_preset':
+			case 'device_dark':
+				toggleDarkMode()
+				applyTodoAlternateColors()
 				// Todo course names follow the active text color, so re-render on theme changes.
-				if (options.better_todo && document.getElementById("better-todo-main")) {
-					clearTodoList();
-					createTodoSections(document.querySelector("#canvasrefined-todo-list"));
+				if (options.better_todo && document.getElementById('better-todo-main')) {
+					clearTodoList()
+					createTodoSections(document.querySelector('#canvasrefined-todo-list'))
 				}
-				break;
-			case "todo_alternate_colors":
-				applyTodoAlternateColors();
-				break;
-			case "gradient_cards":
-				changeGradientCards();
-				break;
-			case "dashboard_grades":
-			case "grade_hover":
-				if (!grades) getGrades();
-				insertGrades();
-				break;
-			case "assignments_due":
-			case "num_assignments":
-				if (!assignments) getAssignments();
-				if (
-					document.querySelectorAll(".canvasrefined-card-assignment")
-						.length === 0
-				)
-					setupCardAssignments();
-				loadCardAssignments();
+				break
+			case 'todo_alternate_colors':
+				applyTodoAlternateColors()
+				break
+			case 'gradient_cards':
+				changeGradientCards()
+				break
+			case 'dashboard_grades':
+			case 'grade_hover':
+				if (!grades) getGrades()
+				insertGrades()
+				break
+			case 'assignments_due':
+			case 'num_assignments':
+				if (!assignments) getAssignments()
+				if (document.querySelectorAll('.canvasrefined-card-assignment').length === 0)
+					setupCardAssignments()
+				loadCardAssignments()
 				// The card overflow fix in applyAestheticChanges() depends on
 				// assignments_due, so re-run it when that option toggles to keep
 				// the overflow rule in sync without a page reload.
-				applyAestheticChanges();
-				break;
-			case "custom_assignments":
-			case "assignment_date_format":
-			case "card_overdues":
-			case "card_overdue_always_red":
-			case "relative_dues":
-				cardAssignments = preloadAssignmentEls();
-				loadCardAssignments();
-				break;
-			case "hide_completed_cards":
-			case "card_future_dues":
+				applyAestheticChanges()
+				break
+			case 'custom_assignments':
+			case 'assignment_date_format':
+			case 'card_overdues':
+			case 'card_overdue_always_red':
+			case 'relative_dues':
+				cardAssignments = preloadAssignmentEls()
+				loadCardAssignments()
+				break
+			case 'hide_completed_cards':
+			case 'card_future_dues':
 				// Assignment elements are already preloaded; just re-filter the render.
-				loadCardAssignments();
-				break;
-			case "custom_cards":
-				customizeCards();
+				loadCardAssignments()
+				break
+			case 'custom_cards':
+				customizeCards()
 				// Hiding/unhiding a card changes which courses appear in the todo
 				// list and the progress display, so re-render them immediately.
-				if (options.better_todo && document.getElementById("better-todo-main")) {
-					moreAnnouncementCount = 0;
-					moreAssignmentCount = 0;
-					clearTodoList();
-					createTodoSections(document.querySelector("#canvasrefined-todo-list"));
+				if (options.better_todo && document.getElementById('better-todo-main')) {
+					moreAnnouncementCount = 0
+					moreAssignmentCount = 0
+					clearTodoList()
+					createTodoSections(document.querySelector('#canvasrefined-todo-list'))
 				}
-				break;
-			case "custom_cards_3":
-                refreshCourseColorUI();
-                break;
-            case "todo_separate_scrollbar":
-            case "todo_full_height":
-                if (options.better_todo && document.getElementById("better-todo-main")) applyTodoSidebarLayout();
-                break;
-			case "todo_hr24":
-			case "num_todo_items":
-			case "hover_preview":
-			case "todo_timeframe":
+				break
+			case 'custom_cards_3':
+				refreshCourseColorUI()
+				break
+			case 'todo_separate_scrollbar':
+			case 'todo_full_height':
+				if (options.better_todo && document.getElementById('better-todo-main'))
+					applyTodoSidebarLayout()
+				break
+			case 'todo_hr24':
+			case 'num_todo_items':
+			case 'hover_preview':
+			case 'todo_timeframe':
 			// case "todo_overdues":
-			case "todo_hide_feedback":
-			case "todo_hide_read":
-			case "todo_show_scores":
-				if (options.better_todo && document.getElementById("better-todo-main")) {
-					moreAnnouncementCount = 0;
-					moreAssignmentCount = 0;
+			case 'todo_hide_feedback':
+			case 'todo_hide_read':
+			case 'todo_show_scores':
+				if (options.better_todo && document.getElementById('better-todo-main')) {
+					moreAnnouncementCount = 0
+					moreAssignmentCount = 0
 					// A new timeframe starts back at the current window.
-					betterTodoTimeframeOffset = 0;
-					clearTodoList();
-					createTodoSections(document.querySelector("#canvasrefined-todo-list"));
+					betterTodoTimeframeOffset = 0
+					clearTodoList()
+					createTodoSections(document.querySelector('#canvasrefined-todo-list'))
 				}
-				break;
-			case "hide_personal_details":
+				break
+			case 'hide_personal_details':
 				// Starts/stops the DOM watcher; with it off, restores the real
 				// text/attributes stashed in dataset markers.
-				setupPersonalDetailsHiding();
+				setupPersonalDetailsHiding()
 				// Todo item text, card grades and card assignment names are baked
 				// in at render time, so re-render them to swap fake/real data.
-				if (options.better_todo && document.getElementById("better-todo-main")) {
-					moreAnnouncementCount = 0;
-					moreAssignmentCount = 0;
-					clearTodoList();
-					createTodoSections(document.querySelector("#canvasrefined-todo-list"));
+				if (options.better_todo && document.getElementById('better-todo-main')) {
+					moreAnnouncementCount = 0
+					moreAssignmentCount = 0
+					clearTodoList()
+					createTodoSections(document.querySelector('#canvasrefined-todo-list'))
 				}
-				if (!grades) getGrades();
-				insertGrades();
-				cardAssignments = preloadAssignmentEls();
-				loadCardAssignments();
-				break;
-			case "hide_course_images":
-				applyCourseImageHiding();
-				break;
-			case "gpa_calc":
-			case "gpa_calc_prepend":
-				if (!grades) getGrades();
-				setupGPACalc();
-				break;
-			case "gpa_what_if":
-				refreshGpaWhatIfMode();
-				break;
-			case "gpa_calc_bounds":
-			case "gpa_threshold_mode":
-			case "gpa_course_bounds":
-				if (document.querySelector("#canvasrefined-gpa-weighted")) calculateGPA2();
-				insertGrades();
-				if (gradeAnalyticsActive() && gaOpen && gaData) renderGradeAnalytics();
-				break;
-			case "remlogo":
-			case "disable_color_overlay":
-			case "condensed_cards":
-			case "emphasize_course_name": // Compatibility until the update migration runs.
-			case "course_nickname_font_size":
-			case "course_id_font_size":
-			case "full_width":
-			case "center_cards":
-				applyAestheticChanges();
-				break;
-			case "hide_new_canvas":
-				watchNewCanvasButton();
-				break;
-			case "hide_sequence_footer":
-				watchSequenceFooter();
-				break;
-			case "remind":
-				showExampleReminder();
-				break;
-			case "imageSize":
-			case "cardMargin":
-			case "cardWidth":
-			case "cardPadding":
+				if (!grades) getGrades()
+				insertGrades()
+				cardAssignments = preloadAssignmentEls()
+				loadCardAssignments()
+				break
+			case 'hide_course_images':
+				applyCourseImageHiding()
+				break
+			case 'gpa_calc':
+			case 'gpa_calc_prepend':
+				if (!grades) getGrades()
+				setupGPACalc()
+				break
+			case 'gpa_what_if':
+				refreshGpaWhatIfMode()
+				break
+			case 'gpa_calc_bounds':
+			case 'gpa_threshold_mode':
+			case 'gpa_course_bounds':
+				if (document.querySelector('#canvasrefined-gpa-weighted')) calculateGPA2()
+				insertGrades()
+				if (gradeAnalyticsActive() && gaOpen && gaData) renderGradeAnalytics()
+				break
+			case 'remlogo':
+			case 'disable_color_overlay':
+			case 'condensed_cards':
+			case 'emphasize_course_name': // Compatibility until the update migration runs.
+			case 'course_nickname_font_size':
+			case 'course_id_font_size':
+			case 'full_width':
+			case 'center_cards':
+				applyAestheticChanges()
+				break
+			case 'hide_new_canvas':
+				watchNewCanvasButton()
+				break
+			case 'hide_sequence_footer':
+				watchSequenceFooter()
+				break
+			case 'remind':
+				showExampleReminder()
+				break
+			case 'imageSize':
+			case 'cardMargin':
+			case 'cardWidth':
+			case 'cardPadding':
 				// Coalesce rapid card-style edits (e.g. holding the arrow keys on a
-			// number input) into a single applyAestheticChanges() call. Each
-			// storage onChanged event would otherwise re-run the dashboard style
-			// pass immediately; a ~150ms cooldown is barely noticeable but keeps
-			// the page from thrashing while the user is still adjusting values.
-				debouncedApplyAestheticChanges();
-				break;
-			case "better_todo":
+				// number input) into a single applyAestheticChanges() call. Each
+				// storage onChanged event would otherwise re-run the dashboard style
+				// pass immediately; a ~150ms cooldown is barely noticeable but keeps
+				// the page from thrashing while the user is still adjusting values.
+				debouncedApplyAestheticChanges()
+				break
+			case 'better_todo':
 				if (options.better_todo) {
-					setupBetterTodo();
+					setupBetterTodo()
 				} else {
-					window.location.reload();
+					window.location.reload()
 				}
-                    break;
-                case "todo_progress_rings": {
-                    // toggle progress rings immediately
-                    const placeholder = document.getElementById("better-todo-progress-placeholder");
-                    if (!placeholder) break;
-                    if (progressRingsEnabled()) {
-                        if (typeof assignments?.then === 'function') {
-                            assignments.then(data => {
-                                const courseId = getCurrentCourseId();
-                                const scopedData = getTodoScopedData(data, courseId);
-                                renderProgressRings(placeholder, scopedData);
-                            });
-                        }
-                    } else {
-                        placeholder.innerHTML = "";
-                    }
-                    break;
-                }
-            case "quiz_safe_mode":
-                // Toggling safe mode changes which features run on quiz pages; reload
-                // so the gating is applied cleanly.
-                if (isQuizPage()) window.location.reload();
-                break;
+				break
+			case 'todo_progress_rings': {
+				// toggle progress rings immediately
+				const placeholder = document.getElementById('better-todo-progress-placeholder')
+				if (!placeholder) break
+				if (progressRingsEnabled()) {
+					if (typeof assignments?.then === 'function') {
+						assignments.then((data) => {
+							const courseId = getCurrentCourseId()
+							const scopedData = getTodoScopedData(data, courseId)
+							renderProgressRings(placeholder, scopedData)
+						})
+					}
+				} else {
+					placeholder.innerHTML = ''
+				}
+				break
+			}
+			case 'quiz_safe_mode':
+				// Toggling safe mode changes which features run on quiz pages; reload
+				// so the gating is applied cleanly.
+				if (isQuizPage()) window.location.reload()
+				break
 		}
-    });
+	})
 }
 
-let insertTimer;
+let insertTimer
 function resetTimer() {
-    clearTimeout(insertTimer);
-    insertTimer = setTimeout(() => {
-        if (document.querySelectorAll(".ic-DashboardCard__link").length > 0) {
-            loadCardAssignments();
-            loadBetterTodo();
-        } else {
-            resetTimer();
-        }
-    }, 1);
+	clearTimeout(insertTimer)
+	insertTimer = setTimeout(() => {
+		if (document.querySelectorAll('.ic-DashboardCard__link').length > 0) {
+			loadCardAssignments()
+			loadBetterTodo()
+		} else {
+			resetTimer()
+		}
+	}, 1)
 }
 
 function checkDashboardReady() {
-    const isDashboard = () => current_page == "/" || current_page == "" || /^\/courses\/(\d+)(?:\/|$)/.test(current_page);
+	const isDashboard = () =>
+		current_page == '/' ||
+		current_page == '' ||
+		/^\/courses\/(\d+)(?:\/|$)/.test(current_page)
 
-    const callback = (mutationList) => {
-        // Ignore attribute-only mutations; only structural (childList) changes matter here.
-        let hasChildList = false;
-        for (const mutation of mutationList) {
-            if (mutation.type === "childList") { hasChildList = true; break; }
-        }
-        if (!hasChildList) return;
+	const callback = (mutationList) => {
+		// Ignore attribute-only mutations; only structural (childList) changes matter here.
+		let hasChildList = false
+		for (const mutation of mutationList) {
+			if (mutation.type === 'childList') {
+				hasChildList = true
+				break
+			}
+		}
+		if (!hasChildList) return
 
-        if (isDashboard()) {
-            // Debounce: a single setup pass per burst of mutations.
-            if (dashboardReadyTimer) return;
-            dashboardReadyTimer = setTimeout(() => {
-                dashboardReadyTimer = null;
+		if (isDashboard()) {
+			// Debounce: a single setup pass per burst of mutations.
+			if (dashboardReadyTimer) return
+			dashboardReadyTimer = setTimeout(() => {
+				dashboardReadyTimer = null
 
-                const c = document.querySelector("#DashboardCard_Container");
-                if (c) {
-                    const gpaCard = document.querySelector(".canvasrefined-gpa-card");
-                    const gpaPanel = document.querySelector(".canvasrefined-gpa");
-                    if (gpaCard && gpaPanel) placeGpaWidgets(gpaCard, gpaPanel);
+				const c = document.querySelector('#DashboardCard_Container')
+				if (c) {
+					const gpaCard = document.querySelector('.canvasrefined-gpa-card')
+					const gpaPanel = document.querySelector('.canvasrefined-gpa')
+					if (gpaCard && gpaPanel) placeGpaWidgets(gpaCard, gpaPanel)
 
-                    let cards = document.querySelectorAll(".ic-DashboardCard");
-                    // Build a cheap signature of the current card set. The setup
-                    // pass below mutates the cards' internals (assignment rows,
-                    // grades, etc.) but never adds/removes the .ic-DashboardCard
-                    // elements themselves, so the signature stays stable across
-                    // our own mutations. It only changes when Canvas re-renders the
-                    // dashboard (cards added/removed/reordered/replaced). Skipping
-                    // when it's unchanged breaks the self-retriggering reflow loop.
-                    let signature = cards.length + "";
-                    for (let i = 0; i < cards.length; i++) {
-                        const link = cards[i].querySelector(".ic-DashboardCard__link");
-                        signature += "|" + (link ? link.getAttribute("href") : "");
-                    }
-                    // Canvas often re-renders the dashboard on a hard reload and
-                    // replaces the .ic-DashboardCard nodes with fresh ones that have
-                    // the same courses/links (so the signature is unchanged) but no
-                    // longer carry our .canvasrefined-card-assignment marker. The
-                    // signature guard alone would skip re-setup in that case, leaving
-                    // card assignments empty until a settings toggle forces a reload.
-                    // Re-run whenever any card is missing its marker too. This is safe
-                    // from the self-retriggering reflow loop: after the pass every
-                    // card has the marker, so our own subsequent mutation bursts skip.
-                    let missingMarker = false;
-                    for (let i = 0; i < cards.length; i++) {
-                        if (!cards[i].querySelector(".canvasrefined-card-assignment")) {
-                            missingMarker = true;
-                            break;
-                        }
-                    }
-                    updateCardContrast();
-                    if (signature !== lastDashboardCardSignature || missingMarker) {
-                        if (signature !== lastDashboardCardSignature) {
-                            applyAestheticChanges();
-                        }
-                        lastDashboardCardSignature = signature;
-                        changeGradientCards();
-                        setupCardAssignments();
-                        loadCardAssignments();
-                        customizeCards(cards);
-                        insertGrades();
-                        setupGPACalc();
-                        showUpdateMsg();
-                    }
-                }
+					let cards = document.querySelectorAll('.ic-DashboardCard')
+					// Build a cheap signature of the current card set. The setup
+					// pass below mutates the cards' internals (assignment rows,
+					// grades, etc.) but never adds/removes the .ic-DashboardCard
+					// elements themselves, so the signature stays stable across
+					// our own mutations. It only changes when Canvas re-renders the
+					// dashboard (cards added/removed/reordered/replaced). Skipping
+					// when it's unchanged breaks the self-retriggering reflow loop.
+					let signature = cards.length + ''
+					for (let i = 0; i < cards.length; i++) {
+						const link = cards[i].querySelector('.ic-DashboardCard__link')
+						signature += '|' + (link ? link.getAttribute('href') : '')
+					}
+					// Canvas often re-renders the dashboard on a hard reload and
+					// replaces the .ic-DashboardCard nodes with fresh ones that have
+					// the same courses/links (so the signature is unchanged) but no
+					// longer carry our .canvasrefined-card-assignment marker. The
+					// signature guard alone would skip re-setup in that case, leaving
+					// card assignments empty until a settings toggle forces a reload.
+					// Re-run whenever any card is missing its marker too. This is safe
+					// from the self-retriggering reflow loop: after the pass every
+					// card has the marker, so our own subsequent mutation bursts skip.
+					let missingMarker = false
+					for (let i = 0; i < cards.length; i++) {
+						if (!cards[i].querySelector('.canvasrefined-card-assignment')) {
+							missingMarker = true
+							break
+						}
+					}
+					updateCardContrast()
+					if (signature !== lastDashboardCardSignature || missingMarker) {
+						if (signature !== lastDashboardCardSignature) {
+							applyAestheticChanges()
+						}
+						lastDashboardCardSignature = signature
+						changeGradientCards()
+						setupCardAssignments()
+						loadCardAssignments()
+						customizeCards(cards)
+						insertGrades()
+						setupGPACalc()
+						showUpdateMsg()
+					}
+				}
 
-                const rightSide = document.querySelector("#right-side");
-                if (rightSide && !rightSide.querySelector(".canvasrefined-todosidebar")) {
-                    setupBetterTodo();
-                }
+				const rightSide = document.querySelector('#right-side')
+				if (rightSide && !rightSide.querySelector('.canvasrefined-todosidebar')) {
+					setupBetterTodo()
+				}
+			}, 0)
+		}
+	}
 
-            }, 0);
-        }
-    };
-
-    const observer = new MutationObserver(callback);
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+	const observer = new MutationObserver(callback)
+	observer.observe(document.documentElement, { childList: true, subtree: true })
 }
 
 // Canvas's active CSS bundles identify High Contrast without an API request.
 // https://github.com/instructure/canvas-lms/blob/master/config/brandable_css.yml
 function hasHighContrastStyles(root) {
-    const marker = /(?:^|[\/_-])high_contrast(?:[\/_.-]|$)/i;
-    const mediaMatches = media => !media || media === "all" || window.matchMedia(media).matches;
-    const visited = new Set();
-    const matchesSheet = sheet => {
-        if (visited.has(sheet) || sheet.disabled || !mediaMatches(sheet.media?.mediaText)) return false;
-        visited.add(sheet);
-        if (marker.test(sheet.href || "")) return true;
-        try {
-            return Array.from(sheet.cssRules || []).some(rule => rule.styleSheet && matchesSheet(rule.styleSheet));
-        } catch (_) { return false; } // Cross-origin rules cannot be read; their URL still can.
-    };
-    if (Array.from(root.styleSheets || []).some(matchesSheet)) return true;
-    return Array.from(root.querySelectorAll('link[rel~="stylesheet"][href]')).some(link =>
-        !link.disabled && !link.sheet?.disabled && mediaMatches(link.media) && marker.test(link.getAttribute("href") || ""));
+	const marker = /(?:^|[\/_-])high_contrast(?:[\/_.-]|$)/i
+	const mediaMatches = (media) =>
+		!media || media === 'all' || window.matchMedia(media).matches
+	const visited = new Set()
+	const matchesSheet = (sheet) => {
+		if (visited.has(sheet) || sheet.disabled || !mediaMatches(sheet.media?.mediaText))
+			return false
+		visited.add(sheet)
+		if (marker.test(sheet.href || '')) return true
+		try {
+			return Array.from(sheet.cssRules || []).some(
+				(rule) => rule.styleSheet && matchesSheet(rule.styleSheet),
+			)
+		} catch (_) {
+			return false
+		} // Cross-origin rules cannot be read; their URL still can.
+	}
+	if (Array.from(root.styleSheets || []).some(matchesSheet)) return true
+	return Array.from(root.querySelectorAll('link[rel~="stylesheet"][href]')).some(
+		(link) =>
+			!link.disabled &&
+			!link.sheet?.disabled &&
+			mediaMatches(link.media) &&
+			marker.test(link.getAttribute('href') || ''),
+	)
 }
 
-let highContrastCheckPromise = null;
+let highContrastCheckPromise = null
 function checkCanvasHighContrast() {
-    // Always inspect the current page first, including after a setting change.
-    if (hasHighContrastStyles(document)) return Promise.resolve(true);
-    if (!highContrastCheckPromise) {
-        highContrastCheckPromise = (async () => {
-            try {
-                // The general user-settings API does not expose this preference.
-                // Read the authenticated settings page only when CSS has no marker.
-                const response = await fetch(domain + "/profile/settings", {
-                    credentials: "same-origin",
-                    cache: "no-store",
-                    headers: { accept: "text/html" },
-                    signal: AbortSignal.timeout(5000),
-                });
-                if (!response.ok) return null;
-                const html = await response.text();
-                const settings = new DOMParser().parseFromString(html, "text/html");
-                // Only inspect active stylesheet links: ENV can also contain URLs
-                // for optional high-contrast editors even when the setting is off.
-                if (hasHighContrastStyles(settings)) return true;
-                for (const script of settings.querySelectorAll("script:not([src])")) {
-                    const preference = script.textContent.match(/["']use_high_contrast["']\s*:\s*(true|false)\b/);
-                    if (preference) return preference[1] === "true";
-                }
-                return null; // Unknown, e.g. a login redirect, is not a positive check.
-            } catch (_) { return null; }
-            finally { highContrastCheckPromise = null; }
-        })();
-    }
-    return highContrastCheckPromise;
+	// Always inspect the current page first, including after a setting change.
+	if (hasHighContrastStyles(document)) return Promise.resolve(true)
+	if (!highContrastCheckPromise) {
+		highContrastCheckPromise = (async () => {
+			try {
+				// The general user-settings API does not expose this preference.
+				// Read the authenticated settings page only when CSS has no marker.
+				const response = await fetch(domain + '/profile/settings', {
+					credentials: 'same-origin',
+					cache: 'no-store',
+					headers: { accept: 'text/html' },
+					signal: AbortSignal.timeout(5000),
+				})
+				if (!response.ok) return null
+				const html = await response.text()
+				const settings = new DOMParser().parseFromString(html, 'text/html')
+				// Only inspect active stylesheet links: ENV can also contain URLs
+				// for optional high-contrast editors even when the setting is off.
+				if (hasHighContrastStyles(settings)) return true
+				for (const script of settings.querySelectorAll('script:not([src])')) {
+					const preference = script.textContent.match(
+						/["']use_high_contrast["']\s*:\s*(true|false)\b/,
+					)
+					if (preference) return preference[1] === 'true'
+				}
+				return null // Unknown, e.g. a login redirect, is not a positive check.
+			} catch (_) {
+				return null
+			} finally {
+				highContrastCheckPromise = null
+			}
+		})()
+	}
+	return highContrastCheckPromise
 }
 
 function recieveMessage(request, sender, sendResponse) {
-    switch (request.message) {
-        case ("canvasrefined:check-high-contrast"):
-            checkCanvasHighContrast().then(highContrast => sendResponse({ canvasRefined: true, highContrast }));
-            return true;
-        case ("getCards"):
-            if (options["card_method_dashboard"] === true) {
-                getCardsFromDashboard().then(() => sendResponse(true)).catch(() => sendResponse(true));
-            } else {
-                getCards().then(() => sendResponse(true)).catch(() => sendResponse(true));
-            }
-            return true; // keep the message channel open for async sendResponse
-        case ("preview-theme-values"):
-            options.dark_preset = { ...request.options };
-            toggleDarkMode();
-            sendResponse(true);
-            break;
-        case ("preview-card-colors"): changeColorPreset(request.options, true); sendResponse(true); break;
-        case ("setcolors"): changeColorPreset(request.options); sendResponse(true); break;
-        case ("getcolors"): getCardColors().then(colors => sendResponse(colors)); return true; // keep the message channel open for async sendResponse
-        case ("inspect"): sendResponse(inspectDarkMode(true)); break;
-        case ("clearPlannerCache"):
-            // "Clear planner cache" (Debug tab in the settings page): drop
-            // the cache, re-fetch fresh planner data, and re-render every
-            // consumer in this tab.
-            (async () => {
-                try { await chrome.storage.local.remove(PLANNER_CACHE_KEY); } catch (e) { /* nothing stored */ }
-                if (options.assignments_due === true || options.better_todo === true) {
-                    const items = await loadPlannerItems();
-                    refreshPlannerConsumers(items);
-                }
-                sendResponse(true);
-            })();
-            return true; // keep the message channel open for async sendResponse
-        default: return false;
-    }
+	switch (request.message) {
+		case 'canvasrefined:check-high-contrast':
+			checkCanvasHighContrast().then((highContrast) =>
+				sendResponse({ canvasRefined: true, highContrast }),
+			)
+			return true
+		case 'getCards':
+			if (options['card_method_dashboard'] === true) {
+				getCardsFromDashboard()
+					.then(() => sendResponse(true))
+					.catch(() => sendResponse(true))
+			} else {
+				getCards()
+					.then(() => sendResponse(true))
+					.catch(() => sendResponse(true))
+			}
+			return true // keep the message channel open for async sendResponse
+		case 'preview-theme-values':
+			options.dark_preset = { ...request.options }
+			toggleDarkMode()
+			sendResponse(true)
+			break
+		case 'preview-card-colors':
+			changeColorPreset(request.options, true)
+			sendResponse(true)
+			break
+		case 'setcolors':
+			changeColorPreset(request.options)
+			sendResponse(true)
+			break
+		case 'getcolors':
+			getCardColors().then((colors) => sendResponse(colors))
+			return true // keep the message channel open for async sendResponse
+		case 'inspect':
+			sendResponse(inspectDarkMode(true))
+			break
+		case 'clearPlannerCache':
+			// "Clear planner cache" (Debug tab in the settings page): drop
+			// the cache, re-fetch fresh planner data, and re-render every
+			// consumer in this tab.
+			;(async () => {
+				try {
+					await chrome.storage.local.remove(PLANNER_CACHE_KEY)
+				} catch (e) {
+					/* nothing stored */
+				}
+				if (options.assignments_due === true || options.better_todo === true) {
+					const items = await loadPlannerItems()
+					refreshPlannerConsumers(items)
+				}
+				sendResponse(true)
+			})()
+			return true // keep the message channel open for async sendResponse
+		default:
+			return false
+	}
 }
 
 function hexToRgb(hex) {
-    let match = (/#(.{2})(.{2})(.{2})/).exec(hex);
-    if (match) {
-        return { "r": parseInt(match[1], 16), "g": parseInt(match[2], 16), "b": parseInt(match[3], 16) };
-    }
+	let match = /#(.{2})(.{2})(.{2})/.exec(hex)
+	if (match) {
+		return {
+			r: parseInt(match[1], 16),
+			g: parseInt(match[2], 16),
+			b: parseInt(match[3], 16),
+		}
+	}
 }
 
 function inspectDarkMode(withOutput = false) {
-    const preset = activeThemeValues();
-    let output = "";
-    let bgcount = 0, textcount = 0, time = performance.now();
-    let bg0 = hexToRgb(preset?.["background-0"]);
-    let bg1 = hexToRgb(preset?.["background-1"]);
-    let txt = hexToRgb(preset?.["text-0"]);
-    let bdr = hexToRgb(preset?.["borders"]);
-    let lnk = hexToRgb(preset?.["links"]);
-    document.querySelectorAll("*").forEach(el => {
-        let style = getComputedStyle(el);
-        let bgcolor = style.getPropertyValue("background").match(/rgb\((?<r>\d*)\, ?(?<g>\d*)\, ?(?<b>\d*)\) none/);
-        let selector = "class=." + el.className + ",id=#" + el.id;
+	const preset = activeThemeValues()
+	let output = ''
+	let bgcount = 0,
+		textcount = 0,
+		time = performance.now()
+	let bg0 = hexToRgb(preset?.['background-0'])
+	let bg1 = hexToRgb(preset?.['background-1'])
+	let txt = hexToRgb(preset?.['text-0'])
+	let bdr = hexToRgb(preset?.['borders'])
+	let lnk = hexToRgb(preset?.['links'])
+	document.querySelectorAll('*').forEach((el) => {
+		let style = getComputedStyle(el)
+		let bgcolor = style
+			.getPropertyValue('background')
+			.match(/rgb\((?<r>\d*)\, ?(?<g>\d*)\, ?(?<b>\d*)\) none/)
+		let selector = 'class=.' + el.className + ',id=#' + el.id
 
-        if (bgcolor) {
-            const r = parseInt(bgcolor.groups["r"]);
-            const g = parseInt(bgcolor.groups["g"]);
-            const b = parseInt(bgcolor.groups["b"]);
-            if (bg0 && r > 245 && g > 245 && b > 245 && !(r === bg0.r && g === bg0.g && b === bg0.b) && !(lnk && r === lnk.r && g === lnk.g && b === lnk.b)) {
-                el.style.cssText = (";background:" + preset["background-0"] + "!important;color" + preset["text-0"] + "!important;") + el.style.cssText;
-                if (withOutput === true) output += selector + "{background: background-0, color: text-0}\n";
-                bgcount++;
-            } else if (bg1 && r > 225 && r < 245 && g > 225 && g < 245 && b > 225 && b < 245 && !(r === bg1.r && g === bg1.g && b === bg1.b) && !(lnk && r === lnk.r && g === lnk.g && b === lnk.b)) {
-                el.style.cssText = (";background:" + preset["background-1"] + "!important;color" + preset["text-0"] + "!important;") + el.style.cssText;
-                if (withOutput === true) output += selector + "{background: background-1, color: text-0}";
-                bgcount++;
-            }
-        }
+		if (bgcolor) {
+			const r = parseInt(bgcolor.groups['r'])
+			const g = parseInt(bgcolor.groups['g'])
+			const b = parseInt(bgcolor.groups['b'])
+			if (
+				bg0 &&
+				r > 245 &&
+				g > 245 &&
+				b > 245 &&
+				!(r === bg0.r && g === bg0.g && b === bg0.b) &&
+				!(lnk && r === lnk.r && g === lnk.g && b === lnk.b)
+			) {
+				el.style.cssText =
+					';background:' +
+					preset['background-0'] +
+					'!important;color' +
+					preset['text-0'] +
+					'!important;' +
+					el.style.cssText
+				if (withOutput === true)
+					output += selector + '{background: background-0, color: text-0}\n'
+				bgcount++
+			} else if (
+				bg1 &&
+				r > 225 &&
+				r < 245 &&
+				g > 225 &&
+				g < 245 &&
+				b > 225 &&
+				b < 245 &&
+				!(r === bg1.r && g === bg1.g && b === bg1.b) &&
+				!(lnk && r === lnk.r && g === lnk.g && b === lnk.b)
+			) {
+				el.style.cssText =
+					';background:' +
+					preset['background-1'] +
+					'!important;color' +
+					preset['text-0'] +
+					'!important;' +
+					el.style.cssText
+				if (withOutput === true)
+					output += selector + '{background: background-1, color: text-0}'
+				bgcount++
+			}
+		}
 
+		let bordercolor = style
+			.getPropertyValue('border-color')
+			.match(/rgb\((?<r>\d*)\, ?(?<g>\d*)\, ?(?<b>\d*)/)
+		if (bordercolor) {
+			const r = parseInt(bordercolor.groups['r'])
+			const g = parseInt(bordercolor.groups['g'])
+			const b = parseInt(bordercolor.groups['b'])
+			if (
+				bdr &&
+				r > 195 &&
+				g > 195 &&
+				b > 195 &&
+				!(r === bdr.r && g === bdr.g && b === bdr.b) &&
+				!(lnk && r === lnk.r && g === lnk.g && b === lnk.b)
+			) {
+				el.style.cssText =
+					'border-color:' + preset['borders'] + '!important;' + el.style.cssText
+				if (withOutput === true) output += selector + '{border: borders}'
+			}
+		}
 
-        let bordercolor = style.getPropertyValue("border-color").match(/rgb\((?<r>\d*)\, ?(?<g>\d*)\, ?(?<b>\d*)/);
-        if (bordercolor) {
-            const r = parseInt(bordercolor.groups["r"]);
-            const g = parseInt(bordercolor.groups["g"]);
-            const b = parseInt(bordercolor.groups["b"]);
-            if (bdr && r > 195 && g > 195 && b > 195 && !(r === bdr.r && g === bdr.g && b === bdr.b) && !(lnk && r === lnk.r && g === lnk.g && b === lnk.b)) {
-                el.style.cssText = "border-color:" + preset["borders"] + "!important;" + el.style.cssText;
-                if (withOutput === true) output += selector + "{border: borders}";
-            }
-        }
-
-        let text = style.getPropertyValue("color").match(/rgb\((?<r>\d*)\, ?(?<g>\d*)\, ?(?<b>\d*)/);
-        if (text) {
-            const r = parseInt(text.groups["r"]);
-            const g = parseInt(text.groups["g"]);
-            const b = parseInt(text.groups["b"]);
-            if (txt && r <= 70 && g <= 70 && b <= 70 && !(r === txt.r && g === txt.g && b === txt.b)) {
-                el.style.cssText = "color:" + preset["text-0"] + "!important;" + el.style.cssText;
-                if (withOutput === true) output += selector + "{text: text-0}";
-                textcount++;
-            }
-        }
-
-    });
-    console.log("done fixing dark mode - time:", performance.now() - time, "total backgrounds changed: ", bgcount, ", total colors changed: ", textcount);
-    return { "selectors": output === "" ? "no gaps determined" : output, "time": performance.now() - time };
+		let text = style
+			.getPropertyValue('color')
+			.match(/rgb\((?<r>\d*)\, ?(?<g>\d*)\, ?(?<b>\d*)/)
+		if (text) {
+			const r = parseInt(text.groups['r'])
+			const g = parseInt(text.groups['g'])
+			const b = parseInt(text.groups['b'])
+			if (
+				txt &&
+				r <= 70 &&
+				g <= 70 &&
+				b <= 70 &&
+				!(r === txt.r && g === txt.g && b === txt.b)
+			) {
+				el.style.cssText = 'color:' + preset['text-0'] + '!important;' + el.style.cssText
+				if (withOutput === true) output += selector + '{text: text-0}'
+				textcount++
+			}
+		}
+	})
+	console.log(
+		'done fixing dark mode - time:',
+		performance.now() - time,
+		'total backgrounds changed: ',
+		bgcount,
+		', total colors changed: ',
+		textcount,
+	)
+	return {
+		selectors: output === '' ? 'no gaps determined' : output,
+		time: performance.now() - time,
+	}
 }
 
 async function getCardColors() {
-    // Same display order changeColorPreset uses to APPLY palettes, so an
-    // exported theme's color list maps back onto the same courses when
-    // applied. Works in list mode too (API fallback inside getPaletteCards).
-    const { cards, apiColors } = await getPaletteCards();
-    if (cards.length === 0) return [];
-    return cards.map(card => card.el
-        ? rgbToHex(card.el.querySelector(".ic-DashboardCard__header_hero").style.backgroundColor)
-        : (apiColors["course_" + card.href.split("courses/")[1]] || "#ffffff"));
+	// Same display order changeColorPreset uses to APPLY palettes, so an
+	// exported theme's color list maps back onto the same courses when
+	// applied. Works in list mode too (API fallback inside getPaletteCards).
+	const { cards, apiColors } = await getPaletteCards()
+	if (cards.length === 0) return []
+	return cards.map((card) =>
+		card.el
+			? rgbToHex(
+					card.el.querySelector('.ic-DashboardCard__header_hero').style.backgroundColor,
+				)
+			: apiColors['course_' + card.href.split('courses/')[1]] || '#ffffff',
+	)
 }
 
 function getCardsFromDashboard() {
-    console.log("getting cards from dashboard")
-    const dashboard_cards = document.querySelectorAll(".ic-DashboardCard");
-    return new Promise(resolve => {
-    chrome.storage.sync.get(["custom_cards", "custom_cards_3"], storage => {
-        let cards = storage["custom_cards"] || {};
-        let cards_3 = storage["custom_cards_3"] || {};
-        let newCards = false;
-        let count = 0;
-        try {
-            dashboard_cards.forEach(card => {
-                const id = card.querySelector(".ic-DashboardCard__link").href.split("courses/")[1];
-                if (count >= (options["card_limit"] || 25)) return;
+	console.log('getting cards from dashboard')
+	const dashboard_cards = document.querySelectorAll('.ic-DashboardCard')
+	return new Promise((resolve) => {
+		chrome.storage.sync.get(['custom_cards', 'custom_cards_3'], (storage) => {
+			let cards = storage['custom_cards'] || {}
+			let cards_3 = storage['custom_cards_3'] || {}
+			let newCards = false
+			let count = 0
+			try {
+				dashboard_cards.forEach((card) => {
+					const id = card
+						.querySelector('.ic-DashboardCard__link')
+						.href.split('courses/')[1]
+					if (count >= (options['card_limit'] || 25)) return
 
-                // Privacy mode replaces visible text. Persist Canvas' originals,
-                // otherwise Tasks keeps the fake labels after privacy is off.
-                const subtitle = card.querySelector(".ic-DashboardCard__header-subtitle");
-                const title = card.querySelector(".ic-DashboardCard__header-title span, .ic-DashboardCard__header-title");
-                const courseCode = (subtitle?.dataset?.crAnonOrig ?? subtitle?.textContent ?? "").substring(0, 20);
-                const fullName = (title?.dataset?.crAnonOrig ?? title?.textContent ?? "").trim();
+					// Privacy mode replaces visible text. Persist Canvas' originals,
+					// otherwise Tasks keeps the fake labels after privacy is off.
+					const subtitle = card.querySelector('.ic-DashboardCard__header-subtitle')
+					const title = card.querySelector(
+						'.ic-DashboardCard__header-title span, .ic-DashboardCard__header-title',
+					)
+					const courseCode = (
+						subtitle?.dataset?.crAnonOrig ??
+						subtitle?.textContent ??
+						''
+					).substring(0, 20)
+					const fullName = (title?.dataset?.crAnonOrig ?? title?.textContent ?? '').trim()
 
-                if (!cards[id]) {
-                    newCards = true;
-                    cards[id] = { "default": courseCode, "fullName": fullName, "img": "", "hidden": false, "weight": "regular", "credits": 1, "eid": 100000 - count, "gr": null };
+					if (!cards[id]) {
+						newCards = true
+						cards[id] = {
+							default: courseCode,
+							fullName: fullName,
+							img: '',
+							hidden: false,
+							weight: 'regular',
+							credits: 1,
+							eid: 100000 - count,
+							gr: null,
+						}
 
-                    cards_3[id] = { "url": domain };
-                } else {
-                    // Refresh names too, repairing placeholders saved by older scans.
-                    if (courseCode && cards[id].default !== courseCode) {
-                        cards[id].default = courseCode;
-                        newCards = true;
-                    }
-                    if (fullName && cards[id].fullName !== fullName) {
-                        cards[id].fullName = fullName;
-                        newCards = true;
-                    }
-                }
-                if ("name" in cards[id] || "code" in cards[id]) {
-                    delete cards[id].name;
-                    delete cards[id].code;
-                    newCards = true;
-                }
-                count++;
-            });
+						cards_3[id] = { url: domain }
+					} else {
+						// Refresh names too, repairing placeholders saved by older scans.
+						if (courseCode && cards[id].default !== courseCode) {
+							cards[id].default = courseCode
+							newCards = true
+						}
+						if (fullName && cards[id].fullName !== fullName) {
+							cards[id].fullName = fullName
+							newCards = true
+						}
+					}
+					if ('name' in cards[id] || 'code' in cards[id]) {
+						delete cards[id].name
+						delete cards[id].code
+						newCards = true
+					}
+					count++
+				})
 
-            // there shouldn't be 0 cards
-            if (count === 0) return;
+				// there shouldn't be 0 cards
+				if (count === 0) return
 
-            //delete cards that aren't on the dashboard anymore
-            Object.keys(cards).forEach(key => {
-                let found = false;
-                // ignore cards that are not for the current url
-                if (cards_3[key] && cards_3[key].url !== domain) {
-                    found = true;
-                } else {
-                    dashboard_cards.forEach(card => {
-                        const id = card.querySelector(".ic-DashboardCard__link").href.split("courses/")[1];
-                        if (parseInt(key) === parseInt(id)) found = true;
-                    });
-                }
+				//delete cards that aren't on the dashboard anymore
+				Object.keys(cards).forEach((key) => {
+					let found = false
+					// ignore cards that are not for the current url
+					if (cards_3[key] && cards_3[key].url !== domain) {
+						found = true
+					} else {
+						dashboard_cards.forEach((card) => {
+							const id = card
+								.querySelector('.ic-DashboardCard__link')
+								.href.split('courses/')[1]
+							if (parseInt(key) === parseInt(id)) found = true
+						})
+					}
 
-                if (found === false) {
-                    console.log("Deleting " + key);
-                    cards[key] && delete cards[key];
-                    cards_3[key] && delete cards_3[key];
-                    newCards = true;
-                }
-
-            });
-
-        } catch (e) {
-            console.log("Error getting dashboard cards\n", e);
-            logError(e);
-        } finally {
-            if(newCards !== true) { resolve(); return; }
-            console.log(newCards ? "new cards found" : "");
-            chrome.storage.sync.set({ "custom_cards": cards, "custom_cards_3": cards_3 }, () => resolve());
-        }
-    });
-    });
+					if (found === false) {
+						console.log('Deleting ' + key)
+						cards[key] && delete cards[key]
+						cards_3[key] && delete cards_3[key]
+						newCards = true
+					}
+				})
+			} catch (e) {
+				console.log('Error getting dashboard cards\n', e)
+				logError(e)
+			} finally {
+				if (newCards !== true) {
+					resolve()
+					return
+				}
+				console.log(newCards ? 'new cards found' : '')
+				chrome.storage.sync.set({ custom_cards: cards, custom_cards_3: cards_3 }, () =>
+					resolve(),
+				)
+			}
+		})
+	})
 }
 
 async function getCards(api = null) {
-    let dashboard_cards = api ? api : await getData(`${domain}/api/v1/courses?${/*enrollment_state=active&*/""}per_page=100`);
-    await new Promise(resolve => {
-    chrome.storage.sync.get(["custom_cards", "custom_cards_3"], storage => {
-        let cards = storage["custom_cards"] || {};
-        let cards_3 = storage["custom_cards_3"] || {};
-        let newCards = false;
-        let count = 0;
-        // sort cards by enrollment id (i think the higher the id, the more recent it is)
-        if (options["card_method_date"] === true) {
-            dashboard_cards.sort((a, b) => (b?.created_at) > (a?.created_at) ? 1 : -1);
-        } else {
-            dashboard_cards.sort((a, b) => (b?.enrollment_term_id || 0) - (a?.enrollment_term_id || 0));
-        }
-        try {
-            dashboard_cards.forEach(card => {
-                if (!card.course_code || count >= (options["card_limit"] || 25)) return;
-                let id = card.id;
-                if (!cards || !cards[id]) {
-                    newCards = true;
-                    cards[id] = { "default": card.course_code.substring(0, 20), "fullName": card.name || card.course_code || "", "img": "", "hidden": false, "weight": "regular", "credits": 1, "eid": card.enrollment_term_id || 0, "gr": null };
-                } else if (cards && cards[id]) {
-                    newCards = true;
-                    cards[id].default = card.course_code.substring(0, 20);
-                    cards[id].fullName = card.name || card.course_code || cards[id].fullName || "";
-                    cards[id].eid = card.enrollment_term_id || 0;
-                    delete cards[id].name;
-                    delete cards[id].code;
-                }
-                if (!cards_3 || !cards_3[id]) {
-                    newCards = true;
-                    cards_3[id] = { "url": domain };
-                }
-                count++;
+	let dashboard_cards = api
+		? api
+		: await getData(
+				`${domain}/api/v1/courses?${/*enrollment_state=active&*/ ''}per_page=100`,
+			)
+	await new Promise((resolve) => {
+		chrome.storage.sync.get(['custom_cards', 'custom_cards_3'], (storage) => {
+			let cards = storage['custom_cards'] || {}
+			let cards_3 = storage['custom_cards_3'] || {}
+			let newCards = false
+			let count = 0
+			// sort cards by enrollment id (i think the higher the id, the more recent it is)
+			if (options['card_method_date'] === true) {
+				dashboard_cards.sort((a, b) => (b?.created_at > a?.created_at ? 1 : -1))
+			} else {
+				dashboard_cards.sort(
+					(a, b) => (b?.enrollment_term_id || 0) - (a?.enrollment_term_id || 0),
+				)
+			}
+			try {
+				dashboard_cards.forEach((card) => {
+					if (!card.course_code || count >= (options['card_limit'] || 25)) return
+					let id = card.id
+					if (!cards || !cards[id]) {
+						newCards = true
+						cards[id] = {
+							default: card.course_code.substring(0, 20),
+							fullName: card.name || card.course_code || '',
+							img: '',
+							hidden: false,
+							weight: 'regular',
+							credits: 1,
+							eid: card.enrollment_term_id || 0,
+							gr: null,
+						}
+					} else if (cards && cards[id]) {
+						newCards = true
+						cards[id].default = card.course_code.substring(0, 20)
+						cards[id].fullName = card.name || card.course_code || cards[id].fullName || ''
+						cards[id].eid = card.enrollment_term_id || 0
+						delete cards[id].name
+						delete cards[id].code
+					}
+					if (!cards_3 || !cards_3[id]) {
+						newCards = true
+						cards_3[id] = { url: domain }
+					}
+					count++
+				})
 
-            });
+				//delete cards that aren't on the dashboard anymore
+				Object.keys(cards).forEach((key) => {
+					let found = false
+					// ignore cards that are not for the current url
+					if (cards_3[key] && cards_3[key].url !== domain) {
+						found = true
+					} else {
+						dashboard_cards.forEach((card) => {
+							if (parseInt(key) === card.id) found = true
+						})
+					}
 
-            //delete cards that aren't on the dashboard anymore
-            Object.keys(cards).forEach(key => {
-                let found = false;
-                // ignore cards that are not for the current url
-                if (cards_3[key] && cards_3[key].url !== domain) {
-                    found = true;
-                } else {
-                    dashboard_cards.forEach(card => {
-                        if (parseInt(key) === card.id) found = true;
-                    });
-                }
-
-                if (found === false) {
-                    console.log("Deleting " + key + " from custom_cards...", cards[key]);
-                    cards[key] && delete cards[key];
-                    cards_3[key] && delete cards_3[key];
-                    newCards = true;
-                }
-
-            });
-
-        } catch (e) {
-            console.log(e);
-        } finally {
-            chrome.storage.sync.set(newCards ? { "custom_cards": cards, "custom_cards_3": cards_3 } : {}, () => resolve());
-        }
-    });
-    });
+					if (found === false) {
+						console.log('Deleting ' + key + ' from custom_cards...', cards[key])
+						cards[key] && delete cards[key]
+						cards_3[key] && delete cards_3[key]
+						newCards = true
+					}
+				})
+			} catch (e) {
+				console.log(e)
+			} finally {
+				chrome.storage.sync.set(
+					newCards ? { custom_cards: cards, custom_cards_3: cards_3 } : {},
+					() => resolve(),
+				)
+			}
+		})
+	})
 }
 
 /*
 Better todo list
 */
 
-
 function convertToDueDate(dueAt) {
-	final = "due ";
-	let date = new Date(dueAt);
-	final += date.toLocaleString("en-US", { month: "short", day: "numeric" });
-	final += " at " + date.toLocaleString("en-US", { hour: "numeric", minute: "numeric", hour12: !options.todo_hr24 });
-	return final;
+	final = 'due '
+	let date = new Date(dueAt)
+	final += date.toLocaleString('en-US', { month: 'short', day: 'numeric' })
+	final +=
+		' at ' +
+		date.toLocaleString('en-US', {
+			hour: 'numeric',
+			minute: 'numeric',
+			hour12: !options.todo_hr24,
+		})
+	return final
 }
 function updateIndicator(element) {
-	const indicator = document.getElementById("better-todo-indicator");
-	indicator.style.width = `${element.offsetWidth*2}px`;
-	indicator.style.left = `${element.offsetLeft - (element.offsetWidth * .5)}px`;
+	const indicator = document.getElementById('better-todo-indicator')
+	indicator.style.width = `${element.offsetWidth * 2}px`
+	indicator.style.left = `${element.offsetLeft - element.offsetWidth * 0.5}px`
 
-	const buttons = ["announcement", "assignments", "completed", "feedback"];
-	buttons.forEach(button => {
-		const btn = document.getElementById(`better-todo-${button}`);
+	const buttons = ['announcement', 'assignments', 'completed', 'feedback']
+	buttons.forEach((button) => {
+		const btn = document.getElementById(`better-todo-${button}`)
 		if (btn == element) {
-			btn.firstElementChild.style.opacity = "1";
+			btn.firstElementChild.style.opacity = '1'
 			// btn.style.filter = "none";
-		}
-		else {
-			btn.firstElementChild.style.opacity = ".5";
+		} else {
+			btn.firstElementChild.style.opacity = '.5'
 			// btn.style.filter = "grayscale(100%)";
 		}
 	})
-
 }
 // better todo html
-betterTodoFilter = "tasks";
+betterTodoFilter = 'tasks'
 // Timeframe filter for the upcoming Tasks tab. "all" = no limit; otherwise
 // items are limited to those due on/before now+range (which also keeps
 // overdue items). Only affects the Tasks (upcoming) tab; announcements and
 // completed are unaffected because their dates are in the past.
-let betterTodoTimeframe = "all";
+let betterTodoTimeframe = 'all'
 const BETTER_TODO_TIMEFRAME_DAYS = {
-	"1week": 7,
-	"2week": 14,
-	"month": 30,
-	"2month": 60,
-};
+	'1week': 7,
+	'2week': 14,
+	month: 30,
+	'2month': 60,
+}
 // Announcements older than this are never shown in the Better Todo list (and
 // never count toward the unread badge). Unlike assignments, an announcement
 // stops being an actionable to-do once it's old: the planner cache keeps a
@@ -1413,21 +1659,27 @@ const BETTER_TODO_TIMEFRAME_DAYS = {
 // assignments), so without this cutoff never-opened announcements from a
 // year ago kept showing under "New" forever. Old announcements are still
 // available on the course's own Announcements page.
-const TODO_ANNOUNCEMENT_MAX_AGE_DAYS = 30;
+const TODO_ANNOUNCEMENT_MAX_AGE_DAYS = 30
 // Look-ahead paging for the timeframe window (arrow buttons under the Tasks
 // header). 0 = the current window (now through the timeframe cutoff, with
 // overdue items kept). Each press of the right arrow advances one full
 // window further out, e.g. a 1-week timeframe on offset 1 shows only items
 // due in week 2 (the current week is skipped over).
-let betterTodoTimeframeOffset = 0;
+let betterTodoTimeframeOffset = 0
 // null = show every class; a string courseId = only that class's tasks.
-let betterTodoProgressFilter = null;
-let domContainers = {};
+let betterTodoProgressFilter = null
+let domContainers = {}
 
 // Resolve the persisted todo_timeframe option to a valid key ("all" when
 // unset/unknown).
 function getTodoTimeframeKey() {
-    return (options.todo_timeframe && Object.prototype.hasOwnProperty.call(BETTER_TODO_TIMEFRAME_DAYS, options.todo_timeframe)) ? options.todo_timeframe : "all";
+	return options.todo_timeframe &&
+		Object.prototype.hasOwnProperty.call(
+			BETTER_TODO_TIMEFRAME_DAYS,
+			options.todo_timeframe,
+		)
+		? options.todo_timeframe
+		: 'all'
 }
 
 // Better Todo timeframe filter, shared by the todo list and the progress
@@ -1437,33 +1689,33 @@ function getTodoTimeframeKey() {
 // (now+N*range, now+(N+1)*range] so the current timeframe can be paged
 // through with the look-ahead arrows. "all" keeps everything.
 function applyTodoTimeframe(items) {
-    betterTodoTimeframe = getTodoTimeframeKey();
-    if (betterTodoTimeframe === "all") return items;
-    const days = BETTER_TODO_TIMEFRAME_DAYS[betterTodoTimeframe];
-    const now = Date.now();
-    const cutoff = now + ((betterTodoTimeframeOffset + 1) * days * 24 * 60 * 60 * 1000);
-    if (betterTodoTimeframeOffset <= 0) {
-        return items.filter(item => new Date(item.plannable_date).getTime() <= cutoff);
-    }
-    const windowStart = now + (betterTodoTimeframeOffset * days * 24 * 60 * 60 * 1000);
-    return items.filter(item => {
-        const t = new Date(item.plannable_date).getTime();
-        return t > windowStart && t <= cutoff;
-    });
+	betterTodoTimeframe = getTodoTimeframeKey()
+	if (betterTodoTimeframe === 'all') return items
+	const days = BETTER_TODO_TIMEFRAME_DAYS[betterTodoTimeframe]
+	const now = Date.now()
+	const cutoff = now + (betterTodoTimeframeOffset + 1) * days * 24 * 60 * 60 * 1000
+	if (betterTodoTimeframeOffset <= 0) {
+		return items.filter((item) => new Date(item.plannable_date).getTime() <= cutoff)
+	}
+	const windowStart = now + betterTodoTimeframeOffset * days * 24 * 60 * 60 * 1000
+	return items.filter((item) => {
+		const t = new Date(item.plannable_date).getTime()
+		return t > windowStart && t <= cutoff
+	})
 }
 
 // Date range for the timeframe pager under the Tasks header. The offset is
 // measured in full windows from now, so the dates shown are the exact slice
 // of items the list is currently filtered to.
 function getTodoTimeframeWindow() {
-    const tf = getTodoTimeframeKey();
-    const days = tf === "all" ? 0 : BETTER_TODO_TIMEFRAME_DAYS[tf];
-    const offset = (tf === "all") ? 0 : betterTodoTimeframeOffset;
-    const now = Date.now();
-    const start = new Date(now + (offset * days * 24 * 60 * 60 * 1000));
-    const end = new Date(now + ((offset + 1) * days * 24 * 60 * 60 * 1000));
-    const fmt = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    return { tf, range: fmt(start) + " \u2013 " + fmt(end) };
+	const tf = getTodoTimeframeKey()
+	const days = tf === 'all' ? 0 : BETTER_TODO_TIMEFRAME_DAYS[tf]
+	const offset = tf === 'all' ? 0 : betterTodoTimeframeOffset
+	const now = Date.now()
+	const start = new Date(now + offset * days * 24 * 60 * 60 * 1000)
+	const end = new Date(now + (offset + 1) * days * 24 * 60 * 60 * 1000)
+	const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+	return { tf, range: fmt(start) + ' \u2013 ' + fmt(end) }
 }
 
 // Refresh the timeframe pager (arrows under the Tasks header) after every
@@ -1471,113 +1723,132 @@ function getTodoTimeframeWindow() {
 // current window, and hide it entirely when there is no window to page
 // ("all"). Feedback uses Canvas's recent-feedback widget and is not paged.
 function updateTodoTimeframeNav() {
-    const nav = document.getElementById("better-todo-timeframe-nav");
-    if (!nav) return;
-    const tfWindow = getTodoTimeframeWindow();
-    const paged = tfWindow.tf !== "all" && betterTodoFilter !== "feedback";
-    nav.style.display = paged ? "flex" : "none";
-    if (!paged) return;
-    const label = nav.querySelector("#better-todo-timeframe-label");
-    if (label) label.textContent = tfWindow.range;
-    const prev = nav.querySelector("#better-todo-timeframe-prev");
-    if (prev) {
-        const canPrev = betterTodoTimeframeOffset > 0;
-        prev.disabled = !canPrev;
-        prev.style.opacity = canPrev ? "1" : ".3";
-        prev.style.cursor = canPrev ? "pointer" : "default";
-    }
+	const nav = document.getElementById('better-todo-timeframe-nav')
+	if (!nav) return
+	const tfWindow = getTodoTimeframeWindow()
+	const paged = tfWindow.tf !== 'all' && betterTodoFilter !== 'feedback'
+	nav.style.display = paged ? 'flex' : 'none'
+	if (!paged) return
+	const label = nav.querySelector('#better-todo-timeframe-label')
+	if (label) label.textContent = tfWindow.range
+	const prev = nav.querySelector('#better-todo-timeframe-prev')
+	if (prev) {
+		const canPrev = betterTodoTimeframeOffset > 0
+		prev.disabled = !canPrev
+		prev.style.opacity = canPrev ? '1' : '.3'
+		prev.style.cursor = canPrev ? 'pointer' : 'default'
+	}
 }
 
 // Strict [start, end] bounds of the timeframe window the pager is currently
 // showing, or null when the timeframe is "all" (no window).
 function getTodoTimeframeBounds() {
-    const tf = getTodoTimeframeKey();
-    if (tf === "all") return null;
-    const span = BETTER_TODO_TIMEFRAME_DAYS[tf] * 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    return { start: now + (betterTodoTimeframeOffset * span), end: now + ((betterTodoTimeframeOffset + 1) * span) };
+	const tf = getTodoTimeframeKey()
+	if (tf === 'all') return null
+	const span = BETTER_TODO_TIMEFRAME_DAYS[tf] * 24 * 60 * 60 * 1000
+	const now = Date.now()
+	return {
+		start: now + betterTodoTimeframeOffset * span,
+		end: now + (betterTodoTimeframeOffset + 1) * span,
+	}
 }
 
 // true when `courseId` is the dimmed-out class because another class is selected.
 function progressFilterDim(courseId) {
-    return betterTodoProgressFilter != null && String(courseId) !== String(betterTodoProgressFilter);
+	return (
+		betterTodoProgressFilter != null &&
+		String(courseId) !== String(betterTodoProgressFilter)
+	)
 }
 // Canvas serves gradable work as several plannable types: assignments, quizzes,
 // and graded discussions (plus extension-created planner notes/custom tasks).
 // All of these are "tasks" for the Better Todo list; announcements are
 // handled separately.
 function isTodoTaskType(item) {
-    return item.plannable_type == "assignment"
-        || item.plannable_type == "planner_note"
-        || item.plannable_type == "quiz"
-        || item.plannable_type == "discussion_topic";
+	return (
+		item.plannable_type == 'assignment' ||
+		item.plannable_type == 'planner_note' ||
+		item.plannable_type == 'quiz' ||
+		item.plannable_type == 'discussion_topic'
+	)
 }
 
 // Make an element filter the todo list to one class on click. A no-op on
 // course pages (where only one class is in scope anyway); toggles off when the
 // active class is clicked again.
 function attachProgressFilterClick(el, courseId) {
-    if (getCurrentCourseId() != null) { el.style.cursor = ''; el.onclick = null; return; }
-    el.style.cursor = 'pointer';
-    el.onclick = () => {
-        betterTodoProgressFilter = (String(betterTodoProgressFilter) === String(courseId)) ? null : String(courseId);
-        const loc = document.querySelector("#canvasrefined-todo-list");
-        if (loc) { clearTodoList(); createTodoSections(loc); }
-    };
+	if (getCurrentCourseId() != null) {
+		el.style.cursor = ''
+		el.onclick = null
+		return
+	}
+	el.style.cursor = 'pointer'
+	el.onclick = () => {
+		betterTodoProgressFilter =
+			String(betterTodoProgressFilter) === String(courseId) ? null : String(courseId)
+		const loc = document.querySelector('#canvasrefined-todo-list')
+		if (loc) {
+			clearTodoList()
+			createTodoSections(loc)
+		}
+	}
 }
 
 function formatDateForInput(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+	const year = date.getFullYear()
+	const month = String(date.getMonth() + 1).padStart(2, '0')
+	const day = String(date.getDate()).padStart(2, '0')
+	return `${year}-${month}-${day}`
 }
 
 function formatTimeForInput(date) {
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${hours}:${minutes}`;
+	const hours = String(date.getHours()).padStart(2, '0')
+	const minutes = String(date.getMinutes()).padStart(2, '0')
+	return `${hours}:${minutes}`
 }
 
 /* Progress display mode, stored in options.todo_progress_rings.
    Modes: "none", "rings", "rainbow", "lines".
    Legacy booleans normalize: true/undefined -> rings, false -> none. */
 function getProgressRingMode() {
-    const v = options.todo_progress_rings;
-    if (v === false) return "none";
-    if (v === true || v === undefined || v === null) return "rings";
-    const allowed = ["none", "rings", "rainbow", "lines"];
-    if (allowed.includes(v)) return v;
-    // migrate unreleased string values from the prior experimental set
-    if (v === "per_course") return "rings";
-    // Retired single-bar modes now use the per-course lines display.
-    if (v === "line" || v === "combined" || v === "segmented") return "lines";
-    return "rings";
+	const v = options.todo_progress_rings
+	if (v === false) return 'none'
+	if (v === true || v === undefined || v === null) return 'rings'
+	const allowed = ['none', 'rings', 'rainbow', 'lines']
+	if (allowed.includes(v)) return v
+	// migrate unreleased string values from the prior experimental set
+	if (v === 'per_course') return 'rings'
+	// Retired single-bar modes now use the per-course lines display.
+	if (v === 'line' || v === 'combined' || v === 'segmented') return 'lines'
+	return 'rings'
 }
 
 function progressRingsEnabled() {
-    return getProgressRingMode() !== "none";
+	return getProgressRingMode() !== 'none'
 }
 
 function courseRingColor(courseId, idx) {
-    return options.custom_cards_3?.[String(courseId)]?.color
-        || options.custom_cards_3?.[courseId]?.color
-        || `hsl(${(idx * 60) % 360} 70% 50%)`;
+	return (
+		options.custom_cards_3?.[String(courseId)]?.color ||
+		options.custom_cards_3?.[courseId]?.color ||
+		`hsl(${(idx * 60) % 360} 70% 50%)`
+	)
 }
 
 function courseRingLabel(courseId) {
-    if (String(courseId) === "personal") return "Personal tasks";
-    if (options.hide_personal_details === true) return fakeCourseLabel(courseId);
-    const card = options.custom_cards?.[String(courseId)] || options.custom_cards?.[courseId];
-    return card?.fullName || card?.default || `Course ${courseId}`;
+	if (String(courseId) === 'personal') return 'Personal tasks'
+	if (options.hide_personal_details === true) return fakeCourseLabel(courseId)
+	const card =
+		options.custom_cards?.[String(courseId)] || options.custom_cards?.[courseId]
+	return card?.fullName || card?.default || `Course ${courseId}`
 }
 
 // True when the course is hidden from the dashboard card grid.
 function isCourseHidden(courseId) {
-    if (courseId === undefined || courseId === null) return false;
-    const cards = options.custom_cards || {};
-    const card = cards[String(courseId)] || cards[courseId];
-    return !!card && (card.hidden === true || card.hide === true);
+	if (courseId === undefined || courseId === null) return false
+	const cards = options.custom_cards || {}
+	const card = cards[String(courseId)] || cards[courseId]
+	return !!card && (card.hidden === true || card.hide === true)
 }
 
 // True when the course is hidden from the todo list. Independent of the
@@ -1585,40 +1856,42 @@ function isCourseHidden(courseId) {
 // stay off the todo list, and the other way around. Personal tasks (planner
 // notes with no course) are always kept.
 function isCourseTodoHidden(courseId) {
-    if (courseId === undefined || courseId === null) return false;
-    const cards = options.custom_cards || {};
-    const card = cards[String(courseId)] || cards[courseId];
-    return !!card && card.hide_todo === true;
+	if (courseId === undefined || courseId === null) return false
+	const cards = options.custom_cards || {}
+	const card = cards[String(courseId)] || cards[courseId]
+	return !!card && card.hide_todo === true
 }
 
 function filterHiddenCourses(data) {
-    return data.filter(item => {
-        const cid = item.course_id || item.context_id || item?.plannable?.course_id;
-        return !isCourseTodoHidden(cid);
-    });
+	return data.filter((item) => {
+		const cid = item.course_id || item.context_id || item?.plannable?.course_id
+		return !isCourseTodoHidden(cid)
+	})
 }
 
 // Build scoped data for the Better Todo list: drop courses hidden from the
 // todo list, then (on a course page) restrict to the current course.
 function getTodoScopedData(data, courseId) {
-    const visible = filterHiddenCourses(data);
-    if (!courseId) return visible;
-    return visible.filter(item => {
-        const itemCourseId = parseInt(item.course_id || item.context_id || item?.plannable?.course_id);
-        return itemCourseId === courseId;
-    });
+	const visible = filterHiddenCourses(data)
+	if (!courseId) return visible
+	return visible.filter((item) => {
+		const itemCourseId = parseInt(
+			item.course_id || item.context_id || item?.plannable?.course_id,
+		)
+		return itemCourseId === courseId
+	})
 }
 
 // Returns a Map of courseId (string) -> dashboard position index, read from
 // the live dashboard card DOM order. Empty when not on the dashboard. Used
 // to order the progress display the same way the user ordered their cards.
 function getDashboardCourseOrder() {
-    const order = new Map();
-    document.querySelectorAll('.ic-DashboardCard').forEach((card, idx) => {
-        const id = getCardId(card);
-        if (id && id !== -1 && !order.has(String(id))) order.set(String(id), idx);
-    });
-    return order;
+	const order = new Map()
+	document.querySelectorAll('.ic-DashboardCard').forEach((card, idx) => {
+		const id = getCardId(card)
+		if (id && id !== -1 && !order.has(String(id))) order.set(String(id), idx)
+	})
+	return order
 }
 
 // Keep the centered % / count text clear of the progress graphics (the rings'
@@ -1630,806 +1903,858 @@ function getDashboardCourseOrder() {
 // `neededRadius(hw, hh)` returns the distance from the hole's center to the
 // farthest text corner; the text fits when that is <= availableRadius.
 function fitProgressOverlayText(overlay, neededRadius, availableRadius) {
-    const textWrap = overlay?.firstElementChild;
-    const pct = overlay?.querySelector('.canvasrefined-progress-percent');
-    const cnt = overlay?.querySelector('.canvasrefined-progress-count');
-    if (!textWrap || !pct || !cnt || textWrap === pct || textWrap === cnt) return;
-    // Undo any shrink applied by a previous render before measuring (these
-    // are the default sizes the overlays are created with).
-    pct.style.fontSize = '20px';
-    cnt.style.fontSize = '12px';
-    cnt.style.display = '';
-    if (!availableRadius || availableRadius <= 0) return;
-    let w = textWrap.offsetWidth;
-    let h = textWrap.offsetHeight;
-    if (!w || !h) return;
-    let needed = neededRadius(w / 2, h / 2);
-    if (needed <= availableRadius) return;
-    let scale = availableRadius / needed;
-    if (20 * scale < 11) {
-        // Too tight for both lines: drop the count and re-fit the % alone.
-        cnt.style.display = 'none';
-        w = textWrap.offsetWidth;
-        h = textWrap.offsetHeight;
-        needed = neededRadius(w / 2, h / 2);
-        if (needed <= availableRadius) return;
-        scale = availableRadius / needed;
-    }
-    pct.style.fontSize = `${Math.max(10, Math.round(20 * scale))}px`;
-    if (cnt.style.display !== 'none') cnt.style.fontSize = `${Math.max(9, Math.round(12 * scale))}px`;
-    // Final safety: if the readable-size floors above still don't fit, drop
-    // the count line so the % is guaranteed to clear the strokes.
-    if (neededRadius(textWrap.offsetWidth / 2, textWrap.offsetHeight / 2) > availableRadius) {
-        cnt.style.display = 'none';
-    }
+	const textWrap = overlay?.firstElementChild
+	const pct = overlay?.querySelector('.canvasrefined-progress-percent')
+	const cnt = overlay?.querySelector('.canvasrefined-progress-count')
+	if (!textWrap || !pct || !cnt || textWrap === pct || textWrap === cnt) return
+	// Undo any shrink applied by a previous render before measuring (these
+	// are the default sizes the overlays are created with).
+	pct.style.fontSize = '20px'
+	cnt.style.fontSize = '12px'
+	cnt.style.display = ''
+	if (!availableRadius || availableRadius <= 0) return
+	let w = textWrap.offsetWidth
+	let h = textWrap.offsetHeight
+	if (!w || !h) return
+	let needed = neededRadius(w / 2, h / 2)
+	if (needed <= availableRadius) return
+	let scale = availableRadius / needed
+	if (20 * scale < 11) {
+		// Too tight for both lines: drop the count and re-fit the % alone.
+		cnt.style.display = 'none'
+		w = textWrap.offsetWidth
+		h = textWrap.offsetHeight
+		needed = neededRadius(w / 2, h / 2)
+		if (needed <= availableRadius) return
+		scale = availableRadius / needed
+	}
+	pct.style.fontSize = `${Math.max(10, Math.round(20 * scale))}px`
+	if (cnt.style.display !== 'none')
+		cnt.style.fontSize = `${Math.max(9, Math.round(12 * scale))}px`
+	// Final safety: if the readable-size floors above still don't fit, drop
+	// the count line so the % is guaranteed to clear the strokes.
+	if (
+		neededRadius(textWrap.offsetWidth / 2, textWrap.offsetHeight / 2) > availableRadius
+	) {
+		cnt.style.display = 'none'
+	}
 }
 
 // Mode "rings": concentric rings, one per course, each filled by completion.
 function renderProgressRingsMode(wrapper, shown, totalAll, completedAll, percent) {
-    const containerWidth = wrapper.clientWidth || 240;
-    const size = Math.min(280, Math.floor(containerWidth * 0.99));
-    const cx = size / 2;
-    const cy = size / 2;
-    const padding = 2;
-    const outerRadius = Math.floor((size / 2) - padding);
+	const containerWidth = wrapper.clientWidth || 240
+	const size = Math.min(280, Math.floor(containerWidth * 0.99))
+	const cx = size / 2
+	const cy = size / 2
+	const padding = 2
+	const outerRadius = Math.floor(size / 2 - padding)
 
-    let svg = wrapper.querySelector('svg.canvasrefined-progress-svg');
-    if (!svg) {
-        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', 'canvasrefined-progress-svg');
-        svg.style.display = 'block';
-        wrapper.appendChild(svg);
-    }
-    svg.setAttribute('width', String(size));
-    svg.setAttribute('height', String(size));
-    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+	let svg = wrapper.querySelector('svg.canvasrefined-progress-svg')
+	if (!svg) {
+		svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+		svg.setAttribute('class', 'canvasrefined-progress-svg')
+		svg.style.display = 'block'
+		wrapper.appendChild(svg)
+	}
+	svg.setAttribute('width', String(size))
+	svg.setAttribute('height', String(size))
+	svg.setAttribute('viewBox', `0 0 ${size} ${size}`)
 
-    let overlay = wrapper.querySelector('.canvasrefined-progress-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'canvasrefined-progress-overlay';
-        overlay.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none;';
-        const textWrap = document.createElement('div');
-        textWrap.style.cssText = 'text-align:center;color:var(--bctext-0);';
-        textWrap.innerHTML = `<div class='canvasrefined-progress-percent' style='font-weight:700;font-size:20px;line-height:1;'></div><div class='canvasrefined-progress-count' style='font-size:12px;margin-top:4px;'></div>`;
-        overlay.appendChild(textWrap);
-        wrapper.appendChild(overlay);
-    }
-    overlay.querySelector('.canvasrefined-progress-percent').textContent = `${percent}%`;
-    overlay.querySelector('.canvasrefined-progress-count').textContent = `${completedAll}/${totalAll} done`;
+	let overlay = wrapper.querySelector('.canvasrefined-progress-overlay')
+	if (!overlay) {
+		overlay = document.createElement('div')
+		overlay.className = 'canvasrefined-progress-overlay'
+		overlay.style.cssText =
+			'position:absolute;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none;'
+		const textWrap = document.createElement('div')
+		textWrap.style.cssText = 'text-align:center;color:var(--bctext-0);'
+		textWrap.innerHTML = `<div class='canvasrefined-progress-percent' style='font-weight:700;font-size:20px;line-height:1;'></div><div class='canvasrefined-progress-count' style='font-size:12px;margin-top:4px;'></div>`
+		overlay.appendChild(textWrap)
+		wrapper.appendChild(overlay)
+	}
+	overlay.querySelector('.canvasrefined-progress-percent').textContent = `${percent}%`
+	overlay.querySelector('.canvasrefined-progress-count').textContent =
+		`${completedAll}/${totalAll} done`
 
-    const stroke = 8;
-    const gap = 4;
-    const decrement = stroke + gap;
-    const ringCount = shown.length;
-    const startRadius = outerRadius - stroke / 2;
-    // Keep the center hole big enough for the % / count text so the numbers
-    // never sit on top of the ring strokes (fitProgressOverlayText shrinks the
-    // text as a safety net for unusually wide labels).
-    const minCenterRadius = 44;
-    const requiredSpace = (ringCount - 1) * decrement + stroke / 2 + minCenterRadius;
-    let adjustFactor = 1;
-    if (requiredSpace > startRadius) {
-        adjustFactor = (startRadius - minCenterRadius - stroke / 2) / Math.max(1, (ringCount - 1) * decrement);
-    }
+	const stroke = 8
+	const gap = 4
+	const decrement = stroke + gap
+	const ringCount = shown.length
+	const startRadius = outerRadius - stroke / 2
+	// Keep the center hole big enough for the % / count text so the numbers
+	// never sit on top of the ring strokes (fitProgressOverlayText shrinks the
+	// text as a safety net for unusually wide labels).
+	const minCenterRadius = 44
+	const requiredSpace = (ringCount - 1) * decrement + stroke / 2 + minCenterRadius
+	let adjustFactor = 1
+	if (requiredSpace > startRadius) {
+		adjustFactor =
+			(startRadius - minCenterRadius - stroke / 2) /
+			Math.max(1, (ringCount - 1) * decrement)
+	}
 
-    let innerEdge = startRadius - stroke / 2;
-    shown.forEach((entry, idx) => {
-        const radius = startRadius - idx * Math.max(1, Math.floor(decrement * adjustFactor));
-        if (radius <= 0) return;
-        innerEdge = Math.min(innerEdge, radius - stroke / 2);
-        const circumference = 2 * Math.PI * radius;
-        const prog = entry.total === 0 ? 0 : entry.completed / entry.total;
-        const color = courseRingColor(entry.courseId, idx);
+	let innerEdge = startRadius - stroke / 2
+	shown.forEach((entry, idx) => {
+		const radius = startRadius - idx * Math.max(1, Math.floor(decrement * adjustFactor))
+		if (radius <= 0) return
+		innerEdge = Math.min(innerEdge, radius - stroke / 2)
+		const circumference = 2 * Math.PI * radius
+		const prog = entry.total === 0 ? 0 : entry.completed / entry.total
+		const color = courseRingColor(entry.courseId, idx)
 
-        let bg = svg.querySelector(`circle[data-idx='${idx}'][data-role='bg']`);
-        if (!bg) {
-            bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            bg.setAttribute('data-idx', String(idx));
-            bg.setAttribute('data-role', 'bg');
-            bg.classList.add('canvasrefined-ring-bg');
-            svg.appendChild(bg);
-        }
-        bg.setAttribute('cx', String(cx));
-        bg.setAttribute('cy', String(cy));
-        bg.setAttribute('r', String(radius));
-        bg.setAttribute('stroke', color);
-        bg.setAttribute('stroke-opacity', '0.25');
-        bg.setAttribute('stroke-width', String(stroke));
-        bg.setAttribute('fill', 'none');
-        bg.removeAttribute('stroke-dasharray');
-        bg.removeAttribute('stroke-dashoffset');
-        bg.removeAttribute('transform');
+		let bg = svg.querySelector(`circle[data-idx='${idx}'][data-role='bg']`)
+		if (!bg) {
+			bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+			bg.setAttribute('data-idx', String(idx))
+			bg.setAttribute('data-role', 'bg')
+			bg.classList.add('canvasrefined-ring-bg')
+			svg.appendChild(bg)
+		}
+		bg.setAttribute('cx', String(cx))
+		bg.setAttribute('cy', String(cy))
+		bg.setAttribute('r', String(radius))
+		bg.setAttribute('stroke', color)
+		bg.setAttribute('stroke-opacity', '0.25')
+		bg.setAttribute('stroke-width', String(stroke))
+		bg.setAttribute('fill', 'none')
+		bg.removeAttribute('stroke-dasharray')
+		bg.removeAttribute('stroke-dashoffset')
+		bg.removeAttribute('transform')
 
-        let fg = svg.querySelector(`circle[data-idx='${idx}'][data-role='fg']`);
-        const dasharrayVal = circumference.toFixed(3);
-        const target = (circumference * (1 - prog)).toFixed(3);
-        if (!fg) {
-            fg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            fg.setAttribute('data-idx', String(idx));
-            fg.setAttribute('data-role', 'fg');
-            fg.classList.add('canvasrefined-progress-ring');
-            fg.setAttribute('stroke-linecap', 'round');
-            fg.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-            fg.setAttribute('stroke-dasharray', dasharrayVal);
-            fg.setAttribute('stroke-dashoffset', dasharrayVal); // start empty
-            fg.style.transition = 'stroke-dashoffset .8s cubic-bezier(.2,.9,.2,1), opacity .3s ease';
-            svg.appendChild(fg);
-        }
-        fg.setAttribute('cx', String(cx));
-        fg.setAttribute('cy', String(cy));
-        fg.setAttribute('r', String(radius));
-        fg.setAttribute('stroke', color);
-        fg.setAttribute('stroke-width', String(stroke));
-        fg.setAttribute('fill', 'none');
-        fg.setAttribute('stroke-dasharray', dasharrayVal);
-        const dim = progressFilterDim(entry.courseId);
-        bg.style.transition = 'opacity .3s ease';
-        bg.style.opacity = dim ? '0.25' : '';
-        fg.style.opacity = dim ? '0.3' : '';
-        fg.setAttribute('stroke-dashoffset', target);
-        // transparent hit band on top so the whole ring is easy to click;
-        // width tracks the ring spacing so adjacent bands don't overlap.
-        const step = Math.max(1, Math.floor(decrement * adjustFactor));
-        let hit = svg.querySelector(`circle[data-idx='${idx}'][data-role='hit']`);
-        if (!hit) {
-            hit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            hit.setAttribute('data-idx', String(idx));
-            hit.setAttribute('data-role', 'hit');
-            hit.setAttribute('fill', 'none');
-            hit.setAttribute('stroke', 'transparent');
-            hit.setAttribute('pointer-events', 'stroke');
-            svg.appendChild(hit);
-        }
-        hit.setAttribute('cx', String(cx));
-        hit.setAttribute('cy', String(cy));
-        hit.setAttribute('r', String(radius));
-        hit.setAttribute('stroke-width', String(Math.max(stroke, step)));
-        attachProgressFilterClick(hit, entry.courseId);
-        hit.onmouseenter = () => { bg.style.opacity = '0.8'; fg.style.opacity = '0.8'; };
-        hit.onmouseleave = () => {
-            const d = progressFilterDim(entry.courseId);
-            bg.style.opacity = d ? '0.25' : '';
-            fg.style.opacity = d ? '0.3' : '';
-        };
-    });
+		let fg = svg.querySelector(`circle[data-idx='${idx}'][data-role='fg']`)
+		const dasharrayVal = circumference.toFixed(3)
+		const target = (circumference * (1 - prog)).toFixed(3)
+		if (!fg) {
+			fg = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+			fg.setAttribute('data-idx', String(idx))
+			fg.setAttribute('data-role', 'fg')
+			fg.classList.add('canvasrefined-progress-ring')
+			fg.setAttribute('stroke-linecap', 'round')
+			fg.setAttribute('transform', `rotate(-90 ${cx} ${cy})`)
+			fg.setAttribute('stroke-dasharray', dasharrayVal)
+			fg.setAttribute('stroke-dashoffset', dasharrayVal) // start empty
+			fg.style.transition =
+				'stroke-dashoffset .8s cubic-bezier(.2,.9,.2,1), opacity .3s ease'
+			svg.appendChild(fg)
+		}
+		fg.setAttribute('cx', String(cx))
+		fg.setAttribute('cy', String(cy))
+		fg.setAttribute('r', String(radius))
+		fg.setAttribute('stroke', color)
+		fg.setAttribute('stroke-width', String(stroke))
+		fg.setAttribute('fill', 'none')
+		fg.setAttribute('stroke-dasharray', dasharrayVal)
+		const dim = progressFilterDim(entry.courseId)
+		bg.style.transition = 'opacity .3s ease'
+		bg.style.opacity = dim ? '0.25' : ''
+		fg.style.opacity = dim ? '0.3' : ''
+		fg.setAttribute('stroke-dashoffset', target)
+		// transparent hit band on top so the whole ring is easy to click;
+		// width tracks the ring spacing so adjacent bands don't overlap.
+		const step = Math.max(1, Math.floor(decrement * adjustFactor))
+		let hit = svg.querySelector(`circle[data-idx='${idx}'][data-role='hit']`)
+		if (!hit) {
+			hit = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+			hit.setAttribute('data-idx', String(idx))
+			hit.setAttribute('data-role', 'hit')
+			hit.setAttribute('fill', 'none')
+			hit.setAttribute('stroke', 'transparent')
+			hit.setAttribute('pointer-events', 'stroke')
+			svg.appendChild(hit)
+		}
+		hit.setAttribute('cx', String(cx))
+		hit.setAttribute('cy', String(cy))
+		hit.setAttribute('r', String(radius))
+		hit.setAttribute('stroke-width', String(Math.max(stroke, step)))
+		attachProgressFilterClick(hit, entry.courseId)
+		hit.onmouseenter = () => {
+			bg.style.opacity = '0.8'
+			fg.style.opacity = '0.8'
+		}
+		hit.onmouseleave = () => {
+			const d = progressFilterDim(entry.courseId)
+			bg.style.opacity = d ? '0.25' : ''
+			fg.style.opacity = d ? '0.3' : ''
+		}
+	})
 
-    // Shrink the % / count text if it would reach the innermost ring.
-    fitProgressOverlayText(overlay, (hw, hh) => Math.hypot(hw, hh), Math.max(0, innerEdge - 2));
+	// Shrink the % / count text if it would reach the innermost ring.
+	fitProgressOverlayText(
+		overlay,
+		(hw, hh) => Math.hypot(hw, hh),
+		Math.max(0, innerEdge - 2),
+	)
 
-    const maxIdx = shown.length - 1;
-    svg.querySelectorAll('circle').forEach(c => {
-        const idx = parseInt(c.getAttribute('data-idx'));
-        if (Number.isNaN(idx) || idx > maxIdx) c.remove();
-    });
+	const maxIdx = shown.length - 1
+	svg.querySelectorAll('circle').forEach((c) => {
+		const idx = parseInt(c.getAttribute('data-idx'))
+		if (Number.isNaN(idx) || idx > maxIdx) c.remove()
+	})
 }
 
 // Mode "rainbow": like "rings" (one arc per class) but condensed into a top
 // half-circle and colored with a rainbow palette instead of course colors.
 function renderProgressRainbow(wrapper, shown, totalAll, completedAll, percent) {
-    const containerWidth = wrapper.clientWidth || 240;
-    const size = Math.min(280, Math.floor(containerWidth * 0.99));
-    const cx = size / 2;
-    const stroke = 8;
-    const gap = 4;
-    const decrement = stroke + gap;
-    const ringCount = shown.length;
-    const pad = 2;
-    const outerRadius = Math.max(20, Math.floor(size / 2) - stroke / 2 - pad);
-    // diameter line; arcs bulge UPWARD from here (into y < baseY)
-    const baseY = outerRadius + stroke / 2 + pad;
-    const svgHeight = Math.ceil(baseY + stroke / 2 + 2);
+	const containerWidth = wrapper.clientWidth || 240
+	const size = Math.min(280, Math.floor(containerWidth * 0.99))
+	const cx = size / 2
+	const stroke = 8
+	const gap = 4
+	const decrement = stroke + gap
+	const ringCount = shown.length
+	const pad = 2
+	const outerRadius = Math.max(20, Math.floor(size / 2) - stroke / 2 - pad)
+	// diameter line; arcs bulge UPWARD from here (into y < baseY)
+	const baseY = outerRadius + stroke / 2 + pad
+	const svgHeight = Math.ceil(baseY + stroke / 2 + 2)
 
-    let svg = wrapper.querySelector('svg.canvasrefined-progress-svg');
-    if (!svg) {
-        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', 'canvasrefined-progress-svg');
-        svg.style.display = 'block';
-        wrapper.appendChild(svg);
-    }
-    svg.setAttribute('width', String(size));
-    svg.setAttribute('height', String(svgHeight));
-    svg.setAttribute('viewBox', `0 0 ${size} ${svgHeight}`);
+	let svg = wrapper.querySelector('svg.canvasrefined-progress-svg')
+	if (!svg) {
+		svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+		svg.setAttribute('class', 'canvasrefined-progress-svg')
+		svg.style.display = 'block'
+		wrapper.appendChild(svg)
+	}
+	svg.setAttribute('width', String(size))
+	svg.setAttribute('height', String(svgHeight))
+	svg.setAttribute('viewBox', `0 0 ${size} ${svgHeight}`)
 
-    // shrink spacing if too many classes would overflow the inner radius;
-    // keep the inner bowl big enough for the % / count text so the numbers
-    // never sit on top of the arcs (fitProgressOverlayText shrinks the text
-    // as a safety net for unusually wide labels).
-    const minInnerRadius = 56;
-    const requiredSpace = (ringCount - 1) * decrement;
-    let adjustFactor = 1;
-    if (requiredSpace > outerRadius - minInnerRadius) {
-        adjustFactor = (outerRadius - minInnerRadius) / Math.max(1, (ringCount - 1) * decrement);
-    }
+	// shrink spacing if too many classes would overflow the inner radius;
+	// keep the inner bowl big enough for the % / count text so the numbers
+	// never sit on top of the arcs (fitProgressOverlayText shrinks the text
+	// as a safety net for unusually wide labels).
+	const minInnerRadius = 56
+	const requiredSpace = (ringCount - 1) * decrement
+	let adjustFactor = 1
+	if (requiredSpace > outerRadius - minInnerRadius) {
+		adjustFactor =
+			(outerRadius - minInnerRadius) / Math.max(1, (ringCount - 1) * decrement)
+	}
 
-    shown.forEach((entry, idx) => {
-        const radius = outerRadius - idx * Math.max(1, Math.floor(decrement * adjustFactor));
-        if (radius <= 0) return;
-        // sweep-flag 1 => arc bulges UPWARD (top semicircle), drawn left -> right
-        const arcPath = `M ${cx - radius} ${baseY} A ${radius} ${radius} 0 0 1 ${cx + radius} ${baseY}`;
-        const prog = entry.total === 0 ? 0 : entry.completed / entry.total;
-        const color = courseRingColor(entry.courseId, idx);
+	shown.forEach((entry, idx) => {
+		const radius = outerRadius - idx * Math.max(1, Math.floor(decrement * adjustFactor))
+		if (radius <= 0) return
+		// sweep-flag 1 => arc bulges UPWARD (top semicircle), drawn left -> right
+		const arcPath = `M ${cx - radius} ${baseY} A ${radius} ${radius} 0 0 1 ${cx + radius} ${baseY}`
+		const prog = entry.total === 0 ? 0 : entry.completed / entry.total
+		const color = courseRingColor(entry.courseId, idx)
 
-        // track: full semicircle, faded class color
-        let track = svg.querySelector(`path[data-idx='${idx}'][data-role='bg']`);
-        if (!track) {
-            track = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            track.setAttribute('data-idx', String(idx));
-            track.setAttribute('data-role', 'bg');
-            track.setAttribute('fill', 'none');
-            track.setAttribute('stroke-linecap', 'round');
-            svg.appendChild(track);
-        }
-        track.setAttribute('d', arcPath);
-        track.setAttribute('stroke', color);
-        track.setAttribute('stroke-opacity', '0.25');
-        track.setAttribute('stroke-width', String(stroke));
-        track.removeAttribute('stroke-dasharray');
-        track.removeAttribute('stroke-dashoffset');
+		// track: full semicircle, faded class color
+		let track = svg.querySelector(`path[data-idx='${idx}'][data-role='bg']`)
+		if (!track) {
+			track = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+			track.setAttribute('data-idx', String(idx))
+			track.setAttribute('data-role', 'bg')
+			track.setAttribute('fill', 'none')
+			track.setAttribute('stroke-linecap', 'round')
+			svg.appendChild(track)
+		}
+		track.setAttribute('d', arcPath)
+		track.setAttribute('stroke', color)
+		track.setAttribute('stroke-opacity', '0.25')
+		track.setAttribute('stroke-width', String(stroke))
+		track.removeAttribute('stroke-dasharray')
+		track.removeAttribute('stroke-dashoffset')
 
-        // progress arc: completed portion drawn from the left, via pathLength=100
-        let progArc = svg.querySelector(`path[data-idx='${idx}'][data-role='fg']`);
-        const targetOff = (100 * (1 - prog)).toFixed(3);
-        if (!progArc) {
-            progArc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            progArc.setAttribute('data-idx', String(idx));
-            progArc.setAttribute('data-role', 'fg');
-            progArc.setAttribute('fill', 'none');
-            progArc.setAttribute('stroke-linecap', 'round');
-            progArc.setAttribute('pathLength', '100');
-            progArc.setAttribute('stroke-dasharray', '100 100');
-            progArc.setAttribute('stroke-dashoffset', '100'); // start empty
-            progArc.style.transition = 'stroke-dashoffset .8s cubic-bezier(.2,.9,.2,1), opacity .3s ease';
-            svg.appendChild(progArc);
-        }
-        progArc.setAttribute('d', arcPath);
-        progArc.setAttribute('stroke', color);
-        progArc.setAttribute('stroke-width', String(stroke));
-        progArc.setAttribute('stroke-dasharray', '100 100');
-        const dim = progressFilterDim(entry.courseId);
-        track.style.transition = 'opacity .3s ease';
-        track.style.opacity = dim ? '0.25' : '';
-        progArc.style.opacity = dim ? '0.3' : '';
-        progArc.setAttribute('stroke-dashoffset', targetOff);
-        // transparent hit arc on top so the whole arc is easy to click.
-        let hit = svg.querySelector(`path[data-idx='${idx}'][data-role='hit']`);
-        if (!hit) {
-            hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            hit.setAttribute('data-idx', String(idx));
-            hit.setAttribute('data-role', 'hit');
-            hit.setAttribute('fill', 'none');
-            hit.setAttribute('stroke', 'transparent');
-            hit.setAttribute('stroke-linecap', 'round');
-            hit.setAttribute('pointer-events', 'stroke');
-            svg.appendChild(hit);
-        }
-        hit.setAttribute('d', arcPath);
-        hit.setAttribute('stroke-width', String(stroke + 6));
-        attachProgressFilterClick(hit, entry.courseId);
-        hit.onmouseenter = () => { track.style.opacity = '0.8'; progArc.style.opacity = '0.8'; };
-        hit.onmouseleave = () => {
-            const d = progressFilterDim(entry.courseId);
-            track.style.opacity = d ? '0.25' : '';
-            progArc.style.opacity = d ? '0.3' : '';
-        };
-    });
+		// progress arc: completed portion drawn from the left, via pathLength=100
+		let progArc = svg.querySelector(`path[data-idx='${idx}'][data-role='fg']`)
+		const targetOff = (100 * (1 - prog)).toFixed(3)
+		if (!progArc) {
+			progArc = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+			progArc.setAttribute('data-idx', String(idx))
+			progArc.setAttribute('data-role', 'fg')
+			progArc.setAttribute('fill', 'none')
+			progArc.setAttribute('stroke-linecap', 'round')
+			progArc.setAttribute('pathLength', '100')
+			progArc.setAttribute('stroke-dasharray', '100 100')
+			progArc.setAttribute('stroke-dashoffset', '100') // start empty
+			progArc.style.transition =
+				'stroke-dashoffset .8s cubic-bezier(.2,.9,.2,1), opacity .3s ease'
+			svg.appendChild(progArc)
+		}
+		progArc.setAttribute('d', arcPath)
+		progArc.setAttribute('stroke', color)
+		progArc.setAttribute('stroke-width', String(stroke))
+		progArc.setAttribute('stroke-dasharray', '100 100')
+		const dim = progressFilterDim(entry.courseId)
+		track.style.transition = 'opacity .3s ease'
+		track.style.opacity = dim ? '0.25' : ''
+		progArc.style.opacity = dim ? '0.3' : ''
+		progArc.setAttribute('stroke-dashoffset', targetOff)
+		// transparent hit arc on top so the whole arc is easy to click.
+		let hit = svg.querySelector(`path[data-idx='${idx}'][data-role='hit']`)
+		if (!hit) {
+			hit = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+			hit.setAttribute('data-idx', String(idx))
+			hit.setAttribute('data-role', 'hit')
+			hit.setAttribute('fill', 'none')
+			hit.setAttribute('stroke', 'transparent')
+			hit.setAttribute('stroke-linecap', 'round')
+			hit.setAttribute('pointer-events', 'stroke')
+			svg.appendChild(hit)
+		}
+		hit.setAttribute('d', arcPath)
+		hit.setAttribute('stroke-width', String(stroke + 6))
+		attachProgressFilterClick(hit, entry.courseId)
+		hit.onmouseenter = () => {
+			track.style.opacity = '0.8'
+			progArc.style.opacity = '0.8'
+		}
+		hit.onmouseleave = () => {
+			const d = progressFilterDim(entry.courseId)
+			track.style.opacity = d ? '0.25' : ''
+			progArc.style.opacity = d ? '0.3' : ''
+		}
+	})
 
-    // drop arcs for classes no longer shown
-    const maxIdx = shown.length - 1;
-    svg.querySelectorAll('path').forEach(p => {
-        const idx = parseInt(p.getAttribute('data-idx'));
-        if (Number.isNaN(idx) || idx > maxIdx) p.remove();
-    });
+	// drop arcs for classes no longer shown
+	const maxIdx = shown.length - 1
+	svg.querySelectorAll('path').forEach((p) => {
+		const idx = parseInt(p.getAttribute('data-idx'))
+		if (Number.isNaN(idx) || idx > maxIdx) p.remove()
+	})
 
-    // Overlay the percent/count text INSIDE the rainbow's semicircle hole
-    // (the empty bowl bounded by the INNERMOST arc) instead of beneath it or
-    // up among the arcs. The SVG is centered in the wrapper, so an absolutely-
-    // positioned overlay covering the wrapper with flex centering aligns the
-    // text to the SVG's horizontal center. Vertically we target the centroid of
-    // the innermost semicircle (a touch above the diameter line) so the text
-    // sits in the arc-free pocket near the bottom rather than near the apexes
-    // of the inner arcs, where it would overlap the rainbow strokes.
-    const step = Math.max(1, Math.floor(decrement * adjustFactor));
-    const innerRadius = ringCount > 0 ? Math.max(1, outerRadius - (ringCount - 1) * step) : outerRadius;
-    const holeCenterY = baseY - (4 * innerRadius) / (3 * Math.PI) + 6;
-    const nudge = Math.round(holeCenterY - svgHeight / 2);
-    let overlay = wrapper.querySelector('.canvasrefined-progress-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'canvasrefined-progress-overlay';
-        overlay.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;transform:translateY(${nudge}px);`;
-        // Same textWrap structure as rings mode so fitProgressOverlayText
-        // measures the whole percent+count block, not just one line.
-        const textWrap = document.createElement('div');
-        textWrap.style.cssText = 'text-align:center;color:var(--bctext-0);';
-        textWrap.innerHTML = `<div class='canvasrefined-progress-percent' style='font-weight:700;font-size:20px;line-height:1;'></div><div class='canvasrefined-progress-count' style='font-size:12px;margin-top:3px;'></div>`;
-        overlay.appendChild(textWrap);
-        wrapper.appendChild(overlay);
-    } else {
-        overlay.style.transform = `translateY(${nudge}px)`;
-    }
-    overlay.querySelector('.canvasrefined-progress-percent').textContent = `${percent}%`;
-    overlay.querySelector('.canvasrefined-progress-count').textContent = `${completedAll}/${totalAll} done`;
+	// Overlay the percent/count text INSIDE the rainbow's semicircle hole
+	// (the empty bowl bounded by the INNERMOST arc) instead of beneath it or
+	// up among the arcs. The SVG is centered in the wrapper, so an absolutely-
+	// positioned overlay covering the wrapper with flex centering aligns the
+	// text to the SVG's horizontal center. Vertically we target the centroid of
+	// the innermost semicircle (a touch above the diameter line) so the text
+	// sits in the arc-free pocket near the bottom rather than near the apexes
+	// of the inner arcs, where it would overlap the rainbow strokes.
+	const step = Math.max(1, Math.floor(decrement * adjustFactor))
+	const innerRadius =
+		ringCount > 0 ? Math.max(1, outerRadius - (ringCount - 1) * step) : outerRadius
+	const holeCenterY = baseY - (4 * innerRadius) / (3 * Math.PI) + 6
+	const nudge = Math.round(holeCenterY - svgHeight / 2)
+	let overlay = wrapper.querySelector('.canvasrefined-progress-overlay')
+	if (!overlay) {
+		overlay = document.createElement('div')
+		overlay.className = 'canvasrefined-progress-overlay'
+		overlay.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;transform:translateY(${nudge}px);`
+		// Same textWrap structure as rings mode so fitProgressOverlayText
+		// measures the whole percent+count block, not just one line.
+		const textWrap = document.createElement('div')
+		textWrap.style.cssText = 'text-align:center;color:var(--bctext-0);'
+		textWrap.innerHTML = `<div class='canvasrefined-progress-percent' style='font-weight:700;font-size:20px;line-height:1;'></div><div class='canvasrefined-progress-count' style='font-size:12px;margin-top:3px;'></div>`
+		overlay.appendChild(textWrap)
+		wrapper.appendChild(overlay)
+	} else {
+		overlay.style.transform = `translateY(${nudge}px)`
+	}
+	overlay.querySelector('.canvasrefined-progress-percent').textContent = `${percent}%`
+	overlay.querySelector('.canvasrefined-progress-count').textContent =
+		`${completedAll}/${totalAll} done`
 
-    // Shrink the % / count text if any corner would cross the innermost arc.
-    // The text is centered at (cx, holeCenterY); the bowl is the semicircle
-    // of innerRadius around (cx, baseY), so check the farthest text corner
-    // against the bowl's inner edge.
-    const bowlRadius = Math.max(0, innerRadius - stroke / 2 - 2);
-    fitProgressOverlayText(overlay, (hw, hh) => {
-        const dv = Math.max(
-            Math.abs(baseY - holeCenterY + hh),
-            Math.abs(baseY - holeCenterY - hh)
-        );
-        return Math.hypot(hw, dv);
-    }, bowlRadius);
+	// Shrink the % / count text if any corner would cross the innermost arc.
+	// The text is centered at (cx, holeCenterY); the bowl is the semicircle
+	// of innerRadius around (cx, baseY), so check the farthest text corner
+	// against the bowl's inner edge.
+	const bowlRadius = Math.max(0, innerRadius - stroke / 2 - 2)
+	fitProgressOverlayText(
+		overlay,
+		(hw, hh) => {
+			const dv = Math.max(
+				Math.abs(baseY - holeCenterY + hh),
+				Math.abs(baseY - holeCenterY - hh),
+			)
+			return Math.hypot(hw, dv)
+		},
+		bowlRadius,
+	)
 }
 
 // Mode "lines": one horizontal bar per course, each with its own %.
 function renderProgressLines(wrapper, shown) {
-    let list = wrapper.querySelector('.canvasrefined-progress-lines');
-    if (!list) {
-        list = document.createElement('div');
-        list.className = 'canvasrefined-progress-lines';
-        list.style.cssText = 'display:flex;flex-direction:column;gap:8px;width:100%;box-sizing:border-box;';
-        wrapper.appendChild(list);
-    }
-    while (list.children.length > shown.length) list.lastChild.remove();
+	let list = wrapper.querySelector('.canvasrefined-progress-lines')
+	if (!list) {
+		list = document.createElement('div')
+		list.className = 'canvasrefined-progress-lines'
+		list.style.cssText =
+			'display:flex;flex-direction:column;gap:8px;width:100%;box-sizing:border-box;'
+		wrapper.appendChild(list)
+	}
+	while (list.children.length > shown.length) list.lastChild.remove()
 
-    shown.forEach((entry, idx) => {
-        const prog = entry.total === 0 ? 0 : entry.completed / entry.total;
-        const pct = Math.round(prog * 100);
-        const color = courseRingColor(entry.courseId, idx);
+	shown.forEach((entry, idx) => {
+		const prog = entry.total === 0 ? 0 : entry.completed / entry.total
+		const pct = Math.round(prog * 100)
+		const color = courseRingColor(entry.courseId, idx)
 
-        let row = list.children[idx];
-        if (!row) {
-            row = document.createElement('div');
-            row.className = 'canvasrefined-progress-line';
-            row.style.cssText = 'display:flex;flex-direction:column;gap:3px;width:100%;';
-            row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;"><span class="cr-pl-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;"></span><span class="cr-pl-pct" style="flex-shrink:0;font-weight:600;color:var(--bctext-0);"></span></div><div style="position:relative;height:8px;border-radius:999px;overflow:hidden;"><div class="cr-pl-fill" style="height:100%;border-radius:999px;width:0%;transition:width .8s cubic-bezier(.2,.9,.2,1);"></div></div>`;
-            list.appendChild(row);
-        }
-        const labelEl = row.querySelector('.cr-pl-label');
-        labelEl.textContent = courseRingLabel(entry.courseId);
-        labelEl.style.color = color;
-        row.querySelector('.cr-pl-pct').textContent = `${pct}% (${entry.completed}/${entry.total})`;
-        const track = row.children[1];
-        track.style.background = `color-mix(in srgb, ${color} 25%, transparent)`;
-        const fill = row.querySelector('.cr-pl-fill');
-        fill.style.background = color;
-        if (!fill.dataset.init) {
-            fill.dataset.init = '1';
-            fill.style.width = `${pct}%`;
-        } else {
-            fill.style.width = `${pct}%`;
-        }
-        row.style.transition = 'opacity .3s ease';
-        row.style.opacity = progressFilterDim(entry.courseId) ? '0.4' : '';
-        attachProgressFilterClick(row, entry.courseId);
-        row.onmouseenter = () => { row.style.opacity = '0.8'; };
-        row.onmouseleave = () => { row.style.opacity = progressFilterDim(entry.courseId) ? '0.4' : ''; };
-    });
+		let row = list.children[idx]
+		if (!row) {
+			row = document.createElement('div')
+			row.className = 'canvasrefined-progress-line'
+			row.style.cssText = 'display:flex;flex-direction:column;gap:3px;width:100%;'
+			row.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;"><span class="cr-pl-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;"></span><span class="cr-pl-pct" style="flex-shrink:0;font-weight:600;color:var(--bctext-0);"></span></div><div style="position:relative;height:8px;border-radius:999px;overflow:hidden;"><div class="cr-pl-fill" style="height:100%;border-radius:999px;width:0%;transition:width .8s cubic-bezier(.2,.9,.2,1);"></div></div>`
+			list.appendChild(row)
+		}
+		const labelEl = row.querySelector('.cr-pl-label')
+		labelEl.textContent = courseRingLabel(entry.courseId)
+		labelEl.style.color = color
+		row.querySelector('.cr-pl-pct').textContent =
+			`${pct}% (${entry.completed}/${entry.total})`
+		const track = row.children[1]
+		track.style.background = `color-mix(in srgb, ${color} 25%, transparent)`
+		const fill = row.querySelector('.cr-pl-fill')
+		fill.style.background = color
+		if (!fill.dataset.init) {
+			fill.dataset.init = '1'
+			fill.style.width = `${pct}%`
+		} else {
+			fill.style.width = `${pct}%`
+		}
+		row.style.transition = 'opacity .3s ease'
+		row.style.opacity = progressFilterDim(entry.courseId) ? '0.4' : ''
+		attachProgressFilterClick(row, entry.courseId)
+		row.onmouseenter = () => {
+			row.style.opacity = '0.8'
+		}
+		row.onmouseleave = () => {
+			row.style.opacity = progressFilterDim(entry.courseId) ? '0.4' : ''
+		}
+	})
 }
 
 function renderProgressRings(container, scopedData) {
-    const mode = getProgressRingMode();
-    if (mode === "none") { container.innerHTML = ""; return; }
+	const mode = getProgressRingMode()
+	if (mode === 'none') {
+		container.innerHTML = ''
+		return
+	}
 
-    // Apply the same timeframe window the list pages through so the counts
-    // in the display match what's shown below it. Unlike the Tasks list —
-    // which keeps every overdue item — finished work from before the window
-    // is history, not current workload, so it never counts. Unfinished items
-    // from before the window still count on the current window (offset 0)
-    // because the Tasks tab shows them as overdue; later windows are strict
-    // slices, so the backlog only appears on the current one.
-    const taskItems = scopedData.filter(item => isTodoTaskType(item));
-    const bounds = getTodoTimeframeBounds();
-    let allAssignments;
-    if (!bounds) {
-        allAssignments = taskItems;
-    } else {
-        const isDone = (item) => (item.submissions?.submitted || item.planner_override?.marked_complete === true) && !isPinnedIncomplete(item);
-        allAssignments = taskItems.filter(item => {
-            const t = new Date(item.plannable_date).getTime();
-            if (t > bounds.start && t <= bounds.end) return true;
-            return betterTodoTimeframeOffset === 0 && t <= bounds.start && !isDone(item);
-        });
-    }
+	// Apply the same timeframe window the list pages through so the counts
+	// in the display match what's shown below it. Unlike the Tasks list —
+	// which keeps every overdue item — finished work from before the window
+	// is history, not current workload, so it never counts. Unfinished items
+	// from before the window still count on the current window (offset 0)
+	// because the Tasks tab shows them as overdue; later windows are strict
+	// slices, so the backlog only appears on the current one.
+	const taskItems = scopedData.filter((item) => isTodoTaskType(item))
+	const bounds = getTodoTimeframeBounds()
+	let allAssignments
+	if (!bounds) {
+		allAssignments = taskItems
+	} else {
+		const isDone = (item) =>
+			(item.submissions?.submitted || item.planner_override?.marked_complete === true) &&
+			!isPinnedIncomplete(item)
+		allAssignments = taskItems.filter((item) => {
+			const t = new Date(item.plannable_date).getTime()
+			if (t > bounds.start && t <= bounds.end) return true
+			return betterTodoTimeframeOffset === 0 && t <= bounds.start && !isDone(item)
+		})
+	}
 
-    const groups = {};
-    allAssignments.forEach(item => {
-        const cid = String(item.course_id || item.context_id || item.plannable?.course_id || "personal");
-        groups[cid] = groups[cid] || [];
-        groups[cid].push(item);
-    });
+	const groups = {}
+	allAssignments.forEach((item) => {
+		const cid = String(
+			item.course_id || item.context_id || item.plannable?.course_id || 'personal',
+		)
+		groups[cid] = groups[cid] || []
+		groups[cid].push(item)
+	})
 
-    const entries = Object.keys(groups).map(cid => {
-        const arr = groups[cid];
-        const completed = arr.filter(it => (it.submissions?.submitted || it.planner_override?.marked_complete) && !isPinnedIncomplete(it)).length;
-        return { courseId: cid, total: arr.length, completed };
-    }).filter(e => e.total > 0);
+	const entries = Object.keys(groups)
+		.map((cid) => {
+			const arr = groups[cid]
+			const completed = arr.filter(
+				(it) =>
+					(it.submissions?.submitted || it.planner_override?.marked_complete) &&
+					!isPinnedIncomplete(it),
+			).length
+			return { courseId: cid, total: arr.length, completed }
+		})
+		.filter((e) => e.total > 0)
 
-    if (!entries.length) {
-        // Don't just blank the display: an empty window (e.g. after advancing
-        // the pager to a week with nothing due) previously made the whole
-        // progress display disappear, which read as a bug. Show a quiet
-        // empty state instead.
-        container.innerHTML = "";
-        const empty = document.createElement('div');
-        empty.className = 'canvasrefined-progress-empty';
-        empty.style.cssText = 'color:var(--bctext-0);opacity:.7;font-size:12px;padding:6px 0;text-align:center;';
-        empty.textContent = bounds ? 'No tasks in this timeframe' : 'No tasks yet';
-        container.appendChild(empty);
-        return;
-    }
+	if (!entries.length) {
+		// Don't just blank the display: an empty window (e.g. after advancing
+		// the pager to a week with nothing due) previously made the whole
+		// progress display disappear, which read as a bug. Show a quiet
+		// empty state instead.
+		container.innerHTML = ''
+		const empty = document.createElement('div')
+		empty.className = 'canvasrefined-progress-empty'
+		empty.style.cssText =
+			'color:var(--bctext-0);opacity:.7;font-size:12px;padding:6px 0;text-align:center;'
+		empty.textContent = bounds ? 'No tasks in this timeframe' : 'No tasks yet'
+		container.appendChild(empty)
+		return
+	}
 
-    // Order courses to match the user's dashboard card order. Courses that
-    // aren't on the dashboard (personal tasks, dropped courses) sort after
-    // dashboard courses, keeping their relative order; ties fall back to
-    // most assignments first so the display stays stable.
-    const dashboardOrder = getDashboardCourseOrder();
-    entries.sort((a, b) => {
-        const ai = dashboardOrder.has(a.courseId) ? dashboardOrder.get(a.courseId) : Infinity;
-        const bi = dashboardOrder.has(b.courseId) ? dashboardOrder.get(b.courseId) : Infinity;
-        if (ai !== bi) return ai - bi;
-        return b.total - a.total;
-    });
-    const shown = entries.slice(0, 6);
+	// Order courses to match the user's dashboard card order. Courses that
+	// aren't on the dashboard (personal tasks, dropped courses) sort after
+	// dashboard courses, keeping their relative order; ties fall back to
+	// most assignments first so the display stays stable.
+	const dashboardOrder = getDashboardCourseOrder()
+	entries.sort((a, b) => {
+		const ai = dashboardOrder.has(a.courseId) ? dashboardOrder.get(a.courseId) : Infinity
+		const bi = dashboardOrder.has(b.courseId) ? dashboardOrder.get(b.courseId) : Infinity
+		if (ai !== bi) return ai - bi
+		return b.total - a.total
+	})
+	const shown = entries.slice(0, 6)
 
-    const totalAll = shown.reduce((s, e) => s + e.total, 0);
-    const completedAll = shown.reduce((s, e) => s + e.completed, 0);
-    const percent = totalAll === 0 ? 0 : Math.round((completedAll / totalAll) * 100);
+	const totalAll = shown.reduce((s, e) => s + e.total, 0)
+	const completedAll = shown.reduce((s, e) => s + e.completed, 0)
+	const percent = totalAll === 0 ? 0 : Math.round((completedAll / totalAll) * 100)
 
-    // wrapper reused across renders; clear on mode switch so each mode rebuilds fresh DOM
-    let wrapper = container.querySelector('.canvasrefined-progress-wrapper');
-    if (!wrapper) {
-        wrapper = document.createElement('div');
-        wrapper.className = 'canvasrefined-progress-wrapper';
-        wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;position:relative;width:100%;box-sizing:border-box;';
-        container.appendChild(wrapper);
-    }
-    if (wrapper.dataset.mode !== mode) {
-        wrapper.innerHTML = '';
-        wrapper.dataset.mode = mode;
-    }
+	// wrapper reused across renders; clear on mode switch so each mode rebuilds fresh DOM
+	let wrapper = container.querySelector('.canvasrefined-progress-wrapper')
+	if (!wrapper) {
+		wrapper = document.createElement('div')
+		wrapper.className = 'canvasrefined-progress-wrapper'
+		wrapper.style.cssText =
+			'display:flex;flex-direction:column;align-items:center;position:relative;width:100%;box-sizing:border-box;'
+		container.appendChild(wrapper)
+	}
+	if (wrapper.dataset.mode !== mode) {
+		wrapper.innerHTML = ''
+		wrapper.dataset.mode = mode
+	}
 
-    if (mode === "rings") {
-        renderProgressRingsMode(wrapper, shown, totalAll, completedAll, percent);
-    } else if (mode === "rainbow") {
-        renderProgressRainbow(wrapper, shown, totalAll, completedAll, percent);
-    } else if (mode === "lines") {
-        renderProgressLines(wrapper, shown);
-    }
+	if (mode === 'rings') {
+		renderProgressRingsMode(wrapper, shown, totalAll, completedAll, percent)
+	} else if (mode === 'rainbow') {
+		renderProgressRainbow(wrapper, shown, totalAll, completedAll, percent)
+	} else if (mode === 'lines') {
+		renderProgressLines(wrapper, shown)
+	}
 }
 
 function buildPlannerNotePayload(form) {
-    const title = form.querySelector("#better-todo-new-task-title")?.value?.trim();
-    const details = form.querySelector("#better-todo-new-task-details")?.value?.trim();
-    const courseIdRaw = form.querySelector("#better-todo-new-task-course")?.value;
-    const dateValue = form.querySelector("#better-todo-new-task-date")?.value;
-    const timeValue = form.querySelector("#better-todo-new-task-time")?.value;
-    const link = form.querySelector("#better-todo-new-task-link")?.value?.trim() || "";
+	const title = form.querySelector('#better-todo-new-task-title')?.value?.trim()
+	const details = form.querySelector('#better-todo-new-task-details')?.value?.trim()
+	const courseIdRaw = form.querySelector('#better-todo-new-task-course')?.value
+	const dateValue = form.querySelector('#better-todo-new-task-date')?.value
+	const timeValue = form.querySelector('#better-todo-new-task-time')?.value
+	const link = form.querySelector('#better-todo-new-task-link')?.value?.trim() || ''
 
-    if (!title) {
-        throw new Error("Task title is required.");
-    }
+	if (!title) {
+		throw new Error('Task title is required.')
+	}
 
-    if (!dateValue || !timeValue) {
-        throw new Error("Please choose both a date and time.");
-    }
+	if (!dateValue || !timeValue) {
+		throw new Error('Please choose both a date and time.')
+	}
 
-    const localDateTime = new Date(`${dateValue}T${timeValue}:00`);
-    if (Number.isNaN(localDateTime.getTime())) {
-        throw new Error("Invalid task date.");
-    }
+	const localDateTime = new Date(`${dateValue}T${timeValue}:00`)
+	if (Number.isNaN(localDateTime.getTime())) {
+		throw new Error('Invalid task date.')
+	}
 
-    return {
-        title,
-        details,
-        link,
-        courseId: courseIdRaw ? parseInt(courseIdRaw) : null,
-        // Canvas accepts local timestamp strings more reliably than UTC ISO strings for planner notes.
-        todoDate: `${dateValue}T${timeValue}:00`,
-    };
+	return {
+		title,
+		details,
+		link,
+		courseId: courseIdRaw ? parseInt(courseIdRaw) : null,
+		// Canvas accepts local timestamp strings more reliably than UTC ISO strings for planner notes.
+		todoDate: `${dateValue}T${timeValue}:00`,
+	}
 }
 
 async function createCanvasPlannerNote(payload) {
-    const csrfToken = CSRFtoken();
-    const plannerNote = {
-        title: payload.title,
-        todo_date: payload.todoDate,
-    };
-    if (payload.details) plannerNote.details = payload.details;
-    if (payload.courseId) plannerNote.course_id = payload.courseId;
+	const csrfToken = CSRFtoken()
+	const plannerNote = {
+		title: payload.title,
+		todo_date: payload.todoDate,
+	}
+	if (payload.details) plannerNote.details = payload.details
+	if (payload.courseId) plannerNote.course_id = payload.courseId
 
-    const attempts = [
-        {
-            headers: {
-                "content-type": "application/json",
-                "accept": "application/json",
-                "X-CSRF-Token": csrfToken,
-            },
-            body: JSON.stringify({ planner_note: plannerNote }),
-        },
-        {
-            headers: {
-                "content-type": "application/json",
-                "accept": "application/json",
-                "X-CSRF-Token": csrfToken,
-            },
-            body: JSON.stringify(plannerNote),
-        },
-        {
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-                "accept": "application/json",
-                "X-CSRF-Token": csrfToken,
-            },
-            body: (() => {
-                const formBody = new URLSearchParams();
-                formBody.set("planner_note[title]", plannerNote.title);
-                formBody.set("planner_note[todo_date]", plannerNote.todo_date);
-                if (plannerNote.details) formBody.set("planner_note[details]", plannerNote.details);
-                if (plannerNote.course_id) formBody.set("planner_note[course_id]", plannerNote.course_id);
-                return formBody.toString();
-            })(),
-        },
-    ];
+	const attempts = [
+		{
+			headers: {
+				'content-type': 'application/json',
+				accept: 'application/json',
+				'X-CSRF-Token': csrfToken,
+			},
+			body: JSON.stringify({ planner_note: plannerNote }),
+		},
+		{
+			headers: {
+				'content-type': 'application/json',
+				accept: 'application/json',
+				'X-CSRF-Token': csrfToken,
+			},
+			body: JSON.stringify(plannerNote),
+		},
+		{
+			headers: {
+				'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+				accept: 'application/json',
+				'X-CSRF-Token': csrfToken,
+			},
+			body: (() => {
+				const formBody = new URLSearchParams()
+				formBody.set('planner_note[title]', plannerNote.title)
+				formBody.set('planner_note[todo_date]', plannerNote.todo_date)
+				if (plannerNote.details)
+					formBody.set('planner_note[details]', plannerNote.details)
+				if (plannerNote.course_id)
+					formBody.set('planner_note[course_id]', plannerNote.course_id)
+				return formBody.toString()
+			})(),
+		},
+	]
 
-    let lastError = "Canvas rejected task creation.";
-    for (const attempt of attempts) {
-        const response = await fetch(domain + "/api/v1/planner_notes", {
-            method: "POST",
-            headers: attempt.headers,
-            body: attempt.body,
-        });
+	let lastError = 'Canvas rejected task creation.'
+	for (const attempt of attempts) {
+		const response = await fetch(domain + '/api/v1/planner_notes', {
+			method: 'POST',
+			headers: attempt.headers,
+			body: attempt.body,
+		})
 
-        if (response.status === 200 || response.status === 201) {
-            return response.json();
-        }
+		if (response.status === 200 || response.status === 201) {
+			return response.json()
+		}
 
-        try {
-            const errData = await response.json();
-            if (errData?.errors?.length) {
-                lastError = errData.errors.join(" ");
-            } else if (errData?.message) {
-                lastError = errData.message;
-            }
-        } catch (_) {
-            // Keep prior error text when body is not JSON.
-        }
-    }
+		try {
+			const errData = await response.json()
+			if (errData?.errors?.length) {
+				lastError = errData.errors.join(' ')
+			} else if (errData?.message) {
+				lastError = errData.message
+			}
+		} catch (_) {
+			// Keep prior error text when body is not JSON.
+		}
+	}
 
-    throw new Error(lastError || "Canvas rejected task creation.");
+	throw new Error(lastError || 'Canvas rejected task creation.')
 }
 
 /* Custom task links: Canvas planner notes have no link field, so store a
    user link in sync storage keyed by the note id. */
 function getCustomTaskLinks() {
-    return (options && options.custom_task_links) || {};
+	return (options && options.custom_task_links) || {}
 }
 
 function getCustomTaskLinkId(item) {
-    return item?.plannable_id ?? item?.plannable?.id ?? null;
+	return item?.plannable_id ?? item?.plannable?.id ?? null
 }
 
 function normalizeTaskLink(link) {
-    if (!link) return "";
-    link = String(link).trim();
-    if (!link) return "";
-    if (/^https?:\/\//i.test(link)) return link;
-    if (link.startsWith("//")) return "https:" + link;
-    return domain + (link.startsWith("/") ? link : "/" + link);
+	if (!link) return ''
+	link = String(link).trim()
+	if (!link) return ''
+	if (/^https?:\/\//i.test(link)) return link
+	if (link.startsWith('//')) return 'https:' + link
+	return domain + (link.startsWith('/') ? link : '/' + link)
 }
 
 function customTaskHref(item) {
-    const id = getCustomTaskLinkId(item);
-    const links = getCustomTaskLinks();
-    if (id != null && links[String(id)]) {
-        return normalizeTaskLink(links[String(id)]);
-    }
-    const courseId = item?.course_id || item?.plannable?.course_id || item?.context_id;
-    if (courseId) return `${domain}/courses/${courseId}`;
-    return `${domain}/`;
+	const id = getCustomTaskLinkId(item)
+	const links = getCustomTaskLinks()
+	if (id != null && links[String(id)]) {
+		return normalizeTaskLink(links[String(id)])
+	}
+	const courseId = item?.course_id || item?.plannable?.course_id || item?.context_id
+	if (courseId) return `${domain}/courses/${courseId}`
+	return `${domain}/`
 }
 
 function saveCustomTaskLink(noteId, link) {
-    if (noteId == null) return;
-    const links = { ...getCustomTaskLinks() };
-    const key = String(noteId);
-    if (link && String(link).trim()) {
-        links[key] = String(link).trim();
-    } else {
-        delete links[key];
-    }
-    options = { ...options, custom_task_links: links };
-    chrome.storage.sync.set({ custom_task_links: links });
+	if (noteId == null) return
+	const links = { ...getCustomTaskLinks() }
+	const key = String(noteId)
+	if (link && String(link).trim()) {
+		links[key] = String(link).trim()
+	} else {
+		delete links[key]
+	}
+	options = { ...options, custom_task_links: links }
+	chrome.storage.sync.set({ custom_task_links: links })
 }
 
 function deleteCustomTaskLink(noteId) {
-    if (noteId == null) return;
-    const links = { ...getCustomTaskLinks() };
-    delete links[String(noteId)];
-    options = { ...options, custom_task_links: links };
-    chrome.storage.sync.set({ custom_task_links: links });
+	if (noteId == null) return
+	const links = { ...getCustomTaskLinks() }
+	delete links[String(noteId)]
+	options = { ...options, custom_task_links: links }
+	chrome.storage.sync.set({ custom_task_links: links })
 }
 
 async function updateCanvasPlannerNote(id, payload) {
-    if (!id) throw new Error("Missing task id.");
-    const csrfToken = CSRFtoken();
-    // Canvas's planner_notes update endpoint permits FLAT parameters
-    // (title, details, course_id, todo_date) — NOT nested under planner_note.
-    // Sending nested params is silently ignored, so note.update({}) runs and
-    // returns 200 with the unchanged note, making edits appear to "not save".
-    // Always include details (even empty) so the field can be cleared.
-    const plannerNote = {
-        title: payload.title,
-        todo_date: payload.todoDate,
-        details: payload.details || "",
-        // Sending course_id as empty string disassociates the note from its course.
-        course_id: payload.courseId || "",
-    };
+	if (!id) throw new Error('Missing task id.')
+	const csrfToken = CSRFtoken()
+	// Canvas's planner_notes update endpoint permits FLAT parameters
+	// (title, details, course_id, todo_date) — NOT nested under planner_note.
+	// Sending nested params is silently ignored, so note.update({}) runs and
+	// returns 200 with the unchanged note, making edits appear to "not save".
+	// Always include details (even empty) so the field can be cleared.
+	const plannerNote = {
+		title: payload.title,
+		todo_date: payload.todoDate,
+		details: payload.details || '',
+		// Sending course_id as empty string disassociates the note from its course.
+		course_id: payload.courseId || '',
+	}
 
-    const attempts = [
-        {
-            headers: {
-                "content-type": "application/json",
-                "accept": "application/json",
-                "X-CSRF-Token": csrfToken,
-            },
-            body: JSON.stringify(plannerNote),
-        },
-        {
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-                "accept": "application/json",
-                "X-CSRF-Token": csrfToken,
-            },
-            body: (() => {
-                const formBody = new URLSearchParams();
-                formBody.set("title", plannerNote.title);
-                formBody.set("todo_date", plannerNote.todo_date);
-                formBody.set("details", plannerNote.details);
-                formBody.set("course_id", plannerNote.course_id);
-                return formBody.toString();
-            })(),
-        },
-    ];
+	const attempts = [
+		{
+			headers: {
+				'content-type': 'application/json',
+				accept: 'application/json',
+				'X-CSRF-Token': csrfToken,
+			},
+			body: JSON.stringify(plannerNote),
+		},
+		{
+			headers: {
+				'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+				accept: 'application/json',
+				'X-CSRF-Token': csrfToken,
+			},
+			body: (() => {
+				const formBody = new URLSearchParams()
+				formBody.set('title', plannerNote.title)
+				formBody.set('todo_date', plannerNote.todo_date)
+				formBody.set('details', plannerNote.details)
+				formBody.set('course_id', plannerNote.course_id)
+				return formBody.toString()
+			})(),
+		},
+	]
 
-    let lastError = "Canvas rejected task update.";
-    for (const attempt of attempts) {
-        const response = await fetch(`${domain}/api/v1/planner_notes/${id}`, {
-            method: "PUT",
-            headers: attempt.headers,
-            body: attempt.body,
-        });
+	let lastError = 'Canvas rejected task update.'
+	for (const attempt of attempts) {
+		const response = await fetch(`${domain}/api/v1/planner_notes/${id}`, {
+			method: 'PUT',
+			headers: attempt.headers,
+			body: attempt.body,
+		})
 
-        if (response.status === 200 || response.status === 201) {
-            return response.json();
-        }
+		if (response.status === 200 || response.status === 201) {
+			return response.json()
+		}
 
-        try {
-            const errData = await response.json();
-            if (errData?.errors?.length) {
-                lastError = errData.errors.join(" ");
-            } else if (errData?.message) {
-                lastError = errData.message;
-            }
-        } catch (_) {
-            // Keep prior error text when body is not JSON.
-        }
-    }
+		try {
+			const errData = await response.json()
+			if (errData?.errors?.length) {
+				lastError = errData.errors.join(' ')
+			} else if (errData?.message) {
+				lastError = errData.message
+			}
+		} catch (_) {
+			// Keep prior error text when body is not JSON.
+		}
+	}
 
-    throw new Error(lastError || "Canvas rejected task update.");
+	throw new Error(lastError || 'Canvas rejected task update.')
 }
 
 async function deleteCanvasPlannerNote(id) {
-    if (!id) throw new Error("Missing task id.");
-    const csrfToken = CSRFtoken();
-    const response = await fetch(`${domain}/api/v1/planner_notes/${id}`, {
-        method: "DELETE",
-        headers: {
-            "content-type": "application/json",
-            "accept": "application/json",
-            "X-CSRF-Token": csrfToken,
-        },
-    });
+	if (!id) throw new Error('Missing task id.')
+	const csrfToken = CSRFtoken()
+	const response = await fetch(`${domain}/api/v1/planner_notes/${id}`, {
+		method: 'DELETE',
+		headers: {
+			'content-type': 'application/json',
+			accept: 'application/json',
+			'X-CSRF-Token': csrfToken,
+		},
+	})
 
-    if (response.status === 200 || response.status === 201 || response.status === 204) {
-        return true;
-    }
+	if (response.status === 200 || response.status === 201 || response.status === 204) {
+		return true
+	}
 
-    let lastError = "Canvas rejected task deletion.";
-    try {
-        const errData = await response.json();
-        if (errData?.errors?.length) lastError = errData.errors.join(" ");
-        else if (errData?.message) lastError = errData.message;
-    } catch (_) { /* ignore */ }
-    throw new Error(lastError);
+	let lastError = 'Canvas rejected task deletion.'
+	try {
+		const errData = await response.json()
+		if (errData?.errors?.length) lastError = errData.errors.join(' ')
+		else if (errData?.message) lastError = errData.message
+	} catch (_) {
+		/* ignore */
+	}
+	throw new Error(lastError)
 }
 
 /* Scroll a task form field into view, leaving room below for the native date/time picker. */
 function scrollTodoIntoView(el, smooth = true) {
-    if (!el) return;
-    const sidebar = document.getElementById("right-side-wrapper");
-    const style = sidebar ? getComputedStyle(sidebar) : null;
-    const scrollsSidebar = sidebar &&
-        (style.overflowY === "auto" || style.overflowY === "scroll") &&
-        sidebar.scrollHeight > sidebar.clientHeight;
-    const behavior = smooth ? "smooth" : "auto";
-    if (scrollsSidebar) {
-        const rect = el.getBoundingClientRect();
-        const sRect = sidebar.getBoundingClientRect();
-        const elTop = rect.top - sRect.top + sidebar.scrollTop;
-        // Keep the element near the top so the picker below it stays on screen.
-        const target = elTop - (sidebar.clientHeight - rect.height) * 0.3;
-        sidebar.scrollTo({ top: Math.max(0, target), behavior });
-    } else {
-        el.scrollIntoView({ block: "center", behavior });
-    }
+	if (!el) return
+	const sidebar = document.getElementById('right-side-wrapper')
+	const style = sidebar ? getComputedStyle(sidebar) : null
+	const scrollsSidebar =
+		sidebar &&
+		(style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+		sidebar.scrollHeight > sidebar.clientHeight
+	const behavior = smooth ? 'smooth' : 'auto'
+	if (scrollsSidebar) {
+		const rect = el.getBoundingClientRect()
+		const sRect = sidebar.getBoundingClientRect()
+		const elTop = rect.top - sRect.top + sidebar.scrollTop
+		// Keep the element near the top so the picker below it stays on screen.
+		const target = elTop - (sidebar.clientHeight - rect.height) * 0.3
+		sidebar.scrollTo({ top: Math.max(0, target), behavior })
+	} else {
+		el.scrollIntoView({ block: 'center', behavior })
+	}
 }
 
 function fillTaskCourseOptions(courseSelect) {
-    const cards = options.custom_cards || {};
-    const courseColors = options.custom_cards_3 || {};
-    const currentCourseId = getCurrentCourseId();
-    // Hidden courses should not be offered as a target for custom tasks.
-    const entries = Object.entries(cards)
-        .filter(([, card]) => card?.hidden !== true && card?.hide !== true)
-        .map(([id, card]) => ({
-            id,
-            label: options.hide_personal_details === true ? fakeCourseLabel(id) : (card?.default || `Course ${id}`),
-            color:
-                courseColors?.[String(id)]?.color ??
-                courseColors?.[id]?.color ??
-                "#c7cdd1",
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label));
+	const cards = options.custom_cards || {}
+	const courseColors = options.custom_cards_3 || {}
+	const currentCourseId = getCurrentCourseId()
+	// Hidden courses should not be offered as a target for custom tasks.
+	const entries = Object.entries(cards)
+		.filter(([, card]) => card?.hidden !== true && card?.hide !== true)
+		.map(([id, card]) => ({
+			id,
+			label:
+				options.hide_personal_details === true
+					? fakeCourseLabel(id)
+					: card?.default || `Course ${id}`,
+			color: courseColors?.[String(id)]?.color ?? courseColors?.[id]?.color ?? '#c7cdd1',
+		}))
+		.sort((a, b) => a.label.localeCompare(b.label))
 
-    courseSelect.innerHTML = '<option value="">Personal task</option>';
-    courseSelect.options[0].dataset.color = "#c7cdd1";
-    entries.forEach(entry => {
-        const option = makeElement("option", courseSelect, {
-            value: entry.id,
-            textContent: entry.label,
-        });
-        option.dataset.color = entry.color;
-        option.style.color = entry.color;
-        if (currentCourseId && String(currentCourseId) === String(entry.id)) {
-            option.selected = true;
-        }
-    });
+	courseSelect.innerHTML = '<option value="">Personal task</option>'
+	courseSelect.options[0].dataset.color = '#c7cdd1'
+	entries.forEach((entry) => {
+		const option = makeElement('option', courseSelect, {
+			value: entry.id,
+			textContent: entry.label,
+		})
+		option.dataset.color = entry.color
+		option.style.color = entry.color
+		if (currentCourseId && String(currentCourseId) === String(entry.id)) {
+			option.selected = true
+		}
+	})
 }
 
 function updateTaskCourseSelectColor(courseSelect) {
-    const selectedOption = courseSelect?.options?.[courseSelect.selectedIndex];
-    const color = selectedOption?.dataset?.color || "#c7cdd1";
-    courseSelect.style.borderLeft = `4px solid ${color}`;
-    courseSelect.style.paddingLeft = "8px";
+	const selectedOption = courseSelect?.options?.[courseSelect.selectedIndex]
+	const color = selectedOption?.dataset?.color || '#c7cdd1'
+	courseSelect.style.borderLeft = `4px solid ${color}`
+	courseSelect.style.paddingLeft = '8px'
 }
 
 function ensureTodoTaskMenu(location, feedbackElement) {
-    let actionsRow = location.querySelector("#better-todo-actions-row");
+	let actionsRow = location.querySelector('#better-todo-actions-row')
 
-    if (!actionsRow) {
-        actionsRow = makeElement("div", location, {
-            id: "better-todo-actions-row",
-            style: "display:flex;flex-direction:column;gap:8px;margin-top:14px;",
-        });
+	if (!actionsRow) {
+		actionsRow = makeElement('div', location, {
+			id: 'better-todo-actions-row',
+			style: 'display:flex;flex-direction:column;gap:8px;margin-top:14px;',
+		})
 
-        const addTaskButton = makeElement("button", actionsRow, {
-            id: "better-todo-add-task-btn",
-            className: "canvasrefined-custom-btn",
-            textContent: "+ Add Task",
-            style: "width:100%;padding:6px 8px;cursor:pointer;",
-        });
+		const addTaskButton = makeElement('button', actionsRow, {
+			id: 'better-todo-add-task-btn',
+			className: 'canvasrefined-custom-btn',
+			textContent: '+ Add Task',
+			style: 'width:100%;padding:6px 8px;cursor:pointer;',
+		})
 
-        const menu = makeElement("div", actionsRow, {
-            id: "better-todo-add-task-menu",
-            className: "canvasrefined-add-assignment",
-        });
+		const menu = makeElement('div', actionsRow, {
+			id: 'better-todo-add-task-menu',
+			className: 'canvasrefined-add-assignment',
+		})
 
-        menu.innerHTML = `
+		menu.innerHTML = `
             <div style="display:flex;flex-direction:column;gap:8px;padding:8px;border:1px solid #c7cdd1;border-radius:6px;background:var(--bcbackground-2);position:relative;">
                 <button id="better-todo-add-task-close" type="button" class="canvasrefined-custom-btn" title="Close" style="position:absolute;top:4px;right:6px;padding:0 6px;cursor:pointer;line-height:18px;font-size:14px;color:var(--bctext-1);">\u00d7</button>
                 <input type="text" id="better-todo-new-task-title" class="canvasrefined-custom-input" placeholder="Task title" maxlength="255">
@@ -2448,195 +2773,213 @@ function ensureTodoTaskMenu(location, feedbackElement) {
                     </div>
                 </div>
             </div>
-        `;
+        `
 
-        const today = new Date();
-        menu.querySelector("#better-todo-new-task-date").value = formatDateForInput(today);
-        menu.querySelector("#better-todo-new-task-time").value = formatTimeForInput(today);
-        const courseSelect = menu.querySelector("#better-todo-new-task-course");
-        fillTaskCourseOptions(courseSelect);
-        updateTaskCourseSelectColor(courseSelect);
-        courseSelect.addEventListener("change", () => updateTaskCourseSelectColor(courseSelect));
+		const today = new Date()
+		menu.querySelector('#better-todo-new-task-date').value = formatDateForInput(today)
+		menu.querySelector('#better-todo-new-task-time').value = formatTimeForInput(today)
+		const courseSelect = menu.querySelector('#better-todo-new-task-course')
+		fillTaskCourseOptions(courseSelect)
+		updateTaskCourseSelectColor(courseSelect)
+		courseSelect.addEventListener('change', () =>
+			updateTaskCourseSelectColor(courseSelect),
+		)
 
-        addTaskButton.addEventListener("click", () => {
-            const willOpen = !menu.classList.contains("canvasrefined-custom-open");
-            menu.classList.toggle("canvasrefined-custom-open");
-            if (willOpen) {
-                resetTaskFormToCreate(menu);
-                // Scroll the form up so the picker stays on screen.
-                scrollTodoIntoView(menu, true);
-            }
-        });
+		addTaskButton.addEventListener('click', () => {
+			const willOpen = !menu.classList.contains('canvasrefined-custom-open')
+			menu.classList.toggle('canvasrefined-custom-open')
+			if (willOpen) {
+				resetTaskFormToCreate(menu)
+				// Scroll the form up so the picker stays on screen.
+				scrollTodoIntoView(menu, true)
+			}
+		})
 
-        const submitTask = async () => {
-            const status = menu.querySelector("#better-todo-add-task-status");
-            const submitButton = menu.querySelector("#better-todo-add-task-submit");
-            const deleteButton = menu.querySelector("#better-todo-add-task-delete");
-            status.textContent = "";
-            submitButton.disabled = true;
-            if (deleteButton) deleteButton.disabled = true;
+		const submitTask = async () => {
+			const status = menu.querySelector('#better-todo-add-task-status')
+			const submitButton = menu.querySelector('#better-todo-add-task-submit')
+			const deleteButton = menu.querySelector('#better-todo-add-task-delete')
+			status.textContent = ''
+			submitButton.disabled = true
+			if (deleteButton) deleteButton.disabled = true
 
-            try {
-                const payload = buildPlannerNotePayload(menu);
-                const editingId = menu.dataset.editingId || null;
-                if (editingId) {
-                    await updateCanvasPlannerNote(editingId, payload);
-                    saveCustomTaskLink(editingId, payload.link);
-                    status.textContent = "Task updated.";
-                } else {
-                    const created = await createCanvasPlannerNote(payload);
-                    const newId = created?.id;
-                    if (newId != null) saveCustomTaskLink(newId, payload.link);
-                    status.textContent = "Task created.";
-                }
-                status.style.color = "#198754";
-                resetTaskFormToCreate(menu);
-                menu.classList.remove("canvasrefined-custom-open");
+			try {
+				const payload = buildPlannerNotePayload(menu)
+				const editingId = menu.dataset.editingId || null
+				if (editingId) {
+					await updateCanvasPlannerNote(editingId, payload)
+					saveCustomTaskLink(editingId, payload.link)
+					status.textContent = 'Task updated.'
+				} else {
+					const created = await createCanvasPlannerNote(payload)
+					const newId = created?.id
+					if (newId != null) saveCustomTaskLink(newId, payload.link)
+					status.textContent = 'Task created.'
+				}
+				status.style.color = '#198754'
+				resetTaskFormToCreate(menu)
+				menu.classList.remove('canvasrefined-custom-open')
 
-                getAssignments();
-                clearTodoList();
-                createTodoSections(location);
-            } catch (e) {
-                status.textContent = e?.message || "Could not save task.";
-                status.style.color = "#db3754";
-            } finally {
-                submitButton.disabled = false;
-                if (deleteButton) deleteButton.disabled = false;
-            }
-        };
+				getAssignments()
+				clearTodoList()
+				createTodoSections(location)
+			} catch (e) {
+				status.textContent = e?.message || 'Could not save task.'
+				status.style.color = '#db3754'
+			} finally {
+				submitButton.disabled = false
+				if (deleteButton) deleteButton.disabled = false
+			}
+		}
 
-        menu.querySelector("#better-todo-add-task-submit").addEventListener("click", submitTask);
+		menu
+			.querySelector('#better-todo-add-task-submit')
+			.addEventListener('click', submitTask)
 
-        // Close (×) button: dismiss the form without creating/editing a task.
-        menu.querySelector("#better-todo-add-task-close")?.addEventListener("click", () => {
-            resetTaskFormToCreate(menu);
-            menu.classList.remove("canvasrefined-custom-open");
-        });
+		// Close (×) button: dismiss the form without creating/editing a task.
+		menu.querySelector('#better-todo-add-task-close')?.addEventListener('click', () => {
+			resetTaskFormToCreate(menu)
+			menu.classList.remove('canvasrefined-custom-open')
+		})
 
-        // Reposition the field on focus so the picker opens on screen.
-        ["#better-todo-new-task-date", "#better-todo-new-task-time"].forEach((sel) => {
-            const input = menu.querySelector(sel);
-            input?.addEventListener("focus", () => scrollTodoIntoView(input, false));
-        });
+		// Reposition the field on focus so the picker opens on screen.
+		;['#better-todo-new-task-date', '#better-todo-new-task-time'].forEach((sel) => {
+			const input = menu.querySelector(sel)
+			input?.addEventListener('focus', () => scrollTodoIntoView(input, false))
+		})
 
-        menu.querySelector("#better-todo-add-task-delete").addEventListener("click", async () => {
-            const editingId = menu.dataset.editingId || null;
-            if (!editingId) return;
-            if (!confirm("Delete this custom task? This cannot be undone.")) return;
-            const status = menu.querySelector("#better-todo-add-task-status");
-            const submitButton = menu.querySelector("#better-todo-add-task-submit");
-            const deleteButton = menu.querySelector("#better-todo-add-task-delete");
-            status.textContent = "";
-            submitButton.disabled = true;
-            deleteButton.disabled = true;
-            try {
-                await deleteCanvasPlannerNote(editingId);
-                deleteCustomTaskLink(editingId);
-                resetTaskFormToCreate(menu);
-                menu.classList.remove("canvasrefined-custom-open");
-                getAssignments();
-                clearTodoList();
-                createTodoSections(location);
-            } catch (e) {
-                status.textContent = e?.message || "Could not delete task.";
-                status.style.color = "#db3754";
-            } finally {
-                submitButton.disabled = false;
-                deleteButton.disabled = false;
-            }
-        });
-    }
+		menu
+			.querySelector('#better-todo-add-task-delete')
+			.addEventListener('click', async () => {
+				const editingId = menu.dataset.editingId || null
+				if (!editingId) return
+				if (!confirm('Delete this custom task? This cannot be undone.')) return
+				const status = menu.querySelector('#better-todo-add-task-status')
+				const submitButton = menu.querySelector('#better-todo-add-task-submit')
+				const deleteButton = menu.querySelector('#better-todo-add-task-delete')
+				status.textContent = ''
+				submitButton.disabled = true
+				deleteButton.disabled = true
+				try {
+					await deleteCanvasPlannerNote(editingId)
+					deleteCustomTaskLink(editingId)
+					resetTaskFormToCreate(menu)
+					menu.classList.remove('canvasrefined-custom-open')
+					getAssignments()
+					clearTodoList()
+					createTodoSections(location)
+				} catch (e) {
+					status.textContent = e?.message || 'Could not delete task.'
+					status.style.color = '#db3754'
+				} finally {
+					submitButton.disabled = false
+					deleteButton.disabled = false
+				}
+			})
+	}
 
-    if (feedbackElement) {
-        if (actionsRow.nextSibling !== feedbackElement) {
-            location.insertBefore(actionsRow, feedbackElement);
-        }
-    } else if (actionsRow.parentElement !== location) {
-        location.append(actionsRow);
-    }
+	if (feedbackElement) {
+		if (actionsRow.nextSibling !== feedbackElement) {
+			location.insertBefore(actionsRow, feedbackElement)
+		}
+	} else if (actionsRow.parentElement !== location) {
+		location.append(actionsRow)
+	}
 }
 
 // Reset the shared add/edit task form back to a blank "create" state.
 function resetTaskFormToCreate(menu) {
-    if (!menu) return;
-    menu.querySelector("#better-todo-new-task-title").value = "";
-    menu.querySelector("#better-todo-new-task-details").value = "";
-    menu.querySelector("#better-todo-new-task-link").value = "";
-    const courseSelect = menu.querySelector("#better-todo-new-task-course");
-    if (courseSelect) {
-        fillTaskCourseOptions(courseSelect);
-        updateTaskCourseSelectColor(courseSelect);
-    }
-    const now = new Date();
-    menu.querySelector("#better-todo-new-task-date").value = formatDateForInput(now);
-    menu.querySelector("#better-todo-new-task-time").value = formatTimeForInput(now);
-    const status = menu.querySelector("#better-todo-add-task-status");
-    if (status) { status.textContent = ""; status.style.color = ""; }
-    const del = menu.querySelector("#better-todo-add-task-delete");
-    if (del) del.style.display = "none";
-    const submit = menu.querySelector("#better-todo-add-task-submit");
-    if (submit) submit.textContent = "Create";
-    delete menu.dataset.editingId;
+	if (!menu) return
+	menu.querySelector('#better-todo-new-task-title').value = ''
+	menu.querySelector('#better-todo-new-task-details').value = ''
+	menu.querySelector('#better-todo-new-task-link').value = ''
+	const courseSelect = menu.querySelector('#better-todo-new-task-course')
+	if (courseSelect) {
+		fillTaskCourseOptions(courseSelect)
+		updateTaskCourseSelectColor(courseSelect)
+	}
+	const now = new Date()
+	menu.querySelector('#better-todo-new-task-date').value = formatDateForInput(now)
+	menu.querySelector('#better-todo-new-task-time').value = formatTimeForInput(now)
+	const status = menu.querySelector('#better-todo-add-task-status')
+	if (status) {
+		status.textContent = ''
+		status.style.color = ''
+	}
+	const del = menu.querySelector('#better-todo-add-task-delete')
+	if (del) del.style.display = 'none'
+	const submit = menu.querySelector('#better-todo-add-task-submit')
+	if (submit) submit.textContent = 'Create'
+	delete menu.dataset.editingId
 }
 
 // Open the shared form pre-filled with a custom task for editing or deletion.
 function openTaskForEdit(item) {
-    const location = document.getElementById("canvasrefined-todo-list");
-    if (!location) return;
-    const feedbackElement = location.querySelector(".recent_feedback");
-    ensureTodoTaskMenu(location, feedbackElement);
-    const menu = document.getElementById("better-todo-add-task-menu");
-    if (!menu) return;
+	const location = document.getElementById('canvasrefined-todo-list')
+	if (!location) return
+	const feedbackElement = location.querySelector('.recent_feedback')
+	ensureTodoTaskMenu(location, feedbackElement)
+	const menu = document.getElementById('better-todo-add-task-menu')
+	if (!menu) return
 
-    const noteId = getCustomTaskLinkId(item);
-    menu.querySelector("#better-todo-new-task-title").value = item?.plannable?.title || "";
-    menu.querySelector("#better-todo-new-task-details").value = item?.plannable?.details || "";
-    const courseSelect = menu.querySelector("#better-todo-new-task-course");
-    const cid = item?.course_id || item?.plannable?.course_id || "";
-    if (courseSelect) courseSelect.value = cid ? String(cid) : "";
-    updateTaskCourseSelectColor(courseSelect);
+	const noteId = getCustomTaskLinkId(item)
+	menu.querySelector('#better-todo-new-task-title').value = item?.plannable?.title || ''
+	menu.querySelector('#better-todo-new-task-details').value =
+		item?.plannable?.details || ''
+	const courseSelect = menu.querySelector('#better-todo-new-task-course')
+	const cid = item?.course_id || item?.plannable?.course_id || ''
+	if (courseSelect) courseSelect.value = cid ? String(cid) : ''
+	updateTaskCourseSelectColor(courseSelect)
 
-    const dateObj = new Date(item?.plannable_date || item?.plannable?.todo_date || Date.now());
-    if (!Number.isNaN(dateObj.getTime())) {
-        menu.querySelector("#better-todo-new-task-date").value = formatDateForInput(dateObj);
-        menu.querySelector("#better-todo-new-task-time").value = formatTimeForInput(dateObj);
-    }
-    const links = getCustomTaskLinks();
-    menu.querySelector("#better-todo-new-task-link").value = (noteId != null && links[String(noteId)]) || "";
+	const dateObj = new Date(
+		item?.plannable_date || item?.plannable?.todo_date || Date.now(),
+	)
+	if (!Number.isNaN(dateObj.getTime())) {
+		menu.querySelector('#better-todo-new-task-date').value = formatDateForInput(dateObj)
+		menu.querySelector('#better-todo-new-task-time').value = formatTimeForInput(dateObj)
+	}
+	const links = getCustomTaskLinks()
+	menu.querySelector('#better-todo-new-task-link').value =
+		(noteId != null && links[String(noteId)]) || ''
 
-    menu.dataset.editingId = noteId != null ? String(noteId) : "";
-    const del = menu.querySelector("#better-todo-add-task-delete");
-    if (del) del.style.display = "";
-    menu.querySelector("#better-todo-add-task-submit").textContent = "Save";
-    const status = menu.querySelector("#better-todo-add-task-status");
-    if (status) { status.textContent = ""; status.style.color = ""; }
-    menu.classList.add("canvasrefined-custom-open");
-    scrollTodoIntoView(menu, true);
+	menu.dataset.editingId = noteId != null ? String(noteId) : ''
+	const del = menu.querySelector('#better-todo-add-task-delete')
+	if (del) del.style.display = ''
+	menu.querySelector('#better-todo-add-task-submit').textContent = 'Save'
+	const status = menu.querySelector('#better-todo-add-task-status')
+	if (status) {
+		status.textContent = ''
+		status.style.color = ''
+	}
+	menu.classList.add('canvasrefined-custom-open')
+	scrollTodoIntoView(menu, true)
 }
 
 async function createTodoSections(location) {
-	if (!location || !assignments || typeof assignments.then !== "function") return;
+	if (!location || !assignments || typeof assignments.then !== 'function') return
 	// Render-generation guard: capture the counter at call time and bail out of
 	// the async render if a newer call has started by the time our data
 	// resolves. Incremented only after the guards above, so a bail-out can
 	// never cancel an in-flight render without scheduling a replacement.
-	const renderGen = ++todoRenderGen;
-    applyTodoSidebarLayout();
-	if (!location.querySelector("#better-todo-header")) {
-		let header = makeElement("div", location, { id: "better-todo-header" });
-		header.style = "display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bcbackground-1);padding-bottom:-2px;";
-        header.innerHTML = `
+	const renderGen = ++todoRenderGen
+	applyTodoSidebarLayout()
+	if (!location.querySelector('#better-todo-header')) {
+		let header = makeElement('div', location, { id: 'better-todo-header' })
+		header.style =
+			'display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bcbackground-1);padding-bottom:-2px;'
+		header.innerHTML = `
                 <h2 style="border:none !important;padding: 0">Tasks</h2>
-            `;
+            `
 
-        // Timeframe pager below the header: arrows page through the timeframe
-        // window (e.g. a 1-week timeframe pages this week -> week 2 -> week 3,
-        // skipping over everything before the window being shown). The left
-        // arrow is disabled on the current window. Arrow keys also work while
-        // hovering the pager.
-        const timeframeNav = makeElement("div", location, { id: "better-todo-timeframe-nav" });
-        timeframeNav.style = "display:none;align-items:center;justify-content:center;width:100%;margin-top:8px;user-select:none;";
-        timeframeNav.innerHTML = `
+		// Timeframe pager below the header: arrows page through the timeframe
+		// window (e.g. a 1-week timeframe pages this week -> week 2 -> week 3,
+		// skipping over everything before the window being shown). The left
+		// arrow is disabled on the current window. Arrow keys also work while
+		// hovering the pager.
+		const timeframeNav = makeElement('div', location, { id: 'better-todo-timeframe-nav' })
+		timeframeNav.style =
+			'display:none;align-items:center;justify-content:center;width:100%;margin-top:8px;user-select:none;'
+		timeframeNav.innerHTML = `
             <button id="better-todo-timeframe-prev" type="button" title="Previous timeframe" style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border:none;border-radius:50%;background:transparent;cursor:pointer;transition:all .2s ease;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 6L9 12L15 18" stroke="var(--bctext-0)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -2648,34 +2991,50 @@ async function createTodoSections(location) {
                     <path d="M9 6L15 12L9 18" stroke="var(--bctext-0)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
-        `;
-        const changeTimeframeOffset = (delta) => {
-            const tf = getTodoTimeframeKey();
-            if (tf === "all") return;
-            const nextOffset = Math.max(0, betterTodoTimeframeOffset + delta);
-            if (nextOffset === betterTodoTimeframeOffset) return;
-            betterTodoTimeframeOffset = nextOffset;
-            moreAnnouncementCount = 0;
-            moreAssignmentCount = 0;
-            moreCompletedCount = 0;
-            clearTodoList();
-            createTodoSections(location);
-        };
-        timeframeNav.querySelector("#better-todo-timeframe-prev").addEventListener("click", () => changeTimeframeOffset(-1));
-        timeframeNav.querySelector("#better-todo-timeframe-next").addEventListener("click", () => changeTimeframeOffset(1));
-        // Keyboard arrows page the timeframe while hovering the pager (and
-        // only then, so normal arrow-key use elsewhere is untouched).
-        const timeframeKeyHandler = (e) => {
-            if (e.key === "ArrowRight") { e.preventDefault(); changeTimeframeOffset(1); }
-            else if (e.key === "ArrowLeft") { e.preventDefault(); changeTimeframeOffset(-1); }
-        };
-        timeframeNav.addEventListener("mouseenter", () => document.addEventListener("keydown", timeframeKeyHandler));
-        timeframeNav.addEventListener("mouseleave", () => document.removeEventListener("keydown", timeframeKeyHandler));
+        `
+		const changeTimeframeOffset = (delta) => {
+			const tf = getTodoTimeframeKey()
+			if (tf === 'all') return
+			const nextOffset = Math.max(0, betterTodoTimeframeOffset + delta)
+			if (nextOffset === betterTodoTimeframeOffset) return
+			betterTodoTimeframeOffset = nextOffset
+			moreAnnouncementCount = 0
+			moreAssignmentCount = 0
+			moreCompletedCount = 0
+			clearTodoList()
+			createTodoSections(location)
+		}
+		timeframeNav
+			.querySelector('#better-todo-timeframe-prev')
+			.addEventListener('click', () => changeTimeframeOffset(-1))
+		timeframeNav
+			.querySelector('#better-todo-timeframe-next')
+			.addEventListener('click', () => changeTimeframeOffset(1))
+		// Keyboard arrows page the timeframe while hovering the pager (and
+		// only then, so normal arrow-key use elsewhere is untouched).
+		const timeframeKeyHandler = (e) => {
+			if (e.key === 'ArrowRight') {
+				e.preventDefault()
+				changeTimeframeOffset(1)
+			} else if (e.key === 'ArrowLeft') {
+				e.preventDefault()
+				changeTimeframeOffset(-1)
+			}
+		}
+		timeframeNav.addEventListener('mouseenter', () =>
+			document.addEventListener('keydown', timeframeKeyHandler),
+		)
+		timeframeNav.addEventListener('mouseleave', () =>
+			document.removeEventListener('keydown', timeframeKeyHandler),
+		)
 
-        // placeholder for progress rings above the tab/filter control
-        makeElement("div", location, { id: "better-todo-progress-placeholder", style: "display:flex;justify-content:center;margin-top:8px;" });
+		// placeholder for progress rings above the tab/filter control
+		makeElement('div', location, {
+			id: 'better-todo-progress-placeholder',
+			style: 'display:flex;justify-content:center;margin-top:8px;',
+		})
 
-		let filterControl = makeElement("div", location, { "id": "better-todo-filter" });
+		let filterControl = makeElement('div', location, { id: 'better-todo-filter' })
 		filterControl.innerHTML = `
 		<div style="display:flex;justify-content:center;margin-top:20px;">
 			<div id="better-todo-filterbuttongroup" style="display:flex;justify-content:space-between;position:relative;padding-bottom:5px;width:80%;height:30px;">
@@ -2712,202 +3071,259 @@ async function createTodoSections(location) {
 				<div id="better-todo-indicator" style="position:absolute;bottom:4px;left:0;height:3px;background-color:var(--bctext-0);border-radius:3px 3px 0 0;transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);"></div>
 			</div>
 		</div>
-		`;
-		setTimeout(() => updateIndicator(document.getElementById("better-todo-assignments")), 10);
+		`
+		setTimeout(
+			() => updateIndicator(document.getElementById('better-todo-assignments')),
+			10,
+		)
 
-		document.getElementById("better-todo-announcement").addEventListener("click", (e) => {
-			betterTodoFilter = "announcements";
-			moreAnnouncementCount = 0;
-			updateIndicator(e.currentTarget);
-			clearTodoList();
-			createTodoSections(location);
-		});
-		document.getElementById("better-todo-assignments").addEventListener("click", (e) => {
-			betterTodoFilter = "tasks";
-			moreAssignmentCount = 0;
-			updateIndicator(e.currentTarget);
-			clearTodoList();
-			createTodoSections(location);
-		});
-		document.getElementById("better-todo-completed").addEventListener("click", (e) => {
-			betterTodoFilter = "completed";
-			moreCompletedCount = 0;
-			updateIndicator(e.currentTarget);
-			clearTodoList();
-			createTodoSections(location);
-		});
-		document.getElementById("better-todo-feedback").addEventListener("click", (e) => {
-			betterTodoFilter = "feedback";
-			updateIndicator(e.currentTarget);
-			clearTodoList();
-			createTodoSections(location);
-		});
+		document.getElementById('better-todo-announcement').addEventListener('click', (e) => {
+			betterTodoFilter = 'announcements'
+			moreAnnouncementCount = 0
+			updateIndicator(e.currentTarget)
+			clearTodoList()
+			createTodoSections(location)
+		})
+		document.getElementById('better-todo-assignments').addEventListener('click', (e) => {
+			betterTodoFilter = 'tasks'
+			moreAssignmentCount = 0
+			updateIndicator(e.currentTarget)
+			clearTodoList()
+			createTodoSections(location)
+		})
+		document.getElementById('better-todo-completed').addEventListener('click', (e) => {
+			betterTodoFilter = 'completed'
+			moreCompletedCount = 0
+			updateIndicator(e.currentTarget)
+			clearTodoList()
+			createTodoSections(location)
+		})
+		document.getElementById('better-todo-feedback').addEventListener('click', (e) => {
+			betterTodoFilter = 'feedback'
+			updateIndicator(e.currentTarget)
+			clearTodoList()
+			createTodoSections(location)
+		})
 
-		let mainSection = makeElement("div", location, {
-			id: "better-todo-main",
-		});
-		mainSection.style = "display:flex;flex-direction:column;";
+		let mainSection = makeElement('div', location, {
+			id: 'better-todo-main',
+		})
+		mainSection.style = 'display:flex;flex-direction:column;'
 	}
-	let mainSection = location.querySelector("#better-todo-main");
+	let mainSection = location.querySelector('#better-todo-main')
 	// Refresh the timeframe pager's label/arrows on every render (visibility
 	// depends on the current tab and the todo_timeframe option).
-	updateTodoTimeframeNav();
-    const feedbackElement = location.querySelector(".recent_feedback");
-    const showFeedback = betterTodoFilter === "feedback" && options.todo_hide_feedback !== true;
-    if (feedbackElement) feedbackElement.style.display = showFeedback ? "block" : "none";
-	assignments.then(data => {
-	    // A newer render superseded this one — appending now would duplicate
-	    // the whole list on top of it.
-	    if (renderGen !== todoRenderGen) return;
-        const courseId = getCurrentCourseId();
-        const scopedData = getTodoScopedData(data, courseId);
+	updateTodoTimeframeNav()
+	const feedbackElement = location.querySelector('.recent_feedback')
+	const showFeedback =
+		betterTodoFilter === 'feedback' && options.todo_hide_feedback !== true
+	if (feedbackElement) feedbackElement.style.display = showFeedback ? 'block' : 'none'
+	assignments
+		.then((data) => {
+			// A newer render superseded this one — appending now would duplicate
+			// the whole list on top of it.
+			if (renderGen !== todoRenderGen) return
+			const courseId = getCurrentCourseId()
+			const scopedData = getTodoScopedData(data, courseId)
 
-        // Clicking a color in the progress display filters the list to that
-        // one class. The filter only makes sense where multiple classes show
-        // (dashboard/profile), so it is cleared on course pages.
-        if (courseId) betterTodoProgressFilter = null;
-        const displayData = (betterTodoProgressFilter == null)
-            ? scopedData
-            : scopedData.filter(item => {
-                const cid = String(item.course_id || item.context_id || item.plannable?.course_id || "personal");
-                return cid === String(betterTodoProgressFilter);
-            });
+			// Clicking a color in the progress display filters the list to that
+			// one class. The filter only makes sense where multiple classes show
+			// (dashboard/profile), so it is cleared on course pages.
+			if (courseId) betterTodoProgressFilter = null
+			const displayData =
+				betterTodoProgressFilter == null
+					? scopedData
+					: scopedData.filter((item) => {
+							const cid = String(
+								item.course_id ||
+									item.context_id ||
+									item.plannable?.course_id ||
+									'personal',
+							)
+							return cid === String(betterTodoProgressFilter)
+						})
 
-        // Announcements: dismissed (marked-complete) ones are always
-        // hidden, and already-read ones are hidden unless the user turned
-        // "Hide read announcements" off. This mirrors how native Canvas
-        // clears announcements from the to-do once seen; without it the list
-        // accumulated every announcement in the lookback window (reporters
-        // saw 200+ "Seen" entries from a single year). Read-state filters
-        // alone don't fix the whole window, though: an announcement the user
-        // simply never opened stays "unread" forever, so year-old ones kept
-        // appearing under "New" and inflating the unread badge. Anything
-        // older than TODO_ANNOUNCEMENT_MAX_AGE_DAYS is stale regardless of
-        // read state and is dropped here (see that constant for rationale).
-        announcements = displayData.filter(item => {
-            if (item.plannable_type != "announcement") return false;
-            if (item.planner_override?.marked_complete === true) return false;
-            if (options.todo_hide_read !== false && item.plannable.read_state == "read") return false;
-            const postedAt = new Date(item.plannable_date).getTime();
-            if (!Number.isNaN(postedAt) && postedAt < Date.now() - TODO_ANNOUNCEMENT_MAX_AGE_DAYS * 86400000) return false;
-            return true;
-        });
-        // Planner items arrive oldest-first (sortAndTrimPlannerItems), so
-        // without this the Announcements tab showed the newest posts at the
-        // bottom. Display newest-first instead: sort a descending copy by
-        // posted date (filter() already returns a fresh array, so this never
-        // mutates the shared planner list).
-        announcements.sort((a, b) => new Date(b.plannable_date) - new Date(a.plannable_date));
-        // Pinned items (locally forced incomplete, e.g. a submitted assignment
-        // the user sent back to Tasks) always count as due; everything else is
-        // due only when neither submitted nor marked complete.
-        assignmentsDue = displayData.filter(item => isTodoTaskType(item) && ((!item.submissions?.submitted && !item.planner_override?.marked_complete) || isPinnedIncomplete(item)));
-        completed = displayData.filter(item => isTodoTaskType(item) && (item.submissions?.submitted || item.planner_override?.marked_complete) && !isPinnedIncomplete(item));
-        // The timeframe is a persisted Better Todo List sub-option set in the
-        // settings page. Read the current value each render so settings changes apply on
-        // the next render. Every tab is paged through time: Tasks by due
-        // date, Announcements by posted date, Completed by due date. On the
-        // current window (offset 0) everything on/before the cutoff stays
-        // visible, so only paging forward narrows these two tabs.
-        // Pinned items ("sent back" submissions) bypass the window filter so
-        // an old pinned item still shows up under Tasks.
-        const pinnedItems = assignmentsDue.filter(item => isPinnedIncomplete(item));
-        assignmentsDue = applyTodoTimeframe(assignmentsDue.filter(item => !isPinnedIncomplete(item))).concat(pinnedItems);
-        announcements = applyTodoTimeframe(announcements);
-        completed = applyTodoTimeframe(completed);
-		// console.log("assignments", assignmentsDue);
-		// console.log("announcements", announcements);
-		// console.log("completed", completed);
+			// Announcements: dismissed (marked-complete) ones are always
+			// hidden, and already-read ones are hidden unless the user turned
+			// "Hide read announcements" off. This mirrors how native Canvas
+			// clears announcements from the to-do once seen; without it the list
+			// accumulated every announcement in the lookback window (reporters
+			// saw 200+ "Seen" entries from a single year). Read-state filters
+			// alone don't fix the whole window, though: an announcement the user
+			// simply never opened stays "unread" forever, so year-old ones kept
+			// appearing under "New" and inflating the unread badge. Anything
+			// older than TODO_ANNOUNCEMENT_MAX_AGE_DAYS is stale regardless of
+			// read state and is dropped here (see that constant for rationale).
+			announcements = displayData.filter((item) => {
+				if (item.plannable_type != 'announcement') return false
+				if (item.planner_override?.marked_complete === true) return false
+				if (options.todo_hide_read !== false && item.plannable.read_state == 'read')
+					return false
+				const postedAt = new Date(item.plannable_date).getTime()
+				if (
+					!Number.isNaN(postedAt) &&
+					postedAt < Date.now() - TODO_ANNOUNCEMENT_MAX_AGE_DAYS * 86400000
+				)
+					return false
+				return true
+			})
+			// Planner items arrive oldest-first (sortAndTrimPlannerItems), so
+			// without this the Announcements tab showed the newest posts at the
+			// bottom. Display newest-first instead: sort a descending copy by
+			// posted date (filter() already returns a fresh array, so this never
+			// mutates the shared planner list).
+			announcements.sort(
+				(a, b) => new Date(b.plannable_date) - new Date(a.plannable_date),
+			)
+			// Pinned items (locally forced incomplete, e.g. a submitted assignment
+			// the user sent back to Tasks) always count as due; everything else is
+			// due only when neither submitted nor marked complete.
+			assignmentsDue = displayData.filter(
+				(item) =>
+					isTodoTaskType(item) &&
+					((!item.submissions?.submitted && !item.planner_override?.marked_complete) ||
+						isPinnedIncomplete(item)),
+			)
+			completed = displayData.filter(
+				(item) =>
+					isTodoTaskType(item) &&
+					(item.submissions?.submitted || item.planner_override?.marked_complete) &&
+					!isPinnedIncomplete(item),
+			)
+			// The timeframe is a persisted Better Todo List sub-option set in the
+			// settings page. Read the current value each render so settings changes apply on
+			// the next render. Every tab is paged through time: Tasks by due
+			// date, Announcements by posted date, Completed by due date. On the
+			// current window (offset 0) everything on/before the cutoff stays
+			// visible, so only paging forward narrows these two tabs.
+			// Pinned items ("sent back" submissions) bypass the window filter so
+			// an old pinned item still shows up under Tasks.
+			const pinnedItems = assignmentsDue.filter((item) => isPinnedIncomplete(item))
+			assignmentsDue = applyTodoTimeframe(
+				assignmentsDue.filter((item) => !isPinnedIncomplete(item)),
+			).concat(pinnedItems)
+			announcements = applyTodoTimeframe(announcements)
+			completed = applyTodoTimeframe(completed)
+			// console.log("assignments", assignmentsDue);
+			// console.log("announcements", announcements);
+			// console.log("completed", completed);
 
-        if (document.getElementById("better-todo-announcement-badge")) {
-            document.getElementById("better-todo-announcement-badge").remove();
-        }
-        let isAnnoucementBadge = 0;
-        announcements.forEach(item => {
-            if (item.plannable.read_state == "unread") {
-                isAnnoucementBadge++;
-                return;
-            }
-        })
-        if (isAnnoucementBadge > 0) {
-            makeElement("div", document.getElementById("better-todo-announcement"), {
-                id: "better-todo-announcement-badge",
-                style: "background-color:#ff0000;width:15px;height:15px;border-radius:50%;font-size:12px;position:absolute;top:-7px;left:16px;display:flex;justify-content:center;align-items:center;", // TODO: theme compatibility
-                innerHTML: `<span style="color:white;">${isAnnoucementBadge}</span>`
-            })
-		}
+			if (document.getElementById('better-todo-announcement-badge')) {
+				document.getElementById('better-todo-announcement-badge').remove()
+			}
+			let isAnnoucementBadge = 0
+			announcements.forEach((item) => {
+				if (item.plannable.read_state == 'unread') {
+					isAnnoucementBadge++
+					return
+				}
+			})
+			if (isAnnoucementBadge > 0) {
+				makeElement('div', document.getElementById('better-todo-announcement'), {
+					id: 'better-todo-announcement-badge',
+					style:
+						'background-color:#ff0000;width:15px;height:15px;border-radius:50%;font-size:12px;position:absolute;top:-7px;left:16px;display:flex;justify-content:center;align-items:center;', // TODO: theme compatibility
+					innerHTML: `<span style="color:white;">${isAnnoucementBadge}</span>`,
+				})
+			}
 
-		domContainers = {};
-		const groupKeys = ["-1", "0", "1", "2", "3", "4", "5", "6", "7", "14", "21", "30", "Later", "New", "Seen", "Ungraded", "Graded"];
-        for (const key of groupKeys) {
-            let wrapper = makeElement("div", mainSection, {
-                style: "display:none;margin-top:10px;",
-                className: "better-todo-dueheader",
-            });
-            let label = "";
-            if (key == "Later") label = "Due <strong>Later</strong>";
-            if (key == "-1") label = "<strong>Overdue</strong>";
-            else if (key == "0") label = "Due <strong>Today</strong>";
-            else if (key == "1") label = "Due <strong>Tomorrow</strong>";
-            else if (key >= 2 && key < 7) label = "Due <strong>" + key + " days</strong>";
-            else if (key >= 7 && key < 30) label = "Due <strong>" + key/7 + " weeks</strong>";
-            else if (key == "30") label = "Due <strong>1 month</strong>";
-            else label = "<strong>" + key + "</strong>";
-            makeElement("div", wrapper, {
-                innerHTML: "<span>" + label + "</span>",
-                style: "display:flex;flex-direction:column;gap:10px;font-size:12px;color:var(--bctext-0);"
-            })
+			domContainers = {}
+			const groupKeys = [
+				'-1',
+				'0',
+				'1',
+				'2',
+				'3',
+				'4',
+				'5',
+				'6',
+				'7',
+				'14',
+				'21',
+				'30',
+				'Later',
+				'New',
+				'Seen',
+				'Ungraded',
+				'Graded',
+			]
+			for (const key of groupKeys) {
+				let wrapper = makeElement('div', mainSection, {
+					style: 'display:none;margin-top:10px;',
+					className: 'better-todo-dueheader',
+				})
+				let label = ''
+				if (key == 'Later') label = 'Due <strong>Later</strong>'
+				if (key == '-1') label = '<strong>Overdue</strong>'
+				else if (key == '0') label = 'Due <strong>Today</strong>'
+				else if (key == '1') label = 'Due <strong>Tomorrow</strong>'
+				else if (key >= 2 && key < 7) label = 'Due <strong>' + key + ' days</strong>'
+				else if (key >= 7 && key < 30)
+					label = 'Due <strong>' + key / 7 + ' weeks</strong>'
+				else if (key == '30') label = 'Due <strong>1 month</strong>'
+				else label = '<strong>' + key + '</strong>'
+				makeElement('div', wrapper, {
+					innerHTML: '<span>' + label + '</span>',
+					style:
+						'display:flex;flex-direction:column;gap:10px;font-size:12px;color:var(--bctext-0);',
+				})
 
-            let listContainer = makeElement("div", wrapper, { className: "todo-group-list" });
-            listContainer.style = "display:flex;flex-direction:column;gap:10px;";
+				let listContainer = makeElement('div', wrapper, { className: 'todo-group-list' })
+				listContainer.style = 'display:flex;flex-direction:column;gap:10px;'
 
-            domContainers[key] = { wrapper, listContainer };
-        }
+				domContainers[key] = { wrapper, listContainer }
+			}
 
+			if (betterTodoFilter == 'tasks') {
+				populateAssignments()
+			}
+			if (betterTodoFilter == 'announcements') {
+				populateAnnouncements()
+			}
+			if (betterTodoFilter == 'completed') {
+				populateAssignments(true)
+			}
 
-        if (betterTodoFilter == "tasks") {
-            populateAssignments();
-        }
-        if (betterTodoFilter == "announcements") {
-            populateAnnouncements();
-        }
-        if (betterTodoFilter == "completed") {
-            populateAssignments(true);
-        }
+			if (betterTodoFilter === 'feedback' && (!feedbackElement || !showFeedback)) {
+				const emptyState = makeElement('div', mainSection, {
+					className: 'better-todo-dueheader',
+				})
+				makeElement('p', emptyState, {
+					textContent:
+						options.todo_hide_feedback === true
+							? 'Recent feedback is hidden in Todo List settings.'
+							: 'No recent feedback.',
+				})
+			}
 
-        if (betterTodoFilter === "feedback" && (!feedbackElement || !showFeedback)) {
-            const emptyState = makeElement("div", mainSection, { className: "better-todo-dueheader" });
-            makeElement("p", emptyState, {
-                textContent: options.todo_hide_feedback === true
-                    ? "Recent feedback is hidden in Todo List settings."
-                    : "No recent feedback."
-            });
-        }
+			// populate progress rings placeholder (respect user toggle)
+			const progressPlaceholder = document.getElementById(
+				'better-todo-progress-placeholder',
+			)
+			if (progressPlaceholder) {
+				if (progressRingsEnabled()) {
+					renderProgressRings(progressPlaceholder, scopedData)
+				} else {
+					progressPlaceholder.innerHTML = ''
+				}
+			}
 
-        // populate progress rings placeholder (respect user toggle)
-        const progressPlaceholder = document.getElementById("better-todo-progress-placeholder");
-        if (progressPlaceholder) {
-            if (progressRingsEnabled()) {
-                renderProgressRings(progressPlaceholder, scopedData);
-            } else {
-                progressPlaceholder.innerHTML = "";
-            }
-        }
+			// Only show the Add Task control on the Assignments (tasks) tab.
+			if (betterTodoFilter === 'tasks') {
+				ensureTodoTaskMenu(location, feedbackElement)
+			} else {
+				const existing = location.querySelector('#better-todo-actions-row')
+				if (existing) existing.remove()
+			}
 
-        // Only show the Add Task control on the Assignments (tasks) tab.
-        if (betterTodoFilter === "tasks") {
-            ensureTodoTaskMenu(location, feedbackElement);
-        } else {
-            const existing = location.querySelector("#better-todo-actions-row");
-            if (existing) existing.remove();
-        }
-
-        applyTodoSidebarLayout();
-	}).catch(err => {
-		// A rejected data promise must not leave the todo list half-rendered or
-		// throw unhandled; the generation guard above keeps renders idempotent.
-		if (renderGen === todoRenderGen) console.warn("Canvas Enhanced - todo list render failed", err);
-	});
+			applyTodoSidebarLayout()
+		})
+		.catch((err) => {
+			// A rejected data promise must not leave the todo list half-rendered or
+			// throw unhandled; the generation guard above keeps renders idempotent.
+			if (renderGen === todoRenderGen)
+				console.warn('Canvas Enhanced - todo list render failed', err)
+		})
 }
 
 // Height the todo sidebar must shed to fit the viewport: the nav-toggle +
@@ -2915,46 +3331,49 @@ async function createTodoSections(location) {
 // sidebar forces the page to scroll by exactly the bar's height. Returns 0
 // when the bar is hidden or absent (dashboard pages have no crumbs bar).
 function todoViewportOffsetPx() {
-	const crumbs = document.querySelector(".ic-app-nav-toggle-and-crumbs");
-	const h = crumbs ? crumbs.offsetHeight : 0;
-	return h > 0 ? h : 0;
+	const crumbs = document.querySelector('.ic-app-nav-toggle-and-crumbs')
+	const h = crumbs ? crumbs.offsetHeight : 0
+	return h > 0 ? h : 0
 }
 
 // The navbar height changes with window size/zoom, so re-apply the height
 // styles on resize (without a full todo re-render).
-let todoHeightResizeTimer = null;
-window.addEventListener("resize", () => {
-	if (todoHeightResizeTimer) clearTimeout(todoHeightResizeTimer);
+let todoHeightResizeTimer = null
+window.addEventListener('resize', () => {
+	if (todoHeightResizeTimer) clearTimeout(todoHeightResizeTimer)
 	todoHeightResizeTimer = setTimeout(() => {
-        if (!document.getElementById("better-todo-main")) return;
-        applyTodoSidebarLayout();
-	}, 150);
-});
+		if (!document.getElementById('better-todo-main')) return
+		applyTodoSidebarLayout()
+	}, 150)
+})
 
 function applyTodoSidebarLayout() {
-    const sidebar = document.getElementById("right-side-wrapper");
-    if (!sidebar) return;
-    const dashboard = isDashboardPage();
-    const gap = dashboard ? 24 : 0;
-    const viewportOffset = todoViewportOffsetPx() + gap * 2;
-    const height = viewportOffset > 0 ? `calc(100vh - ${viewportOffset}px)` : "100vh";
-    sidebar.style.boxSizing = "border-box";
-    sidebar.style.marginTop = gap ? `${gap}px` : "";
-    sidebar.style.marginBottom = gap ? `${gap}px` : "";
-    sidebar.style.minHeight = options.todo_full_height ? height : "";
-    sidebar.style.position = options.todo_separate_scrollbar ? "sticky" : "";
-    sidebar.style.top = options.todo_separate_scrollbar ? `${gap}px` : "";
-    sidebar.style.height = options.todo_separate_scrollbar ? height : "";
-    sidebar.style.overflowY = options.todo_separate_scrollbar ? "auto" : "";
-    sidebar.style.removeProperty("scrollbar-width");
-    sidebar.style.removeProperty("-ms-overflow-style");
+	const sidebar = document.getElementById('right-side-wrapper')
+	if (!sidebar) return
+	const dashboard = isDashboardPage()
+	const gap = dashboard ? 24 : 0
+	const viewportOffset = todoViewportOffsetPx() + gap * 2
+	const height = viewportOffset > 0 ? `calc(100vh - ${viewportOffset}px)` : '100vh'
+	sidebar.style.boxSizing = 'border-box'
+	sidebar.style.marginTop = gap ? `${gap}px` : ''
+	sidebar.style.marginBottom = gap ? `${gap}px` : ''
+	sidebar.style.minHeight = options.todo_full_height ? height : ''
+	sidebar.style.position = options.todo_separate_scrollbar ? 'sticky' : ''
+	sidebar.style.top = options.todo_separate_scrollbar ? `${gap}px` : ''
+	sidebar.style.height = options.todo_separate_scrollbar ? height : ''
+	sidebar.style.overflowY = options.todo_separate_scrollbar ? 'auto' : ''
+	sidebar.style.removeProperty('scrollbar-width')
+	sidebar.style.removeProperty('-ms-overflow-style')
 
-    const show = options.todo_separate_scrollbar === true;
-    let style = document.getElementById("canvasrefined-right-sidebar-scrollbar") || document.createElement("style");
-    // Remove the old rule too when updating a tab that already has it.
-    document.getElementById("canvasrefined-hide-right-sidebar-scrollbar")?.remove();
-    style.id = "canvasrefined-right-sidebar-scrollbar";
-    style.textContent = show ? `
+	const show = options.todo_separate_scrollbar === true
+	let style =
+		document.getElementById('canvasrefined-right-sidebar-scrollbar') ||
+		document.createElement('style')
+	// Remove the old rule too when updating a tab that already has it.
+	document.getElementById('canvasrefined-hide-right-sidebar-scrollbar')?.remove()
+	style.id = 'canvasrefined-right-sidebar-scrollbar'
+	style.textContent = show
+		? `
         #right-side-wrapper {
             scrollbar-width: thin !important;
             scrollbar-color: var(--bctext-2, #68737d) var(--bcbackground-1, #f5f5f5) !important;
@@ -2971,7 +3390,8 @@ function applyTodoSidebarLayout() {
         #right-side-wrapper::-webkit-scrollbar-track {
             background: var(--bcbackground-1, #f5f5f5) !important;
         }
-    ` : `
+    `
+		: `
         #right-side-wrapper {
             scrollbar-width: none !important;
             -ms-overflow-style: none !important;
@@ -2981,26 +3401,26 @@ function applyTodoSidebarLayout() {
             height: 0 !important;
             display: none !important;
         }
-    `;
-    document.documentElement.append(style);
+    `
+	document.documentElement.append(style)
 }
 
 function clearTodoList() {
-    const main = document.getElementById("better-todo-main");
-    const seeMoreBtn = document.getElementById("better-todo-see-more");
-    if (seeMoreBtn) {
-        seeMoreBtn.remove();
-    }
-    // Called from storage-change handlers on every page; without this guard it
-    // throws on pages that have no todo list mounted.
-    if (!main) return;
+	const main = document.getElementById('better-todo-main')
+	const seeMoreBtn = document.getElementById('better-todo-see-more')
+	if (seeMoreBtn) {
+		seeMoreBtn.remove()
+	}
+	// Called from storage-change handlers on every page; without this guard it
+	// throws on pages that have no todo list mounted.
+	if (!main) return
 
-	main.querySelectorAll(".todo-group-list").forEach(list => {
-		list.innerHTML = "";
-	});
-	document.querySelectorAll(".better-todo-dueheader").forEach(header => {
-		header.remove();
-	});
+	main.querySelectorAll('.todo-group-list').forEach((list) => {
+		list.innerHTML = ''
+	})
+	document.querySelectorAll('.better-todo-dueheader').forEach((header) => {
+		header.remove()
+	})
 }
 
 // "Alternate colors" (Better Todo List, light mode only): recolors the main
@@ -3008,17 +3428,17 @@ function clearTodoList() {
 // stay visible on lighter course-color strips. Implemented through a CSS
 // variable so toggling the option or dark mode recolors existing icons live
 // without a re-render.
-const TODO_ALT_ICON_COLOR = "#ffffff";
-let todoAltStyleEl = null;
+const TODO_ALT_ICON_COLOR = '#ffffff'
+let todoAltStyleEl = null
 // Icons sit on a per-course colored strip. When that color is dark the themed
 // icon color (black in light mode) is unreadable, so use the theme's very light
 // color (--cr-todo-icon-light, set in applyTodoAlternateColors) for those strips.
 // Depends only on the course color, so it stays correct across theme switches.
 function todoIconStyleForColor(color) {
-    const rgb = themeRGB(color);
-    if (!rgb) return "";
-    // Below ~0.18 luminance white has more contrast than black.
-    return themeLuminance(rgb) < 0.18 ? "--cr-todo-icon:var(--cr-todo-icon-light);" : "";
+	const rgb = themeRGB(color)
+	if (!rgb) return ''
+	// Below ~0.18 luminance white has more contrast than black.
+	return themeLuminance(rgb) < 0.18 ? '--cr-todo-icon:var(--cr-todo-icon-light);' : ''
 }
 
 // Dashboard card menu (three dots) and announcement badge sit on colored
@@ -3026,37 +3446,42 @@ function todoIconStyleForColor(color) {
 // theme-aware very light color. Writes are idempotent (no-ops when unchanged)
 // so this is safe to call from the dashboard mutation observer.
 function setOnColorGlyph(el, bgEl) {
-    if (!el || !bgEl) return;
-    const m = getComputedStyle(bgEl).backgroundColor.match(/[\d.]+/g);
-    const alpha = m && m.length > 3 ? parseFloat(m[3]) : 1;
-    const dark = m && m.length >= 3 && alpha > 0.5 && themeLuminance([+m[0], +m[1], +m[2]]) < 0.18;
-    const wanted = dark ? "var(--cr-todo-icon-light, #ffffff)" : "";
-    if (el.style.getPropertyValue("color") === wanted) return;
-    if (wanted) el.style.setProperty("color", wanted, "important");
-    else el.style.removeProperty("color");
+	if (!el || !bgEl) return
+	const m = getComputedStyle(bgEl).backgroundColor.match(/[\d.]+/g)
+	const alpha = m && m.length > 3 ? parseFloat(m[3]) : 1
+	const dark =
+		m && m.length >= 3 && alpha > 0.5 && themeLuminance([+m[0], +m[1], +m[2]]) < 0.18
+	const wanted = dark ? 'var(--cr-todo-icon-light, #ffffff)' : ''
+	if (el.style.getPropertyValue('color') === wanted) return
+	if (wanted) el.style.setProperty('color', wanted, 'important')
+	else el.style.removeProperty('color')
 }
 
 function updateCardContrast() {
-    document.querySelectorAll(".ic-DashboardCard").forEach(card => {
-        const bg = card.querySelector(".ic-DashboardCard__header-button-bg");
-        setOnColorGlyph(card.querySelector(".ic-DashboardCard__header-button .icon-more"), bg);
-        card.querySelectorAll(".ic-DashboardCard__action-badge").forEach(b => setOnColorGlyph(b, b));
-    });
+	document.querySelectorAll('.ic-DashboardCard').forEach((card) => {
+		const bg = card.querySelector('.ic-DashboardCard__header-button-bg')
+		setOnColorGlyph(card.querySelector('.ic-DashboardCard__header-button .icon-more'), bg)
+		card
+			.querySelectorAll('.ic-DashboardCard__action-badge')
+			.forEach((b) => setOnColorGlyph(b, b))
+	})
 }
 
 function applyTodoAlternateColors() {
-    const altOn = options.todo_alternate_colors === true && !isDarkModeActive();
-    const color = altOn ? TODO_ALT_ICON_COLOR : "var(--bctext-0)";
-    if (!todoAltStyleEl) {
-        todoAltStyleEl = document.createElement("style");
-        todoAltStyleEl.id = "crtodoaltcss";
-        document.documentElement.append(todoAltStyleEl);
-    }
-    // Very light theme color: the light text color in dark themes, the lightest
-    // background in light themes (text-0 is near-black there).
-    const light = isDarkModeActive() ? "var(--bctext-0, #ffffff)" : "var(--bcbackground-0, #ffffff)";
-    todoAltStyleEl.textContent = `:root{--cr-todo-icon:${color};--cr-todo-icon-light:${light};}`;
-    updateCardContrast();
+	const altOn = options.todo_alternate_colors === true && !isDarkModeActive()
+	const color = altOn ? TODO_ALT_ICON_COLOR : 'var(--bctext-0)'
+	if (!todoAltStyleEl) {
+		todoAltStyleEl = document.createElement('style')
+		todoAltStyleEl.id = 'crtodoaltcss'
+		document.documentElement.append(todoAltStyleEl)
+	}
+	// Very light theme color: the light text color in dark themes, the lightest
+	// background in light themes (text-0 is near-black there).
+	const light = isDarkModeActive()
+		? 'var(--bctext-0, #ffffff)'
+		: 'var(--bcbackground-0, #ffffff)'
+	todoAltStyleEl.textContent = `:root{--cr-todo-icon:${color};--cr-todo-icon-light:${light};}`
+	updateCardContrast()
 }
 
 // --- Hover preview (Better Todo List: "Previews on hover") ---
@@ -3065,127 +3490,142 @@ function applyTodoAlternateColors() {
 // A single shared, body-level tooltip is reused across items so it is never
 // clipped by the sidebar's scroll/overflow containers. It reuses the
 // .canvasrefined-hover-preview class so existing light/dark styling applies.
-let todoPreviewDelay = null;
-let todoPreviewToken = 0;
-const todoPreviewCache = new Map();
+let todoPreviewDelay = null
+let todoPreviewToken = 0
+const todoPreviewCache = new Map()
 
 function stripHtmlPreview(html) {
-    if (!html) return "";
-    return String(html).replace(/<\/?[^>]+(>|$)/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+	if (!html) return ''
+	return String(html)
+		.replace(/<\/?[^>]+(>|$)/g, ' ')
+		.replace(/&nbsp;/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim()
 }
 
 function getTodoPreviewEl() {
-    let el = document.getElementById("canvasrefined-todo-preview");
-    if (el) return el;
-    el = document.createElement("div");
-    el.id = "canvasrefined-todo-preview";
-    el.className = "canvasrefined-hover-preview";
-    el.innerHTML = '<p class="canvasrefined-preview-title"></p><p class="canvasrefined-preview-text"></p>';
-    el.style.position = "fixed";
-    el.style.zIndex = "100001";
-    el.style.width = "300px";
-    el.style.maxWidth = "90vw";
-    el.style.maxHeight = "260px";
-    document.body.append(el);
-    return el;
+	let el = document.getElementById('canvasrefined-todo-preview')
+	if (el) return el
+	el = document.createElement('div')
+	el.id = 'canvasrefined-todo-preview'
+	el.className = 'canvasrefined-hover-preview'
+	el.innerHTML =
+		'<p class="canvasrefined-preview-title"></p><p class="canvasrefined-preview-text"></p>'
+	el.style.position = 'fixed'
+	el.style.zIndex = '100001'
+	el.style.width = '300px'
+	el.style.maxWidth = '90vw'
+	el.style.maxHeight = '260px'
+	document.body.append(el)
+	return el
 }
 
 function positionTodoPreview(el, anchor) {
-    const r = anchor.getBoundingClientRect();
-    const gap = 10;
-    const pw = el.offsetWidth || 300;
-    const ph = el.offsetHeight || 160;
-    let left = r.left - pw - gap;
-    let top = r.top;
-    if (left < gap) {
-        left = r.right + gap;
-        if (left + pw > window.innerWidth - gap) left = Math.max(gap, window.innerWidth - pw - gap);
-    }
-    if (top + ph > window.innerHeight - gap) top = Math.max(gap, window.innerHeight - ph - gap);
-    el.style.left = left + "px";
-    el.style.top = top + "px";
+	const r = anchor.getBoundingClientRect()
+	const gap = 10
+	const pw = el.offsetWidth || 300
+	const ph = el.offsetHeight || 160
+	let left = r.left - pw - gap
+	let top = r.top
+	if (left < gap) {
+		left = r.right + gap
+		if (left + pw > window.innerWidth - gap)
+			left = Math.max(gap, window.innerWidth - pw - gap)
+	}
+	if (top + ph > window.innerHeight - gap)
+		top = Math.max(gap, window.innerHeight - ph - gap)
+	el.style.left = left + 'px'
+	el.style.top = top + 'px'
 }
 
 async function getTodoPreviewText(item) {
-    const type = item.plannable_type;
-    const id = item.plannable_id;
-    const key = type + ":" + id;
-    if (todoPreviewCache.has(key)) return todoPreviewCache.get(key);
-    // Custom task (planner note): the description is already on the planner
-    // item as item.plannable.details, so no API call is needed.
-    if (type === "planner_note" || (item.planner_override && item.planner_override.custom === true)) {
-        const raw = item.plannable && item.plannable.details ? item.plannable.details : "";
-        const text = stripHtmlPreview(raw) || "No details given";
-        todoPreviewCache.set(key, text);
-        return text;
-    }
-    let url = null;
-    let field = "description";
-    if (type === "assignment") {
-        url = `${domain}/api/v1/courses/${item.course_id}/assignments/${id}`;
-    } else if (type === "quiz") {
-        url = `${domain}/api/v1/courses/${item.course_id}/quizzes/${id}`;
-    } else if (type === "discussion_topic" || type === "announcement") {
-        url = `${domain}/api/v1/courses/${item.course_id}/discussion_topics/${id}`;
-        field = "message";
-    }
-    if (!url) {
-        const text = "No preview available";
-        todoPreviewCache.set(key, text);
-        return text;
-    }
-    try {
-        const data = await getData(url);
-        const raw = data && data[field] ? data[field] : "";
-        const text = stripHtmlPreview(raw) || "No details given";
-        todoPreviewCache.set(key, text);
-        return text;
-    } catch (e) {
-        return "Couldn't load preview";
-    }
+	const type = item.plannable_type
+	const id = item.plannable_id
+	const key = type + ':' + id
+	if (todoPreviewCache.has(key)) return todoPreviewCache.get(key)
+	// Custom task (planner note): the description is already on the planner
+	// item as item.plannable.details, so no API call is needed.
+	if (
+		type === 'planner_note' ||
+		(item.planner_override && item.planner_override.custom === true)
+	) {
+		const raw = item.plannable && item.plannable.details ? item.plannable.details : ''
+		const text = stripHtmlPreview(raw) || 'No details given'
+		todoPreviewCache.set(key, text)
+		return text
+	}
+	let url = null
+	let field = 'description'
+	if (type === 'assignment') {
+		url = `${domain}/api/v1/courses/${item.course_id}/assignments/${id}`
+	} else if (type === 'quiz') {
+		url = `${domain}/api/v1/courses/${item.course_id}/quizzes/${id}`
+	} else if (type === 'discussion_topic' || type === 'announcement') {
+		url = `${domain}/api/v1/courses/${item.course_id}/discussion_topics/${id}`
+		field = 'message'
+	}
+	if (!url) {
+		const text = 'No preview available'
+		todoPreviewCache.set(key, text)
+		return text
+	}
+	try {
+		const data = await getData(url)
+		const raw = data && data[field] ? data[field] : ''
+		const text = stripHtmlPreview(raw) || 'No details given'
+		todoPreviewCache.set(key, text)
+		return text
+	} catch (e) {
+		return "Couldn't load preview"
+	}
 }
 
 function hideTodoPreview() {
-    todoPreviewToken++; // cancel any pending async text update
-    const el = document.getElementById("canvasrefined-todo-preview");
-    if (el) el.style.display = "none";
+	todoPreviewToken++ // cancel any pending async text update
+	const el = document.getElementById('canvasrefined-todo-preview')
+	if (el) el.style.display = 'none'
 }
 
 async function showTodoPreview(anchor, item) {
-    const token = ++todoPreviewToken;
-    const el = getTodoPreviewEl();
-    const title = el.querySelector(".canvasrefined-preview-title");
-    const text = el.querySelector(".canvasrefined-preview-text");
-    title.textContent = anonTitleForItem(item);
-    text.textContent = "Loading…";
-    el.style.display = "block";
-    positionTodoPreview(el, anchor);
-    const content = await getTodoPreviewText(item);
-    if (token !== todoPreviewToken) return; // a newer hover (or hide) superseded this one
-    if (el.style.display !== "block") return; // user already moved away
-    // "Hide personal details": don't reveal real assignment descriptions.
-    text.textContent = options.hide_personal_details === true ? "Preview hidden while personal details are hidden." : content;
-    positionTodoPreview(el, anchor); // reposition now that the height is known
+	const token = ++todoPreviewToken
+	const el = getTodoPreviewEl()
+	const title = el.querySelector('.canvasrefined-preview-title')
+	const text = el.querySelector('.canvasrefined-preview-text')
+	title.textContent = anonTitleForItem(item)
+	text.textContent = 'Loading…'
+	el.style.display = 'block'
+	positionTodoPreview(el, anchor)
+	const content = await getTodoPreviewText(item)
+	if (token !== todoPreviewToken) return // a newer hover (or hide) superseded this one
+	if (el.style.display !== 'block') return // user already moved away
+	// "Hide personal details": don't reveal real assignment descriptions.
+	text.textContent =
+		options.hide_personal_details === true
+			? 'Preview hidden while personal details are hidden.'
+			: content
+	positionTodoPreview(el, anchor) // reposition now that the height is known
 }
 
 function attachTodoHoverPreview(anchor, item) {
-    if (options.hover_preview !== true) return;
-    anchor.addEventListener("mouseenter", () => {
-        clearTimeout(todoPreviewDelay);
-        showTodoPreview(anchor, item);
-    });
-    anchor.addEventListener("mouseleave", () => {
-        clearTimeout(todoPreviewDelay);
-        hideTodoPreview();
-    });
+	if (options.hover_preview !== true) return
+	anchor.addEventListener('mouseenter', () => {
+		clearTimeout(todoPreviewDelay)
+		showTodoPreview(anchor, item)
+	})
+	anchor.addEventListener('mouseleave', () => {
+		clearTimeout(todoPreviewDelay)
+		hideTodoPreview()
+	})
 }
 
 // Task-type icons for the Better Todo task rows (quiz / graded discussion),
 // adapted from the legacy todo renderer so quizzes and discussions get a
 // recognizable icon instead of the generic assignment one. Same fill
 // variable as the assignment icon so theme tweaks apply consistently.
-const TODO_QUIZ_ICON_SVG = '<svg fill="var(--cr-todo-icon)" label="Quiz" name="IconQuiz" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><g fill-rule="evenodd" stroke="none" stroke-width="1"><path d="M746.255375,1466.76417 L826.739372,1547.47616 L577.99138,1796.11015 L497.507383,1715.51216 L746.255375,1466.76417 Z M580.35118,1300.92837 L660.949178,1381.52637 L329.323189,1713.15236 L248.725192,1632.55436 L580.35118,1300.92837 Z M414.503986,1135.20658 L495.101983,1215.80457 L80.5979973,1630.30856 L0,1549.71056 L414.503986,1135.20658 Z M1119.32036,264.600006 C1475.79835,-91.8779816 1844.58834,86.3040124 1848.35034,88.1280123 L1848.35034,88.1280123 L1865.45034,96.564012 L1873.88634,113.664011 C1875.71034,117.312011 2053.89233,486.101999 1697.30034,842.693987 L1697.30034,842.693987 L1550.69635,989.297982 L1548.07435,1655.17196 L1325.43235,1877.81395 L993.806366,1546.30196 L415.712386,968.207982 L84.0863971,636.467994 L306.72839,413.826001 L972.602367,411.318001 Z M1436.24035,1103.75398 L1074.40436,1465.70397 L1325.43235,1716.61796 L1434.30235,1607.74796 L1436.24035,1103.75398 Z M1779.26634,182.406009 C1710.18234,156.41401 1457.90035,87.1020124 1199.91836,345.198004 L1199.91836,345.198004 L576.90838,968.207982 L993.806366,1385.10597 L1616.70235,762.095989 C1873.65834,505.139998 1804.68834,250.920007 1779.26634,182.406009 Z M858.146371,525.773997 L354.152388,527.597997 L245.282392,636.467994 L496.310383,887.609985 L858.146371,525.773997 Z"></path><path d="M1534.98715,372.558003 C1483.91515,371.190003 1403.31715,385.326002 1321.69316,466.949999 L1281.22316,507.305998 L1454.61715,680.585992 L1494.97315,640.343994 C1577.16715,558.035996 1591.87315,479.033999 1589.82115,427.164001 L1587.65515,374.610003 L1534.98715,372.558003 Z"></path></g></g></svg>';
-const TODO_DISCUSSION_ICON_SVG = '<svg fill="var(--cr-todo-icon)" name="IconDiscussion" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><path d="M677.647059,16 L677.647059,354.936471 L790.588235,354.936471 L790.588235,129.054118 L1807.05882,129.054118 L1807.05882,919.529412 L1581.06353,919.529412 L1581.06353,1179.29412 L1321.41176,919.529412 L1242.24,919.529412 L1242.24,467.877647 L677.647059,467.877647 L0,467.877647 L0,1484.34824 L338.710588,1484.34824 L338.710588,1903.24706 L756.705882,1484.34824 L1242.24,1484.34824 L1242.24,1032.47059 L1274.99294,1032.47059 L1694.11765,1451.59529 L1694.11765,1032.47059 L1920,1032.47059 L1920,16 L677.647059,16 Z M338.789647,919.563294 L903.495529,919.563294 L903.495529,806.622118 L338.789647,806.622118 L338.789647,919.563294 Z M338.789647,1145.44565 L677.726118,1145.44565 L677.726118,1032.39153 L338.789647,1032.39153 L338.789647,1145.44565 Z M112.941176,580.705882 L1129.41176,580.705882 L1129.41176,1371.40706 L710.4,1371.40706 L451.651765,1631.05882 L451.651765,1371.40706 L112.941176,1371.40706 L112.941176,580.705882 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>';
+const TODO_QUIZ_ICON_SVG =
+	'<svg fill="var(--cr-todo-icon)" label="Quiz" name="IconQuiz" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><g fill-rule="evenodd" stroke="none" stroke-width="1"><path d="M746.255375,1466.76417 L826.739372,1547.47616 L577.99138,1796.11015 L497.507383,1715.51216 L746.255375,1466.76417 Z M580.35118,1300.92837 L660.949178,1381.52637 L329.323189,1713.15236 L248.725192,1632.55436 L580.35118,1300.92837 Z M414.503986,1135.20658 L495.101983,1215.80457 L80.5979973,1630.30856 L0,1549.71056 L414.503986,1135.20658 Z M1119.32036,264.600006 C1475.79835,-91.8779816 1844.58834,86.3040124 1848.35034,88.1280123 L1848.35034,88.1280123 L1865.45034,96.564012 L1873.88634,113.664011 C1875.71034,117.312011 2053.89233,486.101999 1697.30034,842.693987 L1697.30034,842.693987 L1550.69635,989.297982 L1548.07435,1655.17196 L1325.43235,1877.81395 L993.806366,1546.30196 L415.712386,968.207982 L84.0863971,636.467994 L306.72839,413.826001 L972.602367,411.318001 Z M1436.24035,1103.75398 L1074.40436,1465.70397 L1325.43235,1716.61796 L1434.30235,1607.74796 L1436.24035,1103.75398 Z M1779.26634,182.406009 C1710.18234,156.41401 1457.90035,87.1020124 1199.91836,345.198004 L1199.91836,345.198004 L576.90838,968.207982 L993.806366,1385.10597 L1616.70235,762.095989 C1873.65834,505.139998 1804.68834,250.920007 1779.26634,182.406009 Z M858.146371,525.773997 L354.152388,527.597997 L245.282392,636.467994 L496.310383,887.609985 L858.146371,525.773997 Z"></path><path d="M1534.98715,372.558003 C1483.91515,371.190003 1403.31715,385.326002 1321.69316,466.949999 L1281.22316,507.305998 L1454.61715,680.585992 L1494.97315,640.343994 C1577.16715,558.035996 1591.87315,479.033999 1589.82115,427.164001 L1587.65515,374.610003 L1534.98715,372.558003 Z"></path></g></g></svg>'
+const TODO_DISCUSSION_ICON_SVG =
+	'<svg fill="var(--cr-todo-icon)" name="IconDiscussion" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><path d="M677.647059,16 L677.647059,354.936471 L790.588235,354.936471 L790.588235,129.054118 L1807.05882,129.054118 L1807.05882,919.529412 L1581.06353,919.529412 L1581.06353,1179.29412 L1321.41176,919.529412 L1242.24,919.529412 L1242.24,467.877647 L677.647059,467.877647 L0,467.877647 L0,1484.34824 L338.710588,1484.34824 L338.710588,1903.24706 L756.705882,1484.34824 L1242.24,1484.34824 L1242.24,1032.47059 L1274.99294,1032.47059 L1694.11765,1451.59529 L1694.11765,1032.47059 L1920,1032.47059 L1920,16 L677.647059,16 Z M338.789647,919.563294 L903.495529,919.563294 L903.495529,806.622118 L338.789647,806.622118 L338.789647,919.563294 Z M338.789647,1145.44565 L677.726118,1145.44565 L677.726118,1032.39153 L338.789647,1032.39153 L338.789647,1145.44565 Z M112.941176,580.705882 L1129.41176,580.705882 L1129.41176,1371.40706 L710.4,1371.40706 L451.651765,1631.05882 L451.651765,1371.40706 L112.941176,1371.40706 L112.941176,580.705882 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>'
 
 // --- Assignment scores on the Better Todo List ("Show assignment scores") ---
 // Canvas's planner items API omits the actual submission score (its
@@ -3196,38 +3636,39 @@ const TODO_DISCUSSION_ICON_SVG = '<svg fill="var(--cr-todo-icon)" name="IconDisc
 // stands in for the earned score until the fetch lands (or while the item is
 // ungraded/unsubmitted), and "Excused" replaces the whole badge for excused
 // submissions.
-const todoScoreCache = new Map(); // `${courseId}:${plannableId}` -> {score, excused}
-let todoScoreLoadToken = 0;
+const todoScoreCache = new Map() // `${courseId}:${plannableId}` -> {score, excused}
+let todoScoreLoadToken = 0
 
 function formatTodoScoreNumber(n) {
-    return String(Math.round(n * 100) / 100);
+	return String(Math.round(n * 100) / 100)
 }
 
 // Tiny green check shown right after the score on graded assignments. Kept
 // as a constant string so both the initial render and the async patch can
 // insert the exact same markup.
-const TODO_GRADED_BADGE_HTML = `<svg class="better-todo-graded" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:10px;height:10px;margin-left:5px;display:inline-block;vertical-align:-1px;" title="Graded"><path d="M20 6L9 17l-5-5" stroke="#28a745" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const TODO_GRADED_BADGE_HTML = `<svg class="better-todo-graded" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:10px;height:10px;margin-left:5px;display:inline-block;vertical-align:-1px;" title="Graded"><path d="M20 6L9 17l-5-5" stroke="#28a745" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
 
 // Small inline badge shown next to the due date. "" when the item has no
 // meaningful points (custom tasks, wiki pages, etc.).
 function todoScoreBadgeHtml(item) {
-    if (item.plannable_type == "planner_note" || item.planner_override?.custom === true) return "";
-    const points = item.plannable?.points_possible;
-    if (points == null) return "";
-    const pts = formatTodoScoreNumber(points);
-    const key = `${item.course_id}:${item.plannable_id}`;
-    const cached = todoScoreCache.get(key);
-    // Graded state: the live fetched score is the strongest signal, otherwise
-    // fall back to the planner API's boolean — but only while the score fetch
-    // hasn't run yet (a cached null score means the fetch confirmed no grade).
-    const graded = cached ? cached.score != null : item.submissions?.graded === true;
-    let text;
-    // "Hide personal details": never reveal the real earned score.
-    const shownScore = options.hide_personal_details === true ? null : cached?.score;
-    if (cached?.excused) text = "Excused";
-    else text = `${shownScore != null ? formatTodoScoreNumber(shownScore) : "–"}/${pts} pts`;
-    const attrs = `data-todo-course="${item.course_id ?? ""}" data-todo-plannable="${item.plannable_id}" data-todo-points="${pts}"`;
-    return `<span class="better-todo-score" ${attrs} style="margin-left:6px;opacity:.85;">${text}</span>${graded ? TODO_GRADED_BADGE_HTML : ""}`;
+	if (item.plannable_type == 'planner_note' || item.planner_override?.custom === true)
+		return ''
+	const points = item.plannable?.points_possible
+	if (points == null) return ''
+	const pts = formatTodoScoreNumber(points)
+	const key = `${item.course_id}:${item.plannable_id}`
+	const cached = todoScoreCache.get(key)
+	// Graded state: the live fetched score is the strongest signal, otherwise
+	// fall back to the planner API's boolean — but only while the score fetch
+	// hasn't run yet (a cached null score means the fetch confirmed no grade).
+	const graded = cached ? cached.score != null : item.submissions?.graded === true
+	let text
+	// "Hide personal details": never reveal the real earned score.
+	const shownScore = options.hide_personal_details === true ? null : cached?.score
+	if (cached?.excused) text = 'Excused'
+	else text = `${shownScore != null ? formatTodoScoreNumber(shownScore) : '–'}/${pts} pts`
+	const attrs = `data-todo-course="${item.course_id ?? ''}" data-todo-plannable="${item.plannable_id}" data-todo-points="${pts}"`
+	return `<span class="better-todo-score" ${attrs} style="margin-left:6px;opacity:.85;">${text}</span>${graded ? TODO_GRADED_BADGE_HTML : ''}`
 }
 
 // Fetches the current user's submission scores for every course with visible
@@ -3237,133 +3678,155 @@ function todoScoreBadgeHtml(item) {
 // stops touching the DOM, and any newer run re-collects the still-missing
 // items anyway.
 async function loadTodoScores(items) {
-    if (options.todo_show_scores !== true) return;
-    const byCourse = new Map();
-    for (const item of items) {
-        if (item.plannable_type == "planner_note" || item.planner_override?.custom === true) continue;
-        if (item.plannable?.points_possible == null) continue;
-        const cid = item.course_id ?? item.context_id;
-        if (cid == null) continue;
-        const key = `${cid}:${item.plannable_id}`;
-        if (todoScoreCache.has(key)) continue;
-        if (item.submissions?.excused === true) { todoScoreCache.set(key, { score: null, excused: true }); continue; }
-        let list = byCourse.get(String(cid));
-        if (!list) { list = []; byCourse.set(String(cid), list); }
-        list.push(item);
-    }
-    if (byCourse.size === 0) return;
-    const token = ++todoScoreLoadToken;
-    for (const [cid] of byCourse) {
-        try {
-            let url = `${domain}/api/v1/courses/${cid}/students/submissions?student_ids[]=self&per_page=100`;
-            // 10 pages * 100 submissions is a safety net against a malformed
-            // next link, same as fetchActiveCourseIds.
-            for (let page = 0; page < 10 && url; page++) {
-                const response = await fetch(url, {
-                    method: "GET",
-                    headers: { "Content-Type": "application/json", "Accept": "application/json" }
-                });
-                if (!response.ok) throw new Error(`Canvas API request failed (${response.status})`);
-                const data = await response.json();
-                if (token !== todoScoreLoadToken) return;
-                if (Array.isArray(data)) {
-                    for (const s of data) {
-                        if (s && s.assignment_id != null) {
-                            todoScoreCache.set(`${cid}:${s.assignment_id}`, { score: s.score, excused: s.excused === true });
-                        }
-                    }
-                }
-                url = getNextPageUrl(response.headers.get("Link"));
-            }
-        } catch (e) {
-            // Leave these items uncached so a later render retries the fetch
-            // (e.g. teacher accounts, which the submissions endpoint rejects).
-        }
-    }
-    if (token !== todoScoreLoadToken) return;
-    // Patch every badge that now has data, on either tab.
-    document.querySelectorAll("#better-todo-main .better-todo-score").forEach(el => {
-        const cached = todoScoreCache.get(`${el.dataset.todoCourse}:${el.dataset.todoPlannable}`);
-        if (!cached) return;
-        // "Hide personal details": never reveal the real earned score.
-        const shownScore = options.hide_personal_details === true ? null : cached.score;
-        if (cached.excused) el.textContent = "Excused";
-        else el.textContent = `${shownScore != null ? formatTodoScoreNumber(shownScore) : "–"}/${el.dataset.todoPoints} pts`;
-        if (cached.score != null && !el.nextElementSibling?.classList.contains("better-todo-graded")) {
-            el.insertAdjacentHTML("afterend", TODO_GRADED_BADGE_HTML);
-        }
-    });
+	if (options.todo_show_scores !== true) return
+	const byCourse = new Map()
+	for (const item of items) {
+		if (item.plannable_type == 'planner_note' || item.planner_override?.custom === true)
+			continue
+		if (item.plannable?.points_possible == null) continue
+		const cid = item.course_id ?? item.context_id
+		if (cid == null) continue
+		const key = `${cid}:${item.plannable_id}`
+		if (todoScoreCache.has(key)) continue
+		if (item.submissions?.excused === true) {
+			todoScoreCache.set(key, { score: null, excused: true })
+			continue
+		}
+		let list = byCourse.get(String(cid))
+		if (!list) {
+			list = []
+			byCourse.set(String(cid), list)
+		}
+		list.push(item)
+	}
+	if (byCourse.size === 0) return
+	const token = ++todoScoreLoadToken
+	for (const [cid] of byCourse) {
+		try {
+			let url = `${domain}/api/v1/courses/${cid}/students/submissions?student_ids[]=self&per_page=100`
+			// 10 pages * 100 submissions is a safety net against a malformed
+			// next link, same as fetchActiveCourseIds.
+			for (let page = 0; page < 10 && url; page++) {
+				const response = await fetch(url, {
+					method: 'GET',
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+				})
+				if (!response.ok)
+					throw new Error(`Canvas API request failed (${response.status})`)
+				const data = await response.json()
+				if (token !== todoScoreLoadToken) return
+				if (Array.isArray(data)) {
+					for (const s of data) {
+						if (s && s.assignment_id != null) {
+							todoScoreCache.set(`${cid}:${s.assignment_id}`, {
+								score: s.score,
+								excused: s.excused === true,
+							})
+						}
+					}
+				}
+				url = getNextPageUrl(response.headers.get('Link'))
+			}
+		} catch (e) {
+			// Leave these items uncached so a later render retries the fetch
+			// (e.g. teacher accounts, which the submissions endpoint rejects).
+		}
+	}
+	if (token !== todoScoreLoadToken) return
+	// Patch every badge that now has data, on either tab.
+	document.querySelectorAll('#better-todo-main .better-todo-score').forEach((el) => {
+		const cached = todoScoreCache.get(
+			`${el.dataset.todoCourse}:${el.dataset.todoPlannable}`,
+		)
+		if (!cached) return
+		// "Hide personal details": never reveal the real earned score.
+		const shownScore = options.hide_personal_details === true ? null : cached.score
+		if (cached.excused) el.textContent = 'Excused'
+		else
+			el.textContent = `${shownScore != null ? formatTodoScoreNumber(shownScore) : '–'}/${el.dataset.todoPoints} pts`
+		if (
+			cached.score != null &&
+			!el.nextElementSibling?.classList.contains('better-todo-graded')
+		) {
+			el.insertAdjacentHTML('afterend', TODO_GRADED_BADGE_HTML)
+		}
+	})
 }
 
 function populateAssignments(iscompleted = false) {
-	const today = new Date();
-	today.setHours(0,0,0,0);
-    let assignments = (iscompleted ? completed : assignmentsDue).slice();
-    if (iscompleted) {
-        assignments.sort((a, b) => {
-            const aIsGraded = Boolean(a.submissions?.graded);
-            const bIsGraded = Boolean(b.submissions?.graded);
-            if (aIsGraded !== bIsGraded) {
-                return aIsGraded - bIsGraded;
-            }
-            return new Date(b.plannable_date) - new Date(a.plannable_date);
-        });
-    } else {
-        // Keep a stable chronological order (overdue first) so the visible
-        // item budget below counts from due today onward. The planner API
-        // normally returns ascending order already; this makes it guaranteed.
-        assignments.sort((a, b) => new Date(a.plannable_date) - new Date(b.plannable_date));
-    }
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+	let assignments = (iscompleted ? completed : assignmentsDue).slice()
+	if (iscompleted) {
+		assignments.sort((a, b) => {
+			const aIsGraded = Boolean(a.submissions?.graded)
+			const bIsGraded = Boolean(b.submissions?.graded)
+			if (aIsGraded !== bIsGraded) {
+				return aIsGraded - bIsGraded
+			}
+			return new Date(b.plannable_date) - new Date(a.plannable_date)
+		})
+	} else {
+		// Keep a stable chronological order (overdue first) so the visible
+		// item budget below counts from due today onward. The planner API
+		// normally returns ascending order already; this makes it guaranteed.
+		assignments.sort((a, b) => new Date(a.plannable_date) - new Date(b.plannable_date))
+	}
 
-	let assignmentCount = 0;
-	const maxElements = options.num_todo_items;
+	let assignmentCount = 0
+	const maxElements = options.num_todo_items
 
 	assignments.forEach((item) => {
-		let dueGroup = -1;
+		let dueGroup = -1
 		if (!iscompleted) {
-			let dueDate = new Date(item.plannable_date);
-			dueDate.setHours(0,0,0,0);
-			const diffDays = Math.round((dueDate - today) / (1000 * 60 * 60 * 24));
-			if (diffDays < 0) {dueGroup = -1;}
-			else if (diffDays <= 1) { dueGroup = diffDays.toString(); }
-			else if (diffDays <= 7) { dueGroup = diffDays.toString(); }
-			else if (diffDays <= 14) {dueGroup = 14;}
-			else if (diffDays <= 21) {dueGroup = 21;}
-			else if (diffDays <= 30) {dueGroup = 30;}
-			else {dueGroup = "Later"};
+			let dueDate = new Date(item.plannable_date)
+			dueDate.setHours(0, 0, 0, 0)
+			const diffDays = Math.round((dueDate - today) / (1000 * 60 * 60 * 24))
+			if (diffDays < 0) {
+				dueGroup = -1
+			} else if (diffDays <= 1) {
+				dueGroup = diffDays.toString()
+			} else if (diffDays <= 7) {
+				dueGroup = diffDays.toString()
+			} else if (diffDays <= 14) {
+				dueGroup = 14
+			} else if (diffDays <= 21) {
+				dueGroup = 21
+			} else if (diffDays <= 30) {
+				dueGroup = 30
+			} else {
+				dueGroup = 'Later'
+			}
 		} else {
-			dueGroup = item.submissions?.graded ? "Graded" : "Ungraded";
+			dueGroup = item.submissions?.graded ? 'Graded' : 'Ungraded'
 		}
 
 		let assignment
-		const targetContainer = domContainers[dueGroup];
+		const targetContainer = domContainers[dueGroup]
 		// Overdue items are always shown and don't consume the visible-item
 		// budget: the count starts at items due today. (On the Completed tab,
 		// whose groups are Graded/Ungraded, every item still counts.)
-		const isOverdue = !iscompleted && dueGroup === -1;
-		if (!isOverdue) assignmentCount++;
-		let isHidden = !isOverdue && assignmentCount > maxElements;
+		const isOverdue = !iscompleted && dueGroup === -1
+		if (!isOverdue) assignmentCount++
+		let isHidden = !isOverdue && assignmentCount > maxElements
 
 		if (targetContainer) {
 			if (!isHidden) {
-				targetContainer.wrapper.style.display = "block";
-				targetContainer.wrapper.setAttribute("data-has-visible", "true");
-			}
-			else {
-				if (!targetContainer.wrapper.hasAttribute("data-has-visible")) {
-					targetContainer.wrapper.classList.add(
-						"better-todo-hidden-wrapper",
-					);
+				targetContainer.wrapper.style.display = 'block'
+				targetContainer.wrapper.setAttribute('data-has-visible', 'true')
+			} else {
+				if (!targetContainer.wrapper.hasAttribute('data-has-visible')) {
+					targetContainer.wrapper.classList.add('better-todo-hidden-wrapper')
 				}
 			}
 
 			// targetContainer.wrapper.style.display = "block";
-			assignment = makeElement("div", targetContainer.listContainer, {
-				class: "better-todo-assignment",
-			});
+			assignment = makeElement('div', targetContainer.listContainer, {
+				class: 'better-todo-assignment',
+			})
 			if (isHidden) {
-				assignment.style.display = "none";
-				assignment.classList.add("better-todo-hidden-assignment");
+				assignment.style.display = 'none'
+				assignment.classList.add('better-todo-hidden-assignment')
 			}
 		}
 
@@ -3371,40 +3834,45 @@ function populateAssignments(iscompleted = false) {
 			options.custom_cards_3?.[String(item.course_id)]?.color ??
 			options.custom_cards_3?.[item.course_id]?.color ??
 			options.custom_cards_3?.[item.plannable.course_id]?.color ??
-			"#cccccc";
+			'#cccccc'
 
-        // Keep course names readable independently of the course's card color.
-        const classNameColor = isDarkModeActive() ? "var(--bctext-0)" : "#000000";
+		// Keep course names readable independently of the course's card color.
+		const classNameColor = isDarkModeActive() ? 'var(--bctext-0)' : '#000000'
 
-        const isCustomTask = item.plannable_type == "planner_note" || item.planner_override?.custom === true;
-        // True when Canvas has a real submission for this item: the Completed
-        // list shows it regardless of the checkmark state, so the toggle is
-        // disabled for it (see the checkmark listener below).
-        const wasSubmitted = item.submissions?.submitted === true;
-        const taskHref = isCustomTask ? customTaskHref(item) : (domain + item.html_url);
-        const editButtonSvg = isCustomTask
-            ? `<svg class="better-todo-assignment-edit" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;position:absolute;top:18px;right:5px;opacity:0.3;transition:all .3s ease;cursor:pointer;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.3'" title="Edit this custom task"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" stroke="var(--bctext-0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>`
-            : "";
-        const iconSize = isCustomTask ? 26 : 20;
-        // Optical centering inside the colored strip: the assignment icon's
-        // glyph hugs its viewBox's left edge, so it gets a 5px nudge right.
-        // The quiz glyph's visual weight already sits right of center (its
-        // thin "motion lines" occupy the left edge), so it needs less of a
-        // nudge — otherwise it reads as off-center next to the others.
-        const iconLeftOffset = isCustomTask ? 2 : item.plannable_type == "quiz" ? 2 : 5;
-        const scoreBadge = options.todo_show_scores === true ? todoScoreBadgeHtml(item) : "";
-        const taskIcon = isCustomTask
-            ? `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
+		const isCustomTask =
+			item.plannable_type == 'planner_note' || item.planner_override?.custom === true
+		// True when Canvas has a real submission for this item: the Completed
+		// list shows it regardless of the checkmark state, so the toggle is
+		// disabled for it (see the checkmark listener below).
+		const wasSubmitted = item.submissions?.submitted === true
+		const taskHref = isCustomTask ? customTaskHref(item) : domain + item.html_url
+		const editButtonSvg = isCustomTask
+			? `<svg class="better-todo-assignment-edit" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;position:absolute;top:18px;right:5px;opacity:0.3;transition:all .3s ease;cursor:pointer;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.3'" title="Edit this custom task"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" stroke="var(--bctext-0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>`
+			: ''
+		const iconSize = isCustomTask ? 26 : 20
+		// Optical centering inside the colored strip: the assignment icon's
+		// glyph hugs its viewBox's left edge, so it gets a 5px nudge right.
+		// The quiz glyph's visual weight already sits right of center (its
+		// thin "motion lines" occupy the left edge), so it needs less of a
+		// nudge — otherwise it reads as off-center next to the others.
+		const iconLeftOffset = isCustomTask ? 2 : item.plannable_type == 'quiz' ? 2 : 5
+		const scoreBadge = options.todo_show_scores === true ? todoScoreBadgeHtml(item) : ''
+		const taskIcon = isCustomTask
+			? `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
                 <path d="M19.8201 14H15.6001C15.04 14 14.76 14 14.5461 14.109C14.3579 14.2049 14.2049 14.3578 14.1091 14.546C14.0001 14.7599 14.0001 15.0399 14.0001 15.6V19.82M20 12.7269V7.2C20 6.0799 20 5.51984 19.782 5.09202C19.5903 4.71569 19.2843 4.40973 18.908 4.21799C18.4802 4 17.9201 4 16.8 4H7.2C6.0799 4 5.51984 4 5.09202 4.21799C4.71569 4.40973 4.40973 4.71569 4.21799 5.09202C4 5.51984 4 6.0799 4 7.2V16.8C4 17.9201 4 18.4802 4.21799 18.908C4.40973 19.2843 4.71569 19.5903 5.09202 19.782C5.51984 20 6.0799 20 7.2 20H12.9496C13.4578 20 13.7118 20 13.9498 19.9407C14.1608 19.8882 14.3618 19.8016 14.5449 19.6844C14.7515 19.5522 14.926 19.3675 15.2751 18.9983L19.1254 14.9252C19.4486 14.5833 19.6101 14.4124 19.7255 14.2156C19.8278 14.041 19.903 13.8519 19.9486 13.6548C20 13.4325 20 13.1973 20 12.7269Z" stroke="var(--cr-todo-icon)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>`
-            : (item.plannable_type == "quiz" ? TODO_QUIZ_ICON_SVG : item.plannable_type == "discussion_topic" ? TODO_DISCUSSION_ICON_SVG : `<svg fill="var(--cr-todo-icon)" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
+			: item.plannable_type == 'quiz'
+				? TODO_QUIZ_ICON_SVG
+				: item.plannable_type == 'discussion_topic'
+					? TODO_DISCUSSION_ICON_SVG
+					: `<svg fill="var(--cr-todo-icon)" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
                 <g id="SVGRepo_bgCarrier" stroke-width="1"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                 <g id="SVGRepo_iconCarrier">
                     <path d="M1468.214 0v551.145L840.27 1179.089c-31.623 31.623-49.693 74.54-49.693 119.715v395.289h395.288c45.176 0 88.093-18.07 119.716-49.694l162.633-162.633v438.206H0V0h1468.214Zm129.428 581.3c22.137-22.136 57.825-22.136 79.962 0l225.879 225.879c22.023 22.023 22.023 57.712 0 79.848l-677.638 677.637c-10.616 10.503-24.96 16.49-39.98 16.49H903.516v-282.35c0-15.02 5.986-29.364 16.49-39.867Zm-920.005 548.095H338.82v112.94h338.818v-112.94Zm225.88-225.879H338.818v112.94h564.697v-112.94Zm734.106-202.5-89.561 89.56 146.03 146.031 89.562-89.56-146.031-146.031Zm-508.228-362.197H338.82v338.818h790.576V338.82Z" fill-rule="evenodd"></path>
                 </g>
-            </svg>`);
+            </svg>`
 
-		assignment.style.overflowX = "hidden";
+		assignment.style.overflowX = 'hidden'
 		assignment.innerHTML = `
 		<div style="display:flex;align-items:center;gap:5px;width:100%;height:60px;background:var(--bcbackground-2);border-radius:5px;transition:all .4s ease;overflow:hidden;">
 			<div style="width:40px;display:flex;align-items:center;justify-content:center;background-color:${courseColor};${todoIconStyleForColor(courseColor)}height:100%;border-radius:5px 0 0 5px;">
@@ -3419,7 +3887,7 @@ function populateAssignments(iscompleted = false) {
 					<span style="color:var(--bctext-0);font-size:12px;margin-top:-5px;">${convertToDueDate(item.plannable_date)}${scoreBadge}</span>
 				</div>
 				${editButtonSvg}
-				<svg class="better-todo-assignment-checkmark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;position:absolute;top:0px;right:5px;opacity:0.3;transition:all .3s ease;cursor:pointer;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.3'"${(iscompleted && wasSubmitted) ? " title=\"Submitted to Canvas — clicking sends it back to Tasks (locally)\"" : ""}>
+				<svg class="better-todo-assignment-checkmark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;position:absolute;top:0px;right:5px;opacity:0.3;transition:all .3s ease;cursor:pointer;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.3'"${iscompleted && wasSubmitted ? ' title="Submitted to Canvas — clicking sends it back to Tasks (locally)"' : ''}>
 					<g id="SVGRepo_bgCarrier" stroke-width="0"></g>
 					<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
 					<g id="SVGRepo_iconCarrier"> <g id="Interface / Checkbox_Check">
@@ -3428,85 +3896,104 @@ function populateAssignments(iscompleted = false) {
 				</svg>
 			</div>
 		</div>
-		`;
+		`
 		// The checkmark reflects the tab it is rendered in: on the Tasks tab it
 		// marks the item complete; on the Completed tab it makes it incomplete
 		// again (for genuinely submitted items this sets a local pin, since
 		// Canvas has no way to un-submit).
-		assignment.querySelector(".better-todo-assignment-checkmark").addEventListener("click", () => {
-			console.log("marking ", item.plannable.title, iscompleted ? "as incomplete" : "as complete");
-			markAs(item, assignment.firstElementChild, !iscompleted);
-		});
-		const editBtn = assignment.querySelector(".better-todo-assignment-edit");
+		assignment
+			.querySelector('.better-todo-assignment-checkmark')
+			.addEventListener('click', () => {
+				console.log(
+					'marking ',
+					item.plannable.title,
+					iscompleted ? 'as incomplete' : 'as complete',
+				)
+				markAs(item, assignment.firstElementChild, !iscompleted)
+			})
+		const editBtn = assignment.querySelector('.better-todo-assignment-edit')
 		if (editBtn) {
-			editBtn.addEventListener("click", (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				openTaskForEdit(item);
-			});
+			editBtn.addEventListener('click', (e) => {
+				e.preventDefault()
+				e.stopPropagation()
+				openTaskForEdit(item)
+			})
 		}
-		attachTodoHoverPreview(assignment, item);
-	});
+		attachTodoHoverPreview(assignment, item)
+	})
 
-	if (options.todo_show_scores === true) loadTodoScores(iscompleted ? completed : assignmentsDue);
+	if (options.todo_show_scores === true)
+		loadTodoScores(iscompleted ? completed : assignmentsDue)
 
-	if (document.getElementById("better-todo-see-more")) {
-		document.getElementById("better-todo-see-more").remove();
+	if (document.getElementById('better-todo-see-more')) {
+		document.getElementById('better-todo-see-more').remove()
 	}
 
 	if (assignmentCount > maxElements) {
-		let isExpanded = false;
+		let isExpanded = false
 
-		let seeMoreButton = makeElement("button", document.getElementById("better-todo-main"), {
-			textContent: `View More (${assignmentCount - maxElements})`,
-			className: "canvasrefined-custom-btn",
-			id: "better-todo-see-more",
-			style: "width:100%;margin-top:15px;cursor:pointer;"
-		})
-		seeMoreButton.addEventListener("click", () => {
+		let seeMoreButton = makeElement(
+			'button',
+			document.getElementById('better-todo-main'),
+			{
+				textContent: `View More (${assignmentCount - maxElements})`,
+				className: 'canvasrefined-custom-btn',
+				id: 'better-todo-see-more',
+				style: 'width:100%;margin-top:15px;cursor:pointer;',
+			},
+		)
+		seeMoreButton.addEventListener('click', () => {
 			if (!isExpanded) {
-				document.querySelectorAll(".better-todo-hidden-assignment").forEach(element => element.style.display = "block");
-				document.querySelectorAll(".better-todo-hidden-wrapper").forEach(element => element.style.display = "block");
-				seeMoreButton.textContent = "View Less";
+				document
+					.querySelectorAll('.better-todo-hidden-assignment')
+					.forEach((element) => (element.style.display = 'block'))
+				document
+					.querySelectorAll('.better-todo-hidden-wrapper')
+					.forEach((element) => (element.style.display = 'block'))
+				seeMoreButton.textContent = 'View Less'
 			} else {
-				document.querySelectorAll(".better-todo-hidden-assignment").forEach(element => element.style.display = "none");
-				document.querySelectorAll(".better-todo-hidden-wrapper").forEach(element => element.style.display = "none");
-				seeMoreButton.textContent = `View More (${assignmentCount - maxElements})`;
+				document
+					.querySelectorAll('.better-todo-hidden-assignment')
+					.forEach((element) => (element.style.display = 'none'))
+				document
+					.querySelectorAll('.better-todo-hidden-wrapper')
+					.forEach((element) => (element.style.display = 'none'))
+				seeMoreButton.textContent = `View More (${assignmentCount - maxElements})`
 			}
-			isExpanded = !isExpanded;
+			isExpanded = !isExpanded
 		})
 	}
 }
 
 function populateAnnouncements() {
-	const today = new Date();
-	today.setHours(0,0,0,0);
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
 
 	announcements.forEach((item) => {
-		let dueGroup = item.plannable.read_state == "read" ? "Seen" : "New";
+		let dueGroup = item.plannable.read_state == 'read' ? 'Seen' : 'New'
 
-		let announcement;
+		let announcement
 		// console.log(domContainers)
-		const targetContainer = domContainers[dueGroup];
+		const targetContainer = domContainers[dueGroup]
 		if (targetContainer) {
-			targetContainer.wrapper.style.display = "block";
-			announcement = makeElement("div", targetContainer.listContainer, {
-				class: "better-todo-announcement",
-			});
+			targetContainer.wrapper.style.display = 'block'
+			announcement = makeElement('div', targetContainer.listContainer, {
+				class: 'better-todo-announcement',
+			})
 		}
 
 		const courseColor =
 			options.custom_cards_3?.[String(item.course_id)]?.color ??
 			options.custom_cards_3?.[item.course_id]?.color ??
 			options.custom_cards_3?.[item.plannable.course_id]?.color ??
-			"#cccccc";
+			'#cccccc'
 
 		// Keep course names readable independently of the course's card color.
-		const classNameColor = isDarkModeActive() ? "var(--bctext-0)" : "#000000";
+		const classNameColor = isDarkModeActive() ? 'var(--bctext-0)' : '#000000'
 
-		let filter = "";
-		if (item.plannable.read_state == "read") {
-			filter = "filter: grayscale(40%);"
+		let filter = ''
+		if (item.plannable.read_state == 'read') {
+			filter = 'filter: grayscale(40%);'
 		}
 
 		announcement.innerHTML = `
@@ -3535,18 +4022,24 @@ function populateAnnouncements() {
 				</svg>
 			</div>
 		</div>
-		`;
+		`
 		// "Mark as seen": sets the same planner override the task checkmark
 		// uses, which also hides the announcement from the list (see the
 		// announcements filter in createTodoSections). Two-way, so with "Hide
 		// read announcements" off a dismissed one can be un-seen again.
-		announcement.querySelector(".better-todo-announcement-checkmark").addEventListener("click", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			markAs(item, announcement.firstElementChild, !(item.planner_override?.marked_complete === true));
-		});
-		attachTodoHoverPreview(announcement, item);
-	});
+		announcement
+			.querySelector('.better-todo-announcement-checkmark')
+			.addEventListener('click', (e) => {
+				e.preventDefault()
+				e.stopPropagation()
+				markAs(
+					item,
+					announcement.firstElementChild,
+					!(item.planner_override?.marked_complete === true),
+				)
+			})
+		attachTodoHoverPreview(announcement, item)
+	})
 }
 
 // --- Local "incomplete" pins -----------------------------------------------
@@ -3556,435 +4049,595 @@ function populateAnnouncements() {
 // local pin that forces the item back into the Tasks list. The pin lives in
 // chrome.storage.sync and clears when the item is checked off again.
 function todoPinKey(item) {
-    return item.plannable_type + "_" + item.plannable_id;
+	return item.plannable_type + '_' + item.plannable_id
 }
 function isPinnedIncomplete(item) {
-    return options.todo_force_incomplete?.[todoPinKey(item)] === true;
+	return options.todo_force_incomplete?.[todoPinKey(item)] === true
 }
 function setPinnedIncomplete(item, pinned) {
-    const pins = Object.assign({}, options.todo_force_incomplete || {});
-    if (pinned) pins[todoPinKey(item)] = true;
-    else delete pins[todoPinKey(item)];
-    options.todo_force_incomplete = pins;
-    chrome.storage.sync.set({ todo_force_incomplete: pins });
+	const pins = Object.assign({}, options.todo_force_incomplete || {})
+	if (pinned) pins[todoPinKey(item)] = true
+	else delete pins[todoPinKey(item)]
+	options.todo_force_incomplete = pins
+	chrome.storage.sync.set({ todo_force_incomplete: pins })
 }
 
 function markAs(item, element, makeComplete) {
-	const csrfToken = CSRFtoken();
-	const completeState = makeComplete;
+	const csrfToken = CSRFtoken()
+	const completeState = makeComplete
 
-    // Checking an item off clears any local incomplete pin; unchecking a
-    // genuinely submitted item sets one, since the submission itself can't
-    // be undone server-side.
-    if (completeState) {
-        if (isPinnedIncomplete(item)) setPinnedIncomplete(item, false);
-    } else if (item.submissions?.submitted) {
-        setPinnedIncomplete(item, true);
-    }
+	// Checking an item off clears any local incomplete pin; unchecking a
+	// genuinely submitted item sets one, since the submission itself can't
+	// be undone server-side.
+	if (completeState) {
+		if (isPinnedIncomplete(item)) setPinnedIncomplete(item, false)
+	} else if (item.submissions?.submitted) {
+		setPinnedIncomplete(item, true)
+	}
 
-    // --- Optimistic UI ---
-    // Canvas's /planner/overrides endpoint occasionally returns 400 (Bad
-    // Request) for both custom tasks and normal tasks, even though the action
-    // is actually applied server-side shortly after. When that happens the
-    // item would not visually update, and would later appear
-    // "secretly complete" on reload. To avoid that confusing UX, we update the
-    // UI as if the request succeeded immediately, and fire the actual API
-    // call in the background for persistence.
-    item.planner_override = item.planner_override || {};
-    item.planner_override.marked_complete = completeState;
-    // Reflect task completion immediately, including progress indicators.
-    const progressPlaceholder = document.getElementById("better-todo-progress-placeholder");
-    if (progressPlaceholder && typeof assignments?.then === 'function' && progressRingsEnabled()) {
-        assignments.then(data => {
-            const courseId = getCurrentCourseId();
-            const scopedData = getTodoScopedData(data.map(d => Object.assign({}, d)), courseId);
+	// --- Optimistic UI ---
+	// Canvas's /planner/overrides endpoint occasionally returns 400 (Bad
+	// Request) for both custom tasks and normal tasks, even though the action
+	// is actually applied server-side shortly after. When that happens the
+	// item would not visually update, and would later appear
+	// "secretly complete" on reload. To avoid that confusing UX, we update the
+	// UI as if the request succeeded immediately, and fire the actual API
+	// call in the background for persistence.
+	item.planner_override = item.planner_override || {}
+	item.planner_override.marked_complete = completeState
+	// Reflect task completion immediately, including progress indicators.
+	const progressPlaceholder = document.getElementById('better-todo-progress-placeholder')
+	if (
+		progressPlaceholder &&
+		typeof assignments?.then === 'function' &&
+		progressRingsEnabled()
+	) {
+		assignments.then((data) => {
+			const courseId = getCurrentCourseId()
+			const scopedData = getTodoScopedData(
+				data.map((d) => Object.assign({}, d)),
+				courseId,
+			)
 
-            // reflect the updated state for this item in the snapshot
-            for (let i = 0; i < scopedData.length; i++) {
-                if (scopedData[i].plannable_id === item.plannable_id && scopedData[i].plannable_type === item.plannable_type) {
-                    scopedData[i].planner_override = scopedData[i].planner_override || {};
-                    scopedData[i].planner_override.marked_complete = item.planner_override.marked_complete;
-                    break;
-                }
-            }
+			// reflect the updated state for this item in the snapshot
+			for (let i = 0; i < scopedData.length; i++) {
+				if (
+					scopedData[i].plannable_id === item.plannable_id &&
+					scopedData[i].plannable_type === item.plannable_type
+				) {
+					scopedData[i].planner_override = scopedData[i].planner_override || {}
+					scopedData[i].planner_override.marked_complete =
+						item.planner_override.marked_complete
+					break
+				}
+			}
 
-            renderProgressRings(progressPlaceholder, scopedData);
-        });
-    }
+			renderProgressRings(progressPlaceholder, scopedData)
+		})
+	}
 
-    clearTodoList();
-    createTodoSections(document.querySelector("#canvasrefined-todo-list"));
+	clearTodoList()
+	createTodoSections(document.querySelector('#canvasrefined-todo-list'))
 
-    // --- Persistence (background, best-effort) ---
-    // Toggle the planner override server-side. The override id returned by a
-    // successful POST/PUT is stored on the in-memory item so subsequent
-    // toggles PUT (update) instead of POSTing a duplicate. If a POST still
-    // collides with an existing override (400 "already exists"), we look up
-    // the real id and retry with a PUT. Only if all of that fails is the
-    // response treated as a soft success: the UI already reflects the
-    // intended state, so we just log it.
-    const sendOverride = (override) => fetch(domain + "/api/v1/planner/overrides" + (override && override.id ? "/" + override.id : ""), {
-        method: override && override.id ? "PUT" : "POST",
-        headers: {
-            "content-type": "application/json",
-            "accept": "application/json",
-            "X-CSRF-Token": csrfToken
-        },
-        body: JSON.stringify({
-            id: override && override.id ? override.id : null,
-            marked_complete: completeState,
-            plannable_id: item.plannable_id,
-            plannable_type: item.plannable_type
-        })
-    });
+	// --- Persistence (background, best-effort) ---
+	// Toggle the planner override server-side. The override id returned by a
+	// successful POST/PUT is stored on the in-memory item so subsequent
+	// toggles PUT (update) instead of POSTing a duplicate. If a POST still
+	// collides with an existing override (400 "already exists"), we look up
+	// the real id and retry with a PUT. Only if all of that fails is the
+	// response treated as a soft success: the UI already reflects the
+	// intended state, so we just log it.
+	const sendOverride = (override) =>
+		fetch(
+			domain +
+				'/api/v1/planner/overrides' +
+				(override && override.id ? '/' + override.id : ''),
+			{
+				method: override && override.id ? 'PUT' : 'POST',
+				headers: {
+					'content-type': 'application/json',
+					accept: 'application/json',
+					'X-CSRF-Token': csrfToken,
+				},
+				body: JSON.stringify({
+					id: override && override.id ? override.id : null,
+					marked_complete: completeState,
+					plannable_id: item.plannable_id,
+					plannable_type: item.plannable_type,
+				}),
+			},
+		)
 
-    sendOverride(item.planner_override)
-    .then(async resp => {
-        if (resp.ok) {
-            // Capture the override id from the response. A POST creates the
-            // override server-side with an id we don't know yet; without
-            // storing it, every later toggle on this item would POST again and
-            // collide with the existing override (400 "already exists"), so
-            // unchecking would never actually persist.
-            try {
-                const saved = await resp.json();
-                if (saved && saved.id) {
-                    item.planner_override = item.planner_override || {};
-                    item.planner_override.id = saved.id;
-                }
-            } catch (e) { /* no JSON body; id stays unknown */ }
-            console.log("marked as complete");
-            return;
-        }
-        // A POST can return 400 because an override already exists server-side
-        // under an id we never learned (e.g. it was created earlier without the
-        // response being captured). Look up the user's overrides, find the one
-        // for this item, and retry with a PUT so the toggle actually persists.
-        if (!(item.planner_override && item.planner_override.id)) {
-            try {
-                const listResp = await fetch(domain + "/api/v1/planner/overrides", {
-                    headers: { "accept": "application/json" }
-                });
-                if (listResp.ok) {
-                    const overrides = await listResp.json();
-                    const match = (Array.isArray(overrides) ? overrides : []).find(o =>
-                        o &&
-                        String(o.plannable_id) === String(item.plannable_id) &&
-                        String(o.plannable_type).toLowerCase() === String(item.plannable_type).toLowerCase());
-                    if (match && match.id) {
-                        item.planner_override = item.planner_override || {};
-                        item.planner_override.id = match.id;
-                        const retry = await sendOverride(item.planner_override);
-                        if (!retry.ok) {
-                            console.warn("planner override PUT retry returned", retry.status);
-                        }
-                        return;
-                    }
-                }
-            } catch (e) {
-                console.error("error recovering planner override id", e);
-            }
-        }
-        // Still non-OK with nothing to recover: logged but not surfaced, the
-        // UI already reflects the intended state.
-        console.warn("planner override request returned", resp.status, "— UI already updated optimistically");
-    })
-    .catch(err => console.error("error marking as complete", err));
-
+	sendOverride(item.planner_override)
+		.then(async (resp) => {
+			if (resp.ok) {
+				// Capture the override id from the response. A POST creates the
+				// override server-side with an id we don't know yet; without
+				// storing it, every later toggle on this item would POST again and
+				// collide with the existing override (400 "already exists"), so
+				// unchecking would never actually persist.
+				try {
+					const saved = await resp.json()
+					if (saved && saved.id) {
+						item.planner_override = item.planner_override || {}
+						item.planner_override.id = saved.id
+					}
+				} catch (e) {
+					/* no JSON body; id stays unknown */
+				}
+				console.log('marked as complete')
+				return
+			}
+			// A POST can return 400 because an override already exists server-side
+			// under an id we never learned (e.g. it was created earlier without the
+			// response being captured). Look up the user's overrides, find the one
+			// for this item, and retry with a PUT so the toggle actually persists.
+			if (!(item.planner_override && item.planner_override.id)) {
+				try {
+					const listResp = await fetch(domain + '/api/v1/planner/overrides', {
+						headers: { accept: 'application/json' },
+					})
+					if (listResp.ok) {
+						const overrides = await listResp.json()
+						const match = (Array.isArray(overrides) ? overrides : []).find(
+							(o) =>
+								o &&
+								String(o.plannable_id) === String(item.plannable_id) &&
+								String(o.plannable_type).toLowerCase() ===
+									String(item.plannable_type).toLowerCase(),
+						)
+						if (match && match.id) {
+							item.planner_override = item.planner_override || {}
+							item.planner_override.id = match.id
+							const retry = await sendOverride(item.planner_override)
+							if (!retry.ok) {
+								console.warn('planner override PUT retry returned', retry.status)
+							}
+							return
+						}
+					}
+				} catch (e) {
+					console.error('error recovering planner override id', e)
+				}
+			}
+			// Still non-OK with nothing to recover: logged but not surfaced, the
+			// UI already reflects the intended state.
+			console.warn(
+				'planner override request returned',
+				resp.status,
+				'— UI already updated optimistically',
+			)
+		})
+		.catch((err) => console.error('error marking as complete', err))
 }
 
 function createTodoViewMore(location, type) {
-    let viewMoreButton = makeElement("button", location, { "className": "canvasrefined-custom-btn canvasrefined-viewmore-btn", "textContent": "View More" });
-    //viewMoreButton.classList.add("canvasrefined-viewmore-btn");
-    const showMoreCount = 3;
-    viewMoreButton.addEventListener("click", function (e) {
-        if (type === "announcement") {
-            moreAnnouncementCount += showMoreCount;
-        } else {
-            moreAssignmentCount += showMoreCount;
-        }
-        loadBetterTodo();
-    });
+	let viewMoreButton = makeElement('button', location, {
+		className: 'canvasrefined-custom-btn canvasrefined-viewmore-btn',
+		textContent: 'View More',
+	})
+	//viewMoreButton.classList.add("canvasrefined-viewmore-btn");
+	const showMoreCount = 3
+	viewMoreButton.addEventListener('click', function (e) {
+		if (type === 'announcement') {
+			moreAnnouncementCount += showMoreCount
+		} else {
+			moreAssignmentCount += showMoreCount
+		}
+		loadBetterTodo()
+	})
 }
 
 // better todo init
 function setupBetterTodo() {
-    // Better Todo list is removed from quizzes (it interferes with the quiz page).
-    if (isQuizPage()) return;
-    // Only the main dashboard and course homepages get the todo sidebar;
-    // sub-pages (assignments, modules, files, ...) keep Canvas's own sidebar.
-    if (!isTodoAllowedPage()) return;
-    if (options.better_todo !== true || isGradesPage()) return;
-    if (document.querySelector('#canvasrefined-todo-list')) return;
-    // The dashboard MutationObserver can fire before getApiData() has assigned
-    // the `assignments` promise. Creating the sidebar now would leave it
-    // permanently empty: createTodoSections would throw on `assignments.then`
-    // after the shell was built, and the existing-element guard above prevents
-    // any retry. Bail instead — Canvas keeps mutating the DOM during load, so
-    // checkDashboardReady calls us again once data is ready.
-    if (!assignments || typeof assignments.then !== "function") return;
-    let list = document.querySelector("#right-side");
-    if (!list) return;
-    //if (!list || list.childElementCount === 0 || list.children[0].id === "canvasrefined-todo-list") return;
-    try {
-        /* save the feedback to append it later */
-        const feedback = list.querySelector(".events_list.recent_feedback");
+	// Better Todo list is removed from quizzes (it interferes with the quiz page).
+	if (isQuizPage()) return
+	// Only the main dashboard and course homepages get the todo sidebar;
+	// sub-pages (assignments, modules, files, ...) keep Canvas's own sidebar.
+	if (!isTodoAllowedPage()) return
+	if (options.better_todo !== true || isGradesPage()) return
+	if (document.querySelector('#canvasrefined-todo-list')) return
+	// The dashboard MutationObserver can fire before getApiData() has assigned
+	// the `assignments` promise. Creating the sidebar now would leave it
+	// permanently empty: createTodoSections would throw on `assignments.then`
+	// after the shell was built, and the existing-element guard above prevents
+	// any retry. Bail instead — Canvas keeps mutating the DOM during load, so
+	// checkDashboardReady calls us again once data is ready.
+	if (!assignments || typeof assignments.then !== 'function') return
+	let list = document.querySelector('#right-side')
+	if (!list) return
+	//if (!list || list.childElementCount === 0 || list.children[0].id === "canvasrefined-todo-list") return;
+	try {
+		/* save the feedback to append it later */
+		const feedback = list.querySelector('.events_list.recent_feedback')
 
-        list.textContent = "";
-        list = makeElement("div", list, { "className": "canvasrefined-todosidebar","id": "canvasrefined-todo-list"});
-        if (feedback) list.append(feedback);
-        createTodoSections(list);
-        // Keep the saved widget below the tab controls and task groups.
-        if (feedback) list.append(feedback);
-
-    } catch (e) {
-        logError(e);
-    }
+		list.textContent = ''
+		list = makeElement('div', list, {
+			className: 'canvasrefined-todosidebar',
+			id: 'canvasrefined-todo-list',
+		})
+		if (feedback) list.append(feedback)
+		createTodoSections(list)
+		// Keep the saved widget below the tab controls and task groups.
+		if (feedback) list.append(feedback)
+	} catch (e) {
+		logError(e)
+	}
 }
 
-let delay;
-let moreAssignmentCount = 0;
-let moreAnnouncementCount = 0;
-let filter = "todo";
+let delay
+let moreAssignmentCount = 0
+let moreAnnouncementCount = 0
+let filter = 'todo'
 async function loadBetterTodo() {
-    if (options.better_todo !== true || isGradesPage()) return;
-    try {
-        await getColors();
-        const discussion_svg = '<svg class="canvasrefined-todo-svg" name="IconDiscussion" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><path d="M677.647059,16 L677.647059,354.936471 L790.588235,354.936471 L790.588235,129.054118 L1807.05882,129.054118 L1807.05882,919.529412 L1581.06353,919.529412 L1581.06353,1179.29412 L1321.41176,919.529412 L1242.24,919.529412 L1242.24,467.877647 L677.647059,467.877647 L0,467.877647 L0,1484.34824 L338.710588,1484.34824 L338.710588,1903.24706 L756.705882,1484.34824 L1242.24,1484.34824 L1242.24,1032.47059 L1274.99294,1032.47059 L1694.11765,1451.59529 L1694.11765,1032.47059 L1920,1032.47059 L1920,16 L677.647059,16 Z M338.789647,919.563294 L903.495529,919.563294 L903.495529,806.622118 L338.789647,806.622118 L338.789647,919.563294 Z M338.789647,1145.44565 L677.726118,1145.44565 L677.726118,1032.39153 L338.789647,1032.39153 L338.789647,1145.44565 Z M112.941176,580.705882 L1129.41176,580.705882 L1129.41176,1371.40706 L710.4,1371.40706 L451.651765,1631.05882 L451.651765,1371.40706 L112.941176,1371.40706 L112.941176,580.705882 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>';
-        const quiz_svg = '<svg class="canvasrefined-todo-svg" label="Quiz" name="IconQuiz" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><g fill-rule="evenodd" stroke="none" stroke-width="1"><path d="M746.255375,1466.76417 L826.739372,1547.47616 L577.99138,1796.11015 L497.507383,1715.51216 L746.255375,1466.76417 Z M580.35118,1300.92837 L660.949178,1381.52637 L329.323189,1713.15236 L248.725192,1632.55436 L580.35118,1300.92837 Z M414.503986,1135.20658 L495.101983,1215.80457 L80.5979973,1630.30856 L0,1549.71056 L414.503986,1135.20658 Z M1119.32036,264.600006 C1475.79835,-91.8779816 1844.58834,86.3040124 1848.35034,88.1280123 L1848.35034,88.1280123 L1865.45034,96.564012 L1873.88634,113.664011 C1875.71034,117.312011 2053.89233,486.101999 1697.30034,842.693987 L1697.30034,842.693987 L1550.69635,989.297982 L1548.07435,1655.17196 L1325.43235,1877.81395 L993.806366,1546.30196 L415.712386,968.207982 L84.0863971,636.467994 L306.72839,413.826001 L972.602367,411.318001 Z M1436.24035,1103.75398 L1074.40436,1465.70397 L1325.43235,1716.61796 L1434.30235,1607.74796 L1436.24035,1103.75398 Z M1779.26634,182.406009 C1710.18234,156.41401 1457.90035,87.1020124 1199.91836,345.198004 L1199.91836,345.198004 L576.90838,968.207982 L993.806366,1385.10597 L1616.70235,762.095989 C1873.65834,505.139998 1804.68834,250.920007 1779.26634,182.406009 Z M858.146371,525.773997 L354.152388,527.597997 L245.282392,636.467994 L496.310383,887.609985 L858.146371,525.773997 Z"></path><path d="M1534.98715,372.558003 C1483.91515,371.190003 1403.31715,385.326002 1321.69316,466.949999 L1281.22316,507.305998 L1454.61715,680.585992 L1494.97315,640.343994 C1577.16715,558.035996 1591.87315,479.033999 1589.82115,427.164001 L1587.65515,374.610003 L1534.98715,372.558003 Z"></path></g></g></svg>';
-        const announcement_svg = '<svg class="canvasrefined-todo-svg" label="Announcement" name="IconAnnouncement" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false" ><g role="presentation"><path d="M1587.16235,31.2784941 C1598.68235,7.78672942 1624.43294,-4.41091764 1650.63529,1.46202354 C1676.16,7.56084707 1694.11765,30.2620235 1694.11765,56.4643765 L1694.11765,56.4643765 L1694.11765,570.459671 C1822.87059,596.662024 1920,710.732612 1920,847.052612 C1920,983.372612 1822.87059,1097.55614 1694.11765,1123.75849 L1694.11765,1123.75849 L1694.11765,1637.64085 C1694.11765,1663.8432 1676.16,1686.65732 1650.63529,1692.6432 C1646.23059,1693.65967 1641.93882,1694.11144 1637.64706,1694.11144 C1616.52706,1694.11144 1596.87529,1682.36555 1587.16235,1662.93967 C1379.23765,1247.2032 964.178824,1242.34673 960,1242.34673 L960,1242.34673 L564.705882,1242.34673 L564.705882,1807.05261 L652.461176,1807.05261 C640.602353,1716.92555 634.955294,1560.05026 715.934118,1456.37026 C768.338824,1389.2832 845.590588,1355.28791 945.882353,1355.28791 L945.882353,1355.28791 L945.882353,1468.22908 C881.392941,1468.22908 835.312941,1487.09026 805.044706,1525.71614 C736.263529,1613.58438 759.981176,1789.54673 774.776471,1849.97026 C778.955294,1866.79849 775.115294,1884.6432 764.498824,1898.30908 C753.769412,1911.97496 737.28,1919.99379 720,1919.99379 L720,1919.99379 L508.235294,1919.99379 C477.063529,1919.99379 451.764706,1894.80791 451.764706,1863.5232 L451.764706,1863.5232 L451.764706,1242.34673 L395.294118,1242.34673 C239.548235,1242.34673 112.941176,1115.73967 112.941176,959.993788 L112.941176,959.993788 L112.941176,903.5232 L56.4705882,903.5232 C25.2988235,903.5232 0,878.337318 0,847.052612 C0,815.880847 25.2988235,790.582024 56.4705882,790.582024 L56.4705882,790.582024 L112.941176,790.582024 L112.941176,734.111435 C112.941176,578.478494 239.548235,451.758494 395.294118,451.758494 L395.294118,451.758494 L959.887059,451.758494 C976.828235,451.645553 1380.36706,444.756141 1587.16235,31.2784941 Z M1581.17647,249.706729 C1386.46588,492.078494 1128.96,547.871435 1016.47059,560.746729 L1016.47059,560.746729 L1016.47059,1133.47144 C1128.96,1146.34673 1386.46588,1202.02673 1581.17647,1444.51144 L1581.17647,1444.51144 Z M903.529412,564.699671 L395.294118,564.699671 C301.891765,564.699671 225.882353,640.709082 225.882353,734.111435 L225.882353,734.111435 L225.882353,959.993788 C225.882353,1053.39614 301.891765,1129.40555 395.294118,1129.40555 L395.294118,1129.40555 L903.529412,1129.40555 L903.529412,564.699671 Z M1694.11765,688.144376 L1694.11765,1006.07379 C1759.73647,982.694965 1807.05882,920.577318 1807.05882,847.052612 C1807.05882,773.527906 1759.73647,711.5232 1694.11765,688.144376 L1694.11765,688.144376 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>';
-        const assignment_svg = '<svg class="canvasrefined-todo-svg" label="Assignment" name="IconAssignment" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"><g role="presentation"><path d="M1468.2137,0 L1468.2137,564.697578 L1355.27419,564.697578 L1355.27419,112.939516 L112.939516,112.939516 L112.939516,1807.03225 L1355.27419,1807.03225 L1355.27419,1581.15322 L1468.2137,1581.15322 L1468.2137,1919.97177 L2.5243549e-29,1919.97177 L2.5243549e-29,0 L1468.2137,0 Z M1597.64239,581.310981 C1619.77853,559.174836 1655.46742,559.174836 1677.60356,581.310981 L1677.60356,581.310981 L1903.4826,807.190012 C1925.5058,829.213217 1925.5058,864.902104 1903.4826,887.038249 L1903.4826,887.038249 L1225.8455,1564.67534 C1215.22919,1575.17872 1200.88587,1581.16451 1185.86491,1581.16451 L1185.86491,1581.16451 L959.985883,1581.16451 C928.814576,1581.16451 903.516125,1555.86606 903.516125,1524.69475 L903.516125,1524.69475 L903.516125,1298.81572 C903.516125,1283.79477 909.501919,1269.45145 920.005294,1258.94807 L920.005294,1258.94807 Z M1442.35055,896.29929 L1016.45564,1322.1942 L1016.45564,1468.225 L1162.48643,1468.225 L1588.38135,1042.33008 L1442.35055,896.29929 Z M677.637094,1242.34597 L677.637094,1355.28548 L338.818547,1355.28548 L338.818547,1242.34597 L677.637094,1242.34597 Z M903.516125,1016.46693 L903.516125,1129.40645 L338.818547,1129.40645 L338.818547,1016.46693 L903.516125,1016.46693 Z M1637.62298,701.026867 L1522.19879,816.451052 L1668.22958,962.481846 L1783.65377,847.057661 L1637.62298,701.026867 Z M1129.39516,338.829841 L1129.39516,790.587903 L338.818547,790.587903 L338.818547,338.829841 L1129.39516,338.829841 Z M1016.45564,451.769356 L451.758062,451.769356 L451.758062,677.648388 L1016.45564,677.648388 L1016.45564,451.769356 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>';
-        const x_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M18 6l-12 12"></path><path d="M6 6l12 12"></path></svg>';
-        const check_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12l5 5l10 -10"></path></svg>';
-        const tag_svg = '<svg  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>';
-        // end of SVGs
+	if (options.better_todo !== true || isGradesPage()) return
+	try {
+		await getColors()
+		const discussion_svg =
+			'<svg class="canvasrefined-todo-svg" name="IconDiscussion" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><path d="M677.647059,16 L677.647059,354.936471 L790.588235,354.936471 L790.588235,129.054118 L1807.05882,129.054118 L1807.05882,919.529412 L1581.06353,919.529412 L1581.06353,1179.29412 L1321.41176,919.529412 L1242.24,919.529412 L1242.24,467.877647 L677.647059,467.877647 L0,467.877647 L0,1484.34824 L338.710588,1484.34824 L338.710588,1903.24706 L756.705882,1484.34824 L1242.24,1484.34824 L1242.24,1032.47059 L1274.99294,1032.47059 L1694.11765,1451.59529 L1694.11765,1032.47059 L1920,1032.47059 L1920,16 L677.647059,16 Z M338.789647,919.563294 L903.495529,919.563294 L903.495529,806.622118 L338.789647,806.622118 L338.789647,919.563294 Z M338.789647,1145.44565 L677.726118,1145.44565 L677.726118,1032.39153 L338.789647,1032.39153 L338.789647,1145.44565 Z M112.941176,580.705882 L1129.41176,580.705882 L1129.41176,1371.40706 L710.4,1371.40706 L451.651765,1631.05882 L451.651765,1371.40706 L112.941176,1371.40706 L112.941176,580.705882 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>'
+		const quiz_svg =
+			'<svg class="canvasrefined-todo-svg" label="Quiz" name="IconQuiz" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><g fill-rule="evenodd" stroke="none" stroke-width="1"><path d="M746.255375,1466.76417 L826.739372,1547.47616 L577.99138,1796.11015 L497.507383,1715.51216 L746.255375,1466.76417 Z M580.35118,1300.92837 L660.949178,1381.52637 L329.323189,1713.15236 L248.725192,1632.55436 L580.35118,1300.92837 Z M414.503986,1135.20658 L495.101983,1215.80457 L80.5979973,1630.30856 L0,1549.71056 L414.503986,1135.20658 Z M1119.32036,264.600006 C1475.79835,-91.8779816 1844.58834,86.3040124 1848.35034,88.1280123 L1848.35034,88.1280123 L1865.45034,96.564012 L1873.88634,113.664011 C1875.71034,117.312011 2053.89233,486.101999 1697.30034,842.693987 L1697.30034,842.693987 L1550.69635,989.297982 L1548.07435,1655.17196 L1325.43235,1877.81395 L993.806366,1546.30196 L415.712386,968.207982 L84.0863971,636.467994 L306.72839,413.826001 L972.602367,411.318001 Z M1436.24035,1103.75398 L1074.40436,1465.70397 L1325.43235,1716.61796 L1434.30235,1607.74796 L1436.24035,1103.75398 Z M1779.26634,182.406009 C1710.18234,156.41401 1457.90035,87.1020124 1199.91836,345.198004 L1199.91836,345.198004 L576.90838,968.207982 L993.806366,1385.10597 L1616.70235,762.095989 C1873.65834,505.139998 1804.68834,250.920007 1779.26634,182.406009 Z M858.146371,525.773997 L354.152388,527.597997 L245.282392,636.467994 L496.310383,887.609985 L858.146371,525.773997 Z"></path><path d="M1534.98715,372.558003 C1483.91515,371.190003 1403.31715,385.326002 1321.69316,466.949999 L1281.22316,507.305998 L1454.61715,680.585992 L1494.97315,640.343994 C1577.16715,558.035996 1591.87315,479.033999 1589.82115,427.164001 L1587.65515,374.610003 L1534.98715,372.558003 Z"></path></g></g></svg>'
+		const announcement_svg =
+			'<svg class="canvasrefined-todo-svg" label="Announcement" name="IconAnnouncement" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false" ><g role="presentation"><path d="M1587.16235,31.2784941 C1598.68235,7.78672942 1624.43294,-4.41091764 1650.63529,1.46202354 C1676.16,7.56084707 1694.11765,30.2620235 1694.11765,56.4643765 L1694.11765,56.4643765 L1694.11765,570.459671 C1822.87059,596.662024 1920,710.732612 1920,847.052612 C1920,983.372612 1822.87059,1097.55614 1694.11765,1123.75849 L1694.11765,1123.75849 L1694.11765,1637.64085 C1694.11765,1663.8432 1676.16,1686.65732 1650.63529,1692.6432 C1646.23059,1693.65967 1641.93882,1694.11144 1637.64706,1694.11144 C1616.52706,1694.11144 1596.87529,1682.36555 1587.16235,1662.93967 C1379.23765,1247.2032 964.178824,1242.34673 960,1242.34673 L960,1242.34673 L564.705882,1242.34673 L564.705882,1807.05261 L652.461176,1807.05261 C640.602353,1716.92555 634.955294,1560.05026 715.934118,1456.37026 C768.338824,1389.2832 845.590588,1355.28791 945.882353,1355.28791 L945.882353,1355.28791 L945.882353,1468.22908 C881.392941,1468.22908 835.312941,1487.09026 805.044706,1525.71614 C736.263529,1613.58438 759.981176,1789.54673 774.776471,1849.97026 C778.955294,1866.79849 775.115294,1884.6432 764.498824,1898.30908 C753.769412,1911.97496 737.28,1919.99379 720,1919.99379 L720,1919.99379 L508.235294,1919.99379 C477.063529,1919.99379 451.764706,1894.80791 451.764706,1863.5232 L451.764706,1863.5232 L451.764706,1242.34673 L395.294118,1242.34673 C239.548235,1242.34673 112.941176,1115.73967 112.941176,959.993788 L112.941176,959.993788 L112.941176,903.5232 L56.4705882,903.5232 C25.2988235,903.5232 0,878.337318 0,847.052612 C0,815.880847 25.2988235,790.582024 56.4705882,790.582024 L56.4705882,790.582024 L112.941176,790.582024 L112.941176,734.111435 C112.941176,578.478494 239.548235,451.758494 395.294118,451.758494 L395.294118,451.758494 L959.887059,451.758494 C976.828235,451.645553 1380.36706,444.756141 1587.16235,31.2784941 Z M1581.17647,249.706729 C1386.46588,492.078494 1128.96,547.871435 1016.47059,560.746729 L1016.47059,560.746729 L1016.47059,1133.47144 C1128.96,1146.34673 1386.46588,1202.02673 1581.17647,1444.51144 L1581.17647,1444.51144 Z M903.529412,564.699671 L395.294118,564.699671 C301.891765,564.699671 225.882353,640.709082 225.882353,734.111435 L225.882353,734.111435 L225.882353,959.993788 C225.882353,1053.39614 301.891765,1129.40555 395.294118,1129.40555 L395.294118,1129.40555 L903.529412,1129.40555 L903.529412,564.699671 Z M1694.11765,688.144376 L1694.11765,1006.07379 C1759.73647,982.694965 1807.05882,920.577318 1807.05882,847.052612 C1807.05882,773.527906 1759.73647,711.5232 1694.11765,688.144376 L1694.11765,688.144376 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>'
+		const assignment_svg =
+			'<svg class="canvasrefined-todo-svg" label="Assignment" name="IconAssignment" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"><g role="presentation"><path d="M1468.2137,0 L1468.2137,564.697578 L1355.27419,564.697578 L1355.27419,112.939516 L112.939516,112.939516 L112.939516,1807.03225 L1355.27419,1807.03225 L1355.27419,1581.15322 L1468.2137,1581.15322 L1468.2137,1919.97177 L2.5243549e-29,1919.97177 L2.5243549e-29,0 L1468.2137,0 Z M1597.64239,581.310981 C1619.77853,559.174836 1655.46742,559.174836 1677.60356,581.310981 L1677.60356,581.310981 L1903.4826,807.190012 C1925.5058,829.213217 1925.5058,864.902104 1903.4826,887.038249 L1903.4826,887.038249 L1225.8455,1564.67534 C1215.22919,1575.17872 1200.88587,1581.16451 1185.86491,1581.16451 L1185.86491,1581.16451 L959.985883,1581.16451 C928.814576,1581.16451 903.516125,1555.86606 903.516125,1524.69475 L903.516125,1524.69475 L903.516125,1298.81572 C903.516125,1283.79477 909.501919,1269.45145 920.005294,1258.94807 L920.005294,1258.94807 Z M1442.35055,896.29929 L1016.45564,1322.1942 L1016.45564,1468.225 L1162.48643,1468.225 L1588.38135,1042.33008 L1442.35055,896.29929 Z M677.637094,1242.34597 L677.637094,1355.28548 L338.818547,1355.28548 L338.818547,1242.34597 L677.637094,1242.34597 Z M903.516125,1016.46693 L903.516125,1129.40645 L338.818547,1129.40645 L338.818547,1016.46693 L903.516125,1016.46693 Z M1637.62298,701.026867 L1522.19879,816.451052 L1668.22958,962.481846 L1783.65377,847.057661 L1637.62298,701.026867 Z M1129.39516,338.829841 L1129.39516,790.587903 L338.818547,790.587903 L338.818547,338.829841 L1129.39516,338.829841 Z M1016.45564,451.769356 L451.758062,451.769356 L451.758062,677.648388 L1016.45564,677.648388 L1016.45564,451.769356 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>'
+		const x_svg =
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M18 6l-12 12"></path><path d="M6 6l12 12"></path></svg>'
+		const check_svg =
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12l5 5l10 -10"></path></svg>'
+		const tag_svg =
+			'<svg  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>'
+		// end of SVGs
 
-        const maxAssignmentCount = parseInt(options.num_todo_items) + moreAssignmentCount;
-        const maxAnnouncementCount = parseInt(options.num_todo_items) + moreAnnouncementCount;
-        const hr24 = options.todo_hr24;
-        const now = new Date();
-        //const csrfToken = CSRFtoken();
-        let todoAnnouncements = document.querySelector("#canvasrefined-announcement-list");
-        let todoAssignments = document.querySelector("#canvasrefined-todo-list");
-        let assignmentsToInsert = [];
-        let announcementsToInsert = [];
+		const maxAssignmentCount = parseInt(options.num_todo_items) + moreAssignmentCount
+		const maxAnnouncementCount = parseInt(options.num_todo_items) + moreAnnouncementCount
+		const hr24 = options.todo_hr24
+		const now = new Date()
+		//const csrfToken = CSRFtoken();
+		let todoAnnouncements = document.querySelector('#canvasrefined-announcement-list')
+		let todoAssignments = document.querySelector('#canvasrefined-todo-list')
+		let assignmentsToInsert = []
+		let announcementsToInsert = []
 
-        assignments.then(data => {
-            chrome.storage.sync.get(options.custom_assignments_overflow, storage => {
-                //assignmentData = assignmentData === null ? data : assignmentData;
-                let items = combineAssignments(data);
-                items.forEach((item, index) => {
-                    let date = new Date(item.plannable_date);
-                    let itemState = options.assignment_states[item.plannable_id];
+		assignments.then((data) => {
+			chrome.storage.sync.get(options.custom_assignments_overflow, (storage) => {
+				//assignmentData = assignmentData === null ? data : assignmentData;
+				let items = combineAssignments(data)
+				items.forEach((item, index) => {
+					let date = new Date(item.plannable_date)
+					let itemState = options.assignment_states[item.plannable_id]
 
-                    let svg;
-                    switch (item.plannable_type) {
-                        case "assignment": svg = assignment_svg; break;
-                        case "discussion_topic": svg = discussion_svg; break;
-                        case "quiz": svg = quiz_svg; break;
-                        case "announcement": svg = announcement_svg; break;
-                        default: return;
-                    }
+					let svg
+					switch (item.plannable_type) {
+						case 'assignment':
+							svg = assignment_svg
+							break
+						case 'discussion_topic':
+							svg = discussion_svg
+							break
+						case 'quiz':
+							svg = quiz_svg
+							break
+						case 'announcement':
+							svg = announcement_svg
+							break
+						default:
+							return
+					}
 
-                    // if (item.plannable_type === "announcement") {
-                    //if (announcementsToInsert.length >= maxAnnouncementCount + 1) return;
-                    if (item.plannable_type !== "announcement") {
-                        // leaving one extra assignment in the array to indicate there are more and the "view more" button should be created
-                        if (assignmentsToInsert.length >= maxAssignmentCount + 1) return;
-                        if (filter === "todo" && options.hide_completed === true && item.submissions.submitted === true) return;
-                        if (filter === "todo" && ((options.todo_overdues !== true && now >= date) || (options.todo_overdues === true && item.submissions.submitted === true))) return;
-                        if (filter === "done" && now <= date && !(itemState?.["rem"] === true || item?.submissions?.submitted === true)) return;
-                        //if (item.plannable_type !== "assignment" && item.plannable_type !== "quiz" && item.plannable_type !== "discussion_topic") return;
-                    }
-                    if (filter === "todo" && ((itemState && itemState["rem"] === true) || (item.planner_override && item.planner_override.marked_complete === true))) return;
+					// if (item.plannable_type === "announcement") {
+					//if (announcementsToInsert.length >= maxAnnouncementCount + 1) return;
+					if (item.plannable_type !== 'announcement') {
+						// leaving one extra assignment in the array to indicate there are more and the "view more" button should be created
+						if (assignmentsToInsert.length >= maxAssignmentCount + 1) return
+						if (
+							filter === 'todo' &&
+							options.hide_completed === true &&
+							item.submissions.submitted === true
+						)
+							return
+						if (
+							filter === 'todo' &&
+							((options.todo_overdues !== true && now >= date) ||
+								(options.todo_overdues === true && item.submissions.submitted === true))
+						)
+							return
+						if (
+							filter === 'done' &&
+							now <= date &&
+							!(itemState?.['rem'] === true || item?.submissions?.submitted === true)
+						)
+							return
+						//if (item.plannable_type !== "assignment" && item.plannable_type !== "quiz" && item.plannable_type !== "discussion_topic") return;
+					}
+					if (
+						filter === 'todo' &&
+						((itemState && itemState['rem'] === true) ||
+							(item.planner_override && item.planner_override.marked_complete === true))
+					)
+						return
 
-                    let listItemContainer = document.createElement("div");
-                    listItemContainer.classList.add("canvasrefined-todo-container");
-                    listItemContainer.innerHTML = '<div class="canvasrefined-hover-preview"><p class="canvasrefined-preview-title"></p><p class="canvasrefined-preview-text"></p></div><div class="canvasrefined-todo-actions"></div><div class="canvasrefined-todo-icon"></div><a class="canvasrefined-todo-item"><div class="canvasrefined-todo-item-header"></div></a><button class="canvasrefined-todo-actions-btn"><i class="icon-more canvasrefined-dots-icon" aria-hidden="true"></i></button>';
-                    listItemContainer.querySelector(".canvasrefined-todo-item").href = item.html_url;
-                    listItemContainer.dataset.id = item.plannable_id;
-                    listItemContainer.querySelector('.canvasrefined-todo-icon').innerHTML += svg;
+					let listItemContainer = document.createElement('div')
+					listItemContainer.classList.add('canvasrefined-todo-container')
+					listItemContainer.innerHTML =
+						'<div class="canvasrefined-hover-preview"><p class="canvasrefined-preview-title"></p><p class="canvasrefined-preview-text"></p></div><div class="canvasrefined-todo-actions"></div><div class="canvasrefined-todo-icon"></div><a class="canvasrefined-todo-item"><div class="canvasrefined-todo-item-header"></div></a><button class="canvasrefined-todo-actions-btn"><i class="icon-more canvasrefined-dots-icon" aria-hidden="true"></i></button>'
+					listItemContainer.querySelector('.canvasrefined-todo-item').href = item.html_url
+					listItemContainer.dataset.id = item.plannable_id
+					listItemContainer.querySelector('.canvasrefined-todo-icon').innerHTML += svg
 
-                    let listItem = listItemContainer.querySelector(".canvasrefined-todo-item");
-                    const courseColor =
-                        options.custom_cards_3?.[String(item.course_id)]?.color ??
-                        options.custom_cards_3?.[item.course_id]?.color ??
-                        options.custom_cards_3?.[item.plannable?.course_id]?.color ??
-                        "#cccccc";
-                    if (itemState?.["lbl"] && itemState["lbl"] !== "") {
-                        makeElement("span", listItem.querySelector(".canvasrefined-todo-item-header"), { "className": "canvasrefined-todo-label", "textContent": itemState["lbl"] });
-                    }
-                    if (itemState?.["crs"] === true) {
-                        listItemContainer.querySelector(".canvasrefined-todo-item").style.textDecoration = "line-through";
-                    }
-                    let title = makeElement("a", listItem.querySelector(".canvasrefined-todo-item-header"), { "className": "canvasrefined-todoitem-title", "textContent": anonTitleForItem(item) });
-                    if (options.todo_hide_feedback === true) title.style = "color:" + courseColor + "!important;";
-                    let course = makeElement("p", listItem, { "className": "canvasrefined-todoitem-course", "textContent": anonCourseNameForItem(item) });
-                    course.style.color = courseColor;
-                    let format = formatTodoDate(date, item.submissions, hr24);
-                    let todoDate = makeElement("p", listItem, { "className": "canvasrefined-todoitem-date", "textContent": format.date });
-                    if (format.dueSoon) todoDate.classList.add("canvasrefined-due-soon");
+					let listItem = listItemContainer.querySelector('.canvasrefined-todo-item')
+					const courseColor =
+						options.custom_cards_3?.[String(item.course_id)]?.color ??
+						options.custom_cards_3?.[item.course_id]?.color ??
+						options.custom_cards_3?.[item.plannable?.course_id]?.color ??
+						'#cccccc'
+					if (itemState?.['lbl'] && itemState['lbl'] !== '') {
+						makeElement(
+							'span',
+							listItem.querySelector('.canvasrefined-todo-item-header'),
+							{ className: 'canvasrefined-todo-label', textContent: itemState['lbl'] },
+						)
+					}
+					if (itemState?.['crs'] === true) {
+						listItemContainer.querySelector(
+							'.canvasrefined-todo-item',
+						).style.textDecoration = 'line-through'
+					}
+					let title = makeElement(
+						'a',
+						listItem.querySelector('.canvasrefined-todo-item-header'),
+						{
+							className: 'canvasrefined-todoitem-title',
+							textContent: anonTitleForItem(item),
+						},
+					)
+					if (options.todo_hide_feedback === true)
+						title.style = 'color:' + courseColor + '!important;'
+					let course = makeElement('p', listItem, {
+						className: 'canvasrefined-todoitem-course',
+						textContent: anonCourseNameForItem(item),
+					})
+					course.style.color = courseColor
+					let format = formatTodoDate(date, item.submissions, hr24)
+					let todoDate = makeElement('p', listItem, {
+						className: 'canvasrefined-todoitem-date',
+						textContent: format.date,
+					})
+					if (format.dueSoon) todoDate.classList.add('canvasrefined-due-soon')
 
-                    if (options.hover_preview === true) {
-                        const customItem = item.planner_override && item.planner_override.custom && item.planner_override.custom === true;
-                        listItem.addEventListener("mouseover", () => {
-                            listItem.classList.add("canvasrefined-todo-hover");
-                            let preview = listItemContainer.querySelector(".canvasrefined-hover-preview");
-                            let previewTitle = preview.querySelector(".canvasrefined-preview-title");
-                            let previewText = preview.querySelector(".canvasrefined-preview-text");
-                            clearTimeout(delay);
-                            delay = setTimeout(async () => {
-                                if (listItem.classList.contains("canvasrefined-todo-hover")) {
-                                    previewTitle.textContent = item.plannable.title;
-                                    // custom assignment (planner note): preview its description/details
-                                    if (customItem) {
-                                        const details = item.plannable && item.plannable.details ? item.plannable.details : "";
-                                        previewText.textContent = details === "" ? "No details given" : details.replace(/<\/?[^>]+(>|$)/g, " ");
-                                    } else {
-                                        console.log(item);
-                                        let found = false;
-                                        let searchCount = 1;
-                                        while (searchCount < 5 && found === false) {
-                                            for (let i = 0; i < announcements.length; i++) {
-                                                if (announcements[i].id === item.plannable_id) {
-                                                    found = true;
-                                                    if (previewText.textContent === "") {
-                                                        let description = item.plannable_type === "announcement" ? announcements[i].message : announcements[i].description;
-                                                        previewText.textContent = description === "" ? "No details given" : description.replace(/<\/?[^>]+(>|$)/g, " ");
-                                                    }
-                                                    break;
-                                                }
-                                            }
-                                            if (found === false) {
-                                                let apiLink = domain + "/api/v1/";
-                                                if (item.plannable_type === "assignment") {
-                                                    apiLink += `courses/${item.course_id}/assignments/${item.plannable_id}`;
-                                                } else if (item.plannable_type === "announcement") {
-                                                    apiLink += `announcements?context_codes[]=course_${item.course_id}&per_page=3&page=${searchCount}`;
-                                                }
-                                                let data = await getData(apiLink);
-                                                item.plannable_type === "announcement" ? announcements.push(...data) : announcements.push(data);
-                                                searchCount++;
-                                            }
-                                        }
-                                        if (found === false) {
-                                            previewText.textContent = "Couldn't load preview";
-                                        }
-                                    }
-                                    preview.style.display = "block";
-                                }
-                            }, 0);
-                        });
+					if (options.hover_preview === true) {
+						const customItem =
+							item.planner_override &&
+							item.planner_override.custom &&
+							item.planner_override.custom === true
+						listItem.addEventListener('mouseover', () => {
+							listItem.classList.add('canvasrefined-todo-hover')
+							let preview = listItemContainer.querySelector(
+								'.canvasrefined-hover-preview',
+							)
+							let previewTitle = preview.querySelector('.canvasrefined-preview-title')
+							let previewText = preview.querySelector('.canvasrefined-preview-text')
+							clearTimeout(delay)
+							delay = setTimeout(async () => {
+								if (listItem.classList.contains('canvasrefined-todo-hover')) {
+									previewTitle.textContent = item.plannable.title
+									// custom assignment (planner note): preview its description/details
+									if (customItem) {
+										const details =
+											item.plannable && item.plannable.details
+												? item.plannable.details
+												: ''
+										previewText.textContent =
+											details === ''
+												? 'No details given'
+												: details.replace(/<\/?[^>]+(>|$)/g, ' ')
+									} else {
+										console.log(item)
+										let found = false
+										let searchCount = 1
+										while (searchCount < 5 && found === false) {
+											for (let i = 0; i < announcements.length; i++) {
+												if (announcements[i].id === item.plannable_id) {
+													found = true
+													if (previewText.textContent === '') {
+														let description =
+															item.plannable_type === 'announcement'
+																? announcements[i].message
+																: announcements[i].description
+														previewText.textContent =
+															description === ''
+																? 'No details given'
+																: description.replace(/<\/?[^>]+(>|$)/g, ' ')
+													}
+													break
+												}
+											}
+											if (found === false) {
+												let apiLink = domain + '/api/v1/'
+												if (item.plannable_type === 'assignment') {
+													apiLink += `courses/${item.course_id}/assignments/${item.plannable_id}`
+												} else if (item.plannable_type === 'announcement') {
+													apiLink += `announcements?context_codes[]=course_${item.course_id}&per_page=3&page=${searchCount}`
+												}
+												let data = await getData(apiLink)
+												item.plannable_type === 'announcement'
+													? announcements.push(...data)
+													: announcements.push(data)
+												searchCount++
+											}
+										}
+										if (found === false) {
+											previewText.textContent = "Couldn't load preview"
+										}
+									}
+									preview.style.display = 'block'
+								}
+							}, 0)
+						})
 
-                        listItem.addEventListener("mouseleave", () => {
-                            listItem.classList.remove("canvasrefined-todo-hover");
-                            listItemContainer.querySelector(".canvasrefined-hover-preview").style.display = "none";
-                        });
-                    }
+						listItem.addEventListener('mouseleave', () => {
+							listItem.classList.remove('canvasrefined-todo-hover')
+							listItemContainer.querySelector(
+								'.canvasrefined-hover-preview',
+							).style.display = 'none'
+						})
+					}
 
-                    const actions = listItemContainer.querySelector(".canvasrefined-todo-actions");
+					const actions = listItemContainer.querySelector('.canvasrefined-todo-actions')
 
-                    let clickOutActions = (e) => {
-                        if (e.target.className.includes("canvasrefined")) return;
-                        document.body.removeEventListener("click", clickOutActions);
-                        actions.style.display = "none";
-                    }
+					let clickOutActions = (e) => {
+						if (e.target.className.includes('canvasrefined')) return
+						document.body.removeEventListener('click', clickOutActions)
+						actions.style.display = 'none'
+					}
 
-                    listItemContainer.querySelector(".canvasrefined-todo-actions-btn").addEventListener("click", () => {
-                        actions.style.display = "block";
-                        setTimeout(() => {
-                            document.body.addEventListener("click", clickOutActions);
-                        }, 100);
-                    });
+					listItemContainer
+						.querySelector('.canvasrefined-todo-actions-btn')
+						.addEventListener('click', () => {
+							actions.style.display = 'block'
+							setTimeout(() => {
+								document.body.addEventListener('click', clickOutActions)
+							}, 100)
+						})
 
-                    let removeBtn = makeElement("div", actions, { "className": "canvasrefined-todo-action", "textContent": "Remove" });
-                    removeBtn.innerHTML += x_svg;
-                    const dueAt = new Date(item.plannable_date).getTime();
+					let removeBtn = makeElement('div', actions, {
+						className: 'canvasrefined-todo-action',
+						textContent: 'Remove',
+					})
+					removeBtn.innerHTML += x_svg
+					const dueAt = new Date(item.plannable_date).getTime()
 
-                    let crossOffBtn = makeElement("div", actions, { "className": "canvasrefined-todo-action", "textContent": "Cross off" });
-                    crossOffBtn.innerHTML += check_svg;
-                    crossOffBtn.addEventListener("click", () => {
-                        setAssignmentState(item.plannable_id, { "crs": listItemContainer.querySelector(".canvasrefined-todo-item").style.textDecoration === "line-through" ? false : true, "expire": dueAt });
-                    });
-                    let label = makeElement("span", actions, { "className": "canvasrefined-todo-action-tag", "textContent": "Label:" });
-                    label.innerHTML += tag_svg;
-                    let labelInput = makeElement("input", actions, { "className": "canvasrefined-todo-input", "type": "text", "placeholder": "Label", "value": itemState && itemState["lbl"] ? itemState["lbl"] : "" });
-                    labelInput.addEventListener("change", (e) => {
-                        setAssignmentState(item.plannable_id, { "lbl": e.target.value, "expire": dueAt });
-                    });
+					let crossOffBtn = makeElement('div', actions, {
+						className: 'canvasrefined-todo-action',
+						textContent: 'Cross off',
+					})
+					crossOffBtn.innerHTML += check_svg
+					crossOffBtn.addEventListener('click', () => {
+						setAssignmentState(item.plannable_id, {
+							crs:
+								listItemContainer.querySelector('.canvasrefined-todo-item').style
+									.textDecoration === 'line-through'
+									? false
+									: true,
+							expire: dueAt,
+						})
+					})
+					let label = makeElement('span', actions, {
+						className: 'canvasrefined-todo-action-tag',
+						textContent: 'Label:',
+					})
+					label.innerHTML += tag_svg
+					let labelInput = makeElement('input', actions, {
+						className: 'canvasrefined-todo-input',
+						type: 'text',
+						placeholder: 'Label',
+						value: itemState && itemState['lbl'] ? itemState['lbl'] : '',
+					})
+					labelInput.addEventListener('change', (e) => {
+						setAssignmentState(item.plannable_id, { lbl: e.target.value, expire: dueAt })
+					})
 
-                    removeBtn.addEventListener('click', function () {
-                        setAssignmentState(item.plannable_id, { "rem": filter === "todo", "expire": dueAt });
-                        if (item.planner_override && item.planner_override.custom && item.planner_override.custom === true) {
-                            // set item as complete locally
-                            chrome.storage.sync.get("custom_assignments_overflow", overflow => {
-                                chrome.storage.sync.get(overflow["custom_assignments_overflow"], storage => {
-                                    overflow["custom_assignments_overflow"].forEach(overflow => {
-                                        for (let i = 0; i < storage[overflow].length; i++) {
-                                            if (storage[overflow][i].plannable_id === item.plannable_id) {
-                                                storage[overflow].splice(i, 1);
-                                                chrome.storage.sync.set({ [overflow]: storage[overflow] }).then(() => {
-                                                });
-                                                break;
-                                            }
-                                        }
-                                    });
-                                });
-                            });
-                        }
-                    });
+					removeBtn.addEventListener('click', function () {
+						setAssignmentState(item.plannable_id, {
+							rem: filter === 'todo',
+							expire: dueAt,
+						})
+						if (
+							item.planner_override &&
+							item.planner_override.custom &&
+							item.planner_override.custom === true
+						) {
+							// set item as complete locally
+							chrome.storage.sync.get('custom_assignments_overflow', (overflow) => {
+								chrome.storage.sync.get(
+									overflow['custom_assignments_overflow'],
+									(storage) => {
+										overflow['custom_assignments_overflow'].forEach((overflow) => {
+											for (let i = 0; i < storage[overflow].length; i++) {
+												if (storage[overflow][i].plannable_id === item.plannable_id) {
+													storage[overflow].splice(i, 1)
+													chrome.storage.sync
+														.set({ [overflow]: storage[overflow] })
+														.then(() => {})
+													break
+												}
+											}
+										})
+									},
+								)
+							})
+						}
+					})
 
-                    if (item.plannable_type === "announcement") {
-                        announcementsToInsert.push(listItemContainer);
-                    } else {
-                        assignmentsToInsert.push(listItemContainer);
-                        if (item.submissions && item.submissions.submitted) {
-                            listItemContainer.classList.add("canvasrefined-todo-item-completed");
-                        }
-                    }
+					if (item.plannable_type === 'announcement') {
+						announcementsToInsert.push(listItemContainer)
+					} else {
+						assignmentsToInsert.push(listItemContainer)
+						if (item.submissions && item.submissions.submitted) {
+							listItemContainer.classList.add('canvasrefined-todo-item-completed')
+						}
+					}
+				})
 
+				// appending assignments all at once
+				todoAssignments.textContent = ''
+				if (assignmentsToInsert.length > 0) {
+					let i
+					for (
+						i = 0;
+						i <
+						(assignmentsToInsert.length > maxAssignmentCount
+							? maxAssignmentCount
+							: assignmentsToInsert.length);
+						i++
+					) {
+						todoAssignments.append(assignmentsToInsert[i])
+					}
+					if (i !== assignmentsToInsert.length)
+						createTodoViewMore(todoAssignments, 'assignment')
+				} else {
+					makeElement('p', todoAssignments, {
+						className: 'canvasrefined-none-due',
+						textContent: 'None',
+					})
+				}
 
-                });
+				// appending announcements all at once
+				todoAnnouncements.textContent = ''
+				if (announcementsToInsert.length > 0) {
+					let i
+					for (
+						i = announcementsToInsert.length - 1;
+						i >=
+						(announcementsToInsert.length - maxAnnouncementCount < 0
+							? 0
+							: announcementsToInsert.length - maxAnnouncementCount);
+						i--
+					) {
+						todoAnnouncements.append(announcementsToInsert[i])
+					}
+					if (i !== -1) createTodoViewMore(todoAnnouncements, 'announcement')
+				} else {
+					makeElement('p', todoAnnouncements, {
+						className: 'canvasrefined-none-due',
+						textContent: 'None',
+					})
+				}
 
-                // appending assignments all at once
-                todoAssignments.textContent = "";
-                if (assignmentsToInsert.length > 0) {
-                    let i;
-                    for (i = 0; i < (assignmentsToInsert.length > maxAssignmentCount ? maxAssignmentCount : assignmentsToInsert.length); i++) {
-                        todoAssignments.append(assignmentsToInsert[i]);
-                    }
-                    if (i !== assignmentsToInsert.length) createTodoViewMore(todoAssignments, "assignment");
-                } else {
-                    makeElement("p", todoAssignments, { "className": "canvasrefined-none-due", "textContent": "None" });
-                }
-
-                // appending announcements all at once
-                todoAnnouncements.textContent = "";
-                if (announcementsToInsert.length > 0) {
-                    let i;
-                    for (i = announcementsToInsert.length - 1; i >= (announcementsToInsert.length - maxAnnouncementCount < 0 ? 0 : announcementsToInsert.length - maxAnnouncementCount); i--) {
-                        todoAnnouncements.append(announcementsToInsert[i]);
-                    }
-                    if (i !== -1) createTodoViewMore(todoAnnouncements, "announcement");
-                } else {
-                    makeElement("p", todoAnnouncements, { "className": "canvasrefined-none-due", "textContent": "None" });
-                }
-
-                cleanCustomAssignments();
-            });
-        });
-
-    } catch (e) {
-        logError(e);
-    }
+				cleanCustomAssignments()
+			})
+		})
+	} catch (e) {
+		logError(e)
+	}
 }
 
 /*
 Card color palettes
 */
 
-let changeColorInterval = null;
-let colorChanges = [];
+let changeColorInterval = null
+let colorChanges = []
 
 // Course list for palette operations, in DISPLAY order (first shown to
 // last) so palette colors land on courses in the order the user sees them.
@@ -3997,198 +4650,240 @@ let colorChanges = [];
 // course colors from the users/self/colors API (used for "revert colors"
 // when no DOM cards exist to read inline styles from).
 async function getPaletteCards() {
-    let cards = [];
-    let apiColors = {};
-    document.querySelectorAll(".ic-DashboardCard__header").forEach(card => {
-        cards.push({ "href": card.querySelector(".ic-DashboardCard__link").href, "el": card });
-    });
-    if (cards.length > 0) return { cards, apiColors };
-    try {
-        const [cardsRes, colorsRes] = await Promise.all([
-            fetch(domain + "/api/v1/dashboard/dashboard_cards", { headers: { "accept": "application/json" } }),
-            fetch(domain + "/api/v1/users/self/colors", { headers: { "accept": "application/json" } })
-        ]);
-        const apiCards = await cardsRes.json();
-        apiColors = (await colorsRes.json())?.custom_colors || {};
-        const seen = new Set();
-        const orderedIds = [];
-        document.querySelectorAll("a.Grouping-styles__hero").forEach(hero => {
-            const m = (hero.getAttribute("href") || "").match(/\/courses\/(\d+)/);
-            if (m && !seen.has(m[1])) { seen.add(m[1]); orderedIds.push(m[1]); }
-        });
-        apiCards.forEach(card => {
-            const id = String(card.id);
-            if (!seen.has(id)) { seen.add(id); orderedIds.push(id); }
-        });
-        orderedIds.forEach(id => cards.push({ "href": domain + "/courses/" + id, "el": null }));
-    } catch (e) {
-        logError(e);
-    }
-    return { cards, apiColors };
+	let cards = []
+	let apiColors = {}
+	document.querySelectorAll('.ic-DashboardCard__header').forEach((card) => {
+		cards.push({ href: card.querySelector('.ic-DashboardCard__link').href, el: card })
+	})
+	if (cards.length > 0) return { cards, apiColors }
+	try {
+		const [cardsRes, colorsRes] = await Promise.all([
+			fetch(domain + '/api/v1/dashboard/dashboard_cards', {
+				headers: { accept: 'application/json' },
+			}),
+			fetch(domain + '/api/v1/users/self/colors', {
+				headers: { accept: 'application/json' },
+			}),
+		])
+		const apiCards = await cardsRes.json()
+		apiColors = (await colorsRes.json())?.custom_colors || {}
+		const seen = new Set()
+		const orderedIds = []
+		document.querySelectorAll('a.Grouping-styles__hero').forEach((hero) => {
+			const m = (hero.getAttribute('href') || '').match(/\/courses\/(\d+)/)
+			if (m && !seen.has(m[1])) {
+				seen.add(m[1])
+				orderedIds.push(m[1])
+			}
+		})
+		apiCards.forEach((card) => {
+			const id = String(card.id)
+			if (!seen.has(id)) {
+				seen.add(id)
+				orderedIds.push(id)
+			}
+		})
+		orderedIds.forEach((id) => cards.push({ href: domain + '/courses/' + id, el: null }))
+	} catch (e) {
+		logError(e)
+	}
+	return { cards, apiColors }
 }
 
 // All course-colored consumers must receive the same palette as the cards.
 function refreshCourseColorUI() {
-    changeFavicon();
-    if (options.better_todo && document.getElementById("better-todo-main")) {
-        clearTodoList();
-        createTodoSections(document.querySelector("#canvasrefined-todo-list"));
-    }
+	changeFavicon()
+	if (options.better_todo && document.getElementById('better-todo-main')) {
+		clearTodoList()
+		createTodoSections(document.querySelector('#canvasrefined-todo-list'))
+	}
 }
 
-let paletteChangeVersion = 0;
-let palettePreviewCards = null;
-let palettePreviewOriginalColors = {};
+let paletteChangeVersion = 0
+let palettePreviewCards = null
+let palettePreviewOriginalColors = {}
 
 async function changeColorPreset(colors, previewOnly = false) {
-    const version = ++paletteChangeVersion;
-    const restoring = colors.length === 0;
-    if (restoring && previewOnly) return;
+	const version = ++paletteChangeVersion
+	const restoring = colors.length === 0
+	if (restoring && previewOnly) return
 
-    // reset everything
-    //let res = await getData(`${domain}/api/v1/users/self/colors`);
-    if (!previewOnly) clearInterval(changeColorInterval);
-    const csrfToken = previewOnly ? null : CSRFtoken();
-    const delay = 250;
-    const previous = [];
-    if (!previewOnly) colorChanges = [];
+	// reset everything
+	//let res = await getData(`${domain}/api/v1/users/self/colors`);
+	if (!previewOnly) clearInterval(changeColorInterval)
+	const csrfToken = previewOnly ? null : CSRFtoken()
+	const delay = 250
+	const previous = []
+	if (!previewOnly) colorChanges = []
 
-    // sort cards
-    // (display order — see getPaletteCards; no re-sorting here so palette
-    // colors apply from the first course on screen to the last)
-    // Reuse the ordered course list during a drag, especially in planner view,
-    // where discovering courses requires API reads. Previews never issue PUTs.
-    palettePreviewCards ||= getPaletteCards();
-    const { cards: sortedCards, apiColors } = await palettePreviewCards;
-    if (version !== paletteChangeVersion) return;
-    if (!previewOnly) palettePreviewCards = null;
-    if (previewOnly) sortedCards.forEach(card => {
-        const id = card.href.split("courses/")[1];
-        if (Object.hasOwn(palettePreviewOriginalColors, id)) return;
-        const hero = card.el?.querySelector(".ic-DashboardCard__header_hero");
-        palettePreviewOriginalColors[id] = hero ? rgbToHex(hero.style.backgroundColor) : apiColors["course_" + id];
-    });
+	// sort cards
+	// (display order — see getPaletteCards; no re-sorting here so palette
+	// colors apply from the first course on screen to the last)
+	// Reuse the ordered course list during a drag, especially in planner view,
+	// where discovering courses requires API reads. Previews never issue PUTs.
+	palettePreviewCards ||= getPaletteCards()
+	const { cards: sortedCards, apiColors } = await palettePreviewCards
+	if (version !== paletteChangeVersion) return
+	if (!previewOnly) palettePreviewCards = null
+	if (previewOnly)
+		sortedCards.forEach((card) => {
+			const id = card.href.split('courses/')[1]
+			if (Object.hasOwn(palettePreviewOriginalColors, id)) return
+			const hero = card.el?.querySelector('.ic-DashboardCard__header_hero')
+			palettePreviewOriginalColors[id] = hero
+				? rgbToHex(hero.style.backgroundColor)
+				: apiColors['course_' + id]
+		})
 
-    // Keep the pre-theme colors by school and course, rather than by dashboard
-    // order. The old temporary revert list can expire or use a different order.
-    let originalColors = {};
-    if (!previewOnly) {
-        const local = await chrome.storage.local.get(["theme_original_colors", "previous_colors"]);
-        if (version !== paletteChangeVersion) return;
-        const schools = local.theme_original_colors || {};
-        originalColors = { ...(schools[domain] || {}) };
-        sortedCards.forEach((card, index) => {
-            const id = card.href.split("courses/")[1];
-            if (Object.hasOwn(originalColors, id)) return;
-            // Migrate the old revert list for themes applied before this snapshot
-            // existed. Once captured, the course IDs keep reordering safe.
-            const prev = local.previous_colors;
-            const sameSchool = prev?.domain === domain || (!prev?.domain && Object.keys(schools).length === 0);
-            const oldColor = !schools[domain] && sameSchool ? prev?.colors?.[index] : null;
-            const hero = card.el?.querySelector(".ic-DashboardCard__header_hero");
-            const current = palettePreviewOriginalColors[id] || (hero ? rgbToHex(hero.style.backgroundColor) : apiColors["course_" + id]);
-            if (oldColor || (!restoring && current)) originalColors[id] = oldColor || current;
-        });
-        await chrome.storage.local.set({ theme_original_colors: { ...schools, [domain]: originalColors } });
-        if (version !== paletteChangeVersion) return;
-        palettePreviewOriginalColors = {};
-    }
+	// Keep the pre-theme colors by school and course, rather than by dashboard
+	// order. The old temporary revert list can expire or use a different order.
+	let originalColors = {}
+	if (!previewOnly) {
+		const local = await chrome.storage.local.get([
+			'theme_original_colors',
+			'previous_colors',
+		])
+		if (version !== paletteChangeVersion) return
+		const schools = local.theme_original_colors || {}
+		originalColors = { ...(schools[domain] || {}) }
+		sortedCards.forEach((card, index) => {
+			const id = card.href.split('courses/')[1]
+			if (Object.hasOwn(originalColors, id)) return
+			// Migrate the old revert list for themes applied before this snapshot
+			// existed. Once captured, the course IDs keep reordering safe.
+			const prev = local.previous_colors
+			const sameSchool =
+				prev?.domain === domain || (!prev?.domain && Object.keys(schools).length === 0)
+			const oldColor = !schools[domain] && sameSchool ? prev?.colors?.[index] : null
+			const hero = card.el?.querySelector('.ic-DashboardCard__header_hero')
+			const current =
+				palettePreviewOriginalColors[id] ||
+				(hero ? rgbToHex(hero.style.backgroundColor) : apiColors['course_' + id])
+			if (oldColor || (!restoring && current)) originalColors[id] = oldColor || current
+		})
+		await chrome.storage.local.set({
+			theme_original_colors: { ...schools, [domain]: originalColors },
+		})
+		if (version !== paletteChangeVersion) return
+		palettePreviewOriginalColors = {}
+	}
 
-    // push each color change into a queue
-    const courseColors = { ...options.custom_cards_3 };
-    try {
-        sortedCards.forEach((card, i) => {
-            let course_id = card.href.split("courses/")[1];
-            const color = restoring ? originalColors[course_id] : colors[i % colors.length];
-            if (!color) return;
-            courseColors[course_id] = { ...courseColors[course_id], color };
-            let previousColor = card.el
-                ? rgbToHex(card.el.querySelector(".ic-DashboardCard__header_hero").style.backgroundColor)
-                : (apiColors["course_" + course_id] || "#ffffff");
-            previous.push(previousColor);
+	// push each color change into a queue
+	const courseColors = { ...options.custom_cards_3 }
+	try {
+		sortedCards.forEach((card, i) => {
+			let course_id = card.href.split('courses/')[1]
+			const color = restoring ? originalColors[course_id] : colors[i % colors.length]
+			if (!color) return
+			courseColors[course_id] = { ...courseColors[course_id], color }
+			let previousColor = card.el
+				? rgbToHex(
+						card.el.querySelector('.ic-DashboardCard__header_hero').style.backgroundColor,
+					)
+				: apiColors['course_' + course_id] || '#ffffff'
+			previous.push(previousColor)
 
-            // Apply the new color to whatever surface is rendered: dashboard
-            // card elements (card view) or planner item avatars (list view),
-            // so the change is visible immediately instead of only after a
-            // reload.
-            let applyColor = () => {
-                if (version !== paletteChangeVersion) return;
-                if (card.el) {
-                    card.el.querySelector(".ic-DashboardCard__header_hero").style.backgroundColor = color;
-                    card.el.querySelector(".ic-DashboardCard__header-title span").style.color = color;
-                    card.el.querySelector(".ic-DashboardCard__header-button-bg").style.backgroundColor = color;
-                    // Recompute this card's gradient from its NEW color right
-                    // away — changeGradientCards() outside the queue ran too
-                    // early (colors land later, on the 250ms interval), which
-                    // left gradients built from the previous course colors.
-                    changeGradientCards();
-                } else {
-                    const coursePrefix = "/courses/" + course_id;
-                    document.querySelectorAll(".planner-item").forEach(item => {
-                        const titleLink = item.querySelector(".PlannerItem-styles__title a");
-                        const heroLink = item.closest(".Grouping-styles__root")?.querySelector("a.Grouping-styles__hero");
-                        const inCourse = (titleLink && (titleLink.getAttribute("href") || "").startsWith(coursePrefix)) ||
-                            (heroLink && (heroLink.getAttribute("href") || "").startsWith(coursePrefix));
-                        if (inCourse) {
-                            const avatar = item.querySelector(".PlannerItem-styles__avatar, .PlannerItem-styles__icon");
-                            if (avatar) avatar.style.color = color;
-                        }
-                    });
-                }
-            };
+			// Apply the new color to whatever surface is rendered: dashboard
+			// card elements (card view) or planner item avatars (list view),
+			// so the change is visible immediately instead of only after a
+			// reload.
+			let applyColor = () => {
+				if (version !== paletteChangeVersion) return
+				if (card.el) {
+					card.el.querySelector('.ic-DashboardCard__header_hero').style.backgroundColor =
+						color
+					card.el.querySelector('.ic-DashboardCard__header-title span').style.color =
+						color
+					card.el.querySelector(
+						'.ic-DashboardCard__header-button-bg',
+					).style.backgroundColor = color
+					// Recompute this card's gradient from its NEW color right
+					// away — changeGradientCards() outside the queue ran too
+					// early (colors land later, on the 250ms interval), which
+					// left gradients built from the previous course colors.
+					changeGradientCards()
+				} else {
+					const coursePrefix = '/courses/' + course_id
+					document.querySelectorAll('.planner-item').forEach((item) => {
+						const titleLink = item.querySelector('.PlannerItem-styles__title a')
+						const heroLink = item
+							.closest('.Grouping-styles__root')
+							?.querySelector('a.Grouping-styles__hero')
+						const inCourse =
+							(titleLink &&
+								(titleLink.getAttribute('href') || '').startsWith(coursePrefix)) ||
+							(heroLink && (heroLink.getAttribute('href') || '').startsWith(coursePrefix))
+						if (inCourse) {
+							const avatar = item.querySelector(
+								'.PlannerItem-styles__avatar, .PlannerItem-styles__icon',
+							)
+							if (avatar) avatar.style.color = color
+						}
+					})
+				}
+			}
 
-            let changeCardColor = () => {
-                if (version !== paletteChangeVersion) return;
-                fetch(domain + "/api/v1/users/self/colors/courses_" + course_id,
-                    {
-                        method: "PUT",
-                        headers: {
-                            "content-type": "application/json",
-                            'accept': 'application/json',
-                            'X-CSRF-Token': csrfToken,
-                        },
-                        body: JSON.stringify({ "hexcode": color })
-                    }).then(() => applyColor());
-            }
+			let changeCardColor = () => {
+				if (version !== paletteChangeVersion) return
+				fetch(domain + '/api/v1/users/self/colors/courses_' + course_id, {
+					method: 'PUT',
+					headers: {
+						'content-type': 'application/json',
+						accept: 'application/json',
+						'X-CSRF-Token': csrfToken,
+					},
+					body: JSON.stringify({ hexcode: color }),
+				}).then(() => applyColor())
+			}
 
-            if (!previewOnly) colorChanges.push(changeCardColor);
+			if (!previewOnly) colorChanges.push(changeCardColor)
 
-            applyColor();
-        });
-    } catch (e) {
-        logError(e);
-        if (!previewOnly) colorChanges = [];
-    }
+			applyColor()
+		})
+	} catch (e) {
+		logError(e)
+		if (!previewOnly) colorChanges = []
+	}
 
-    changeGradientCards();
-    options.custom_cards_3 = courseColors;
-    if (previewOnly) refreshCourseColorUI();
-    else await chrome.storage.sync.set({ custom_cards_3: courseColors });
-    if (version !== paletteChangeVersion) return;
+	changeGradientCards()
+	options.custom_cards_3 = courseColors
+	if (previewOnly) refreshCourseColorUI()
+	else await chrome.storage.sync.set({ custom_cards_3: courseColors })
+	if (version !== paletteChangeVersion) return
 
-    // go through the queue until empty
-    if (!previewOnly) changeColorInterval = setInterval(() => {
-        if (colorChanges.length > 0) {
-            let current = colorChanges.shift();
-            current();
-        } else {
-            clearInterval(changeColorInterval);
-        }
-    }, delay);
+	// go through the queue until empty
+	if (!previewOnly)
+		changeColorInterval = setInterval(() => {
+			if (colorChanges.length > 0) {
+				let current = colorChanges.shift()
+				current()
+			} else {
+				clearInterval(changeColorInterval)
+			}
+		}, delay)
 
-    // set colors to revert back to
-    if (!previewOnly && !restoring) chrome.storage.local.get("previous_colors", local => {
-        const now = Date.now();
-        const prev = local["previous_colors"];
-        // Overwrite when missing or expired — and when an old list-mode run
-        // (which found no dashboard cards) stored an empty list, which made
-        // revert a silent no-op. Never store an empty capture (nothing to
-        // revert to). chrome.storage.local.get yields undefined (not null)
-        // for an unset key, so the old `=== null` check never matched it.
-        if (previous.length > 0 && (!prev || now >= prev.expire || !Array.isArray(prev.colors) || prev.colors.length === 0)) {
-            chrome.storage.local.set({ "previous_colors": { "colors": previous, "expire": now + 86400000, domain } });
-        }
-    });
+	// set colors to revert back to
+	if (!previewOnly && !restoring)
+		chrome.storage.local.get('previous_colors', (local) => {
+			const now = Date.now()
+			const prev = local['previous_colors']
+			// Overwrite when missing or expired — and when an old list-mode run
+			// (which found no dashboard cards) stored an empty list, which made
+			// revert a silent no-op. Never store an empty capture (nothing to
+			// revert to). chrome.storage.local.get yields undefined (not null)
+			// for an unset key, so the old `=== null` check never matched it.
+			if (
+				previous.length > 0 &&
+				(!prev ||
+					now >= prev.expire ||
+					!Array.isArray(prev.colors) ||
+					prev.colors.length === 0)
+			) {
+				chrome.storage.local.set({
+					previous_colors: { colors: previous, expire: now + 86400000, domain },
+				})
+			}
+		})
 }
 
 /*
@@ -4197,147 +4892,210 @@ Dark mode
 
 // Light-mode fallbacks for the --bc* variables, always emitted so extension UI renders in light mode; dark mode overrides below.
 const BC_LIGHT_DEFAULTS = {
-    "background-0": "#ffffff",
-    "background-1": "#c7c7c7",
-    "background-2": "#d9d9d9",
-    "borders": "#808080",
-    "links": "#418df1",
-    "sidebar": "#e3e3e3",
-    "sidebar-text": "#000000",
-    "text-0": "#000000",
-    "text-1": "#050505",
-    "text-2": "#4f4f4f"
-};
+	'background-0': '#ffffff',
+	'background-1': '#c7c7c7',
+	'background-2': '#d9d9d9',
+	borders: '#808080',
+	links: '#418df1',
+	sidebar: '#e3e3e3',
+	'sidebar-text': '#000000',
+	'text-0': '#000000',
+	'text-1': '#050505',
+	'text-2': '#4f4f4f',
+}
 
 function sourceThemeValues() {
-    return Object.fromEntries(Object.entries(options.dark_preset || {}).filter(([key, value]) =>
-        Object.hasOwn(BC_LIGHT_DEFAULTS, key) && typeof value === "string" && value.trim() !== ""));
+	return Object.fromEntries(
+		Object.entries(options.dark_preset || {}).filter(
+			([key, value]) =>
+				Object.hasOwn(BC_LIGHT_DEFAULTS, key) &&
+				typeof value === 'string' &&
+				value.trim() !== '',
+		),
+	)
 }
 
 // Derive both appearances from the saved palette, without rewriting theme
 // exports or image URLs. Mixing toward white/black preserves the source hue.
 function themeRGB(value) {
-    if (typeof value !== "string") return null;
-    const match = value.match(/^#([a-f\d]{3}|[a-f\d]{6})$/i);
-    if (!match) return null;
-    const hex = match[1].length === 3 ? [...match[1]].map(c => c + c).join("") : match[1];
-    return [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16));
+	if (typeof value !== 'string') return null
+	const match = value.match(/^#([a-f\d]{3}|[a-f\d]{6})$/i)
+	if (!match) return null
+	const hex = match[1].length === 3 ? [...match[1]].map((c) => c + c).join('') : match[1]
+	return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16))
 }
 
 function themeHex(rgb) {
-    return "#" + rgb.map(c => Math.round(c).toString(16).padStart(2, "0")).join("");
+	return '#' + rgb.map((c) => Math.round(c).toString(16).padStart(2, '0')).join('')
 }
 
 function themeLuminance(rgb) {
-    return rgb.map(c => {
-        c /= 255;
-        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    }).reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
+	return rgb
+		.map((c) => {
+			c /= 255
+			return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+		})
+		.reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0)
 }
 
 function themeContrast(a, b) {
-    const x = themeLuminance(a), y = themeLuminance(b);
-    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+	const x = themeLuminance(a),
+		y = themeLuminance(b)
+	return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
 }
 
 // Keep a suitable existing color exactly; otherwise find the smallest blend
 // that meets the luminance/contrast constraint (including RGB rounding).
 function fitThemeColor(value, towardWhite, suitable) {
-    const rgb = themeRGB(value);
-    if (!rgb || suitable(rgb)) return value;
-    let low = 0, high = 1;
-    const mix = amount => rgb.map(c => Math.round(c + ((towardWhite ? 255 : 0) - c) * amount));
-    for (let i = 0; i < 24; i++) {
-        const mid = (low + high) / 2;
-        if (suitable(mix(mid))) high = mid;
-        else low = mid;
-    }
-    return themeHex(mix(high));
+	const rgb = themeRGB(value)
+	if (!rgb || suitable(rgb)) return value
+	let low = 0,
+		high = 1
+	const mix = (amount) =>
+		rgb.map((c) => Math.round(c + ((towardWhite ? 255 : 0) - c) * amount))
+	for (let i = 0; i < 24; i++) {
+		const mid = (low + high) / 2
+		if (suitable(mix(mid))) high = mid
+		else low = mid
+	}
+	return themeHex(mix(high))
 }
 
 function activeThemeValues(dark = isDarkModeActive()) {
-    const source = sourceThemeValues();
-    // Resolve both current and legacy built-ins before the custom-palette
-    // fallback. Per-theme palettes keep related surface shades distinct.
-    const builtin = resolveThemeModePalette(source, dark);
-    if (builtin) return builtin;
-    const preset = { ...source };
-    const surface = value => fitThemeColor(value, !dark, rgb =>
-        dark ? themeLuminance(rgb) <= 0.06 : themeLuminance(rgb) >= 0.84);
-    for (const key of ["background-0", "background-1", "background-2"]) {
-        if (source[key]) preset[key] = surface(source[key]);
-    }
-    const backgrounds = ["background-0", "background-1", "background-2"]
-        .map(key => themeRGB(preset[key])).filter(Boolean);
-    if (!backgrounds.length) backgrounds.push(dark ? [22, 22, 22] : [255, 255, 255]);
-    for (const [key, limit] of [["text-0", 0.035], ["text-1", 0.065], ["text-2", 0.12], ["links", 0.18]]) {
-        if (!source[key]) continue;
-        preset[key] = fitThemeColor(source[key], dark, rgb =>
-            (dark || themeLuminance(rgb) <= limit) && backgrounds.every(bg => themeContrast(rgb, bg) >= (key === "text-0" ? 7 : 4.5)));
-    }
-    const border = themeRGB(source.borders);
-    if (border) {
-        const min = dark ? 0.09 : 0.35, max = dark ? 0.3 : 0.65;
-        const brighten = themeLuminance(border) < min;
-        preset.borders = fitThemeColor(source.borders, brighten,
-            rgb => brighten ? themeLuminance(rgb) >= min : themeLuminance(rgb) <= max);
-    }
-    if (source.sidebar) {
-        // Only recolor solid/gradient colors. Protect url(...) contents, even
-        // when a filename or fragment happens to contain a hex color.
-        preset.sidebar = source.sidebar.split(/(url\([^)]*\))/gi).map(part => /^url\(/i.test(part) ? part :
-            part.replace(/#[a-f\d]{8}\b|#[a-f\d]{6}\b|#[a-f\d]{3}\b/gi, hex =>
-                surface(hex.length === 9 ? hex.slice(0, 7) : hex) + (hex.length === 9 ? hex.slice(7) : ""))).join("");
-        const stops = preset.sidebar.replace(/url\([^)]*\)/gi, "").match(/#[a-f\d]{8}\b|#[a-f\d]{6}\b|#[a-f\d]{3}\b/gi) || [];
-        const sidebarBackgrounds = stops.map(hex => {
-            const rgb = themeRGB(hex.length === 9 ? hex.slice(0, 7) : hex);
-            const alpha = hex.length === 9 ? parseInt(hex.slice(7), 16) / 255 : 1;
-            // Worst-case image brightness beneath the existing overlay.
-            return rgb.map(c => c * alpha + (dark ? 255 : 0) * (1 - alpha));
-        });
-        if (source["sidebar-text"] && sidebarBackgrounds.length) {
-            preset["sidebar-text"] = fitThemeColor(source["sidebar-text"], dark,
-                rgb => sidebarBackgrounds.every(bg => themeContrast(rgb, bg) >= 4.5));
-        }
-    }
-    return preset;
+	const source = sourceThemeValues()
+	// Resolve both current and legacy built-ins before the custom-palette
+	// fallback. Per-theme palettes keep related surface shades distinct.
+	const builtin = resolveThemeModePalette(source, dark)
+	if (builtin) return builtin
+	const preset = { ...source }
+	const surface = (value) =>
+		fitThemeColor(value, !dark, (rgb) =>
+			dark ? themeLuminance(rgb) <= 0.06 : themeLuminance(rgb) >= 0.84,
+		)
+	for (const key of ['background-0', 'background-1', 'background-2']) {
+		if (source[key]) preset[key] = surface(source[key])
+	}
+	const backgrounds = ['background-0', 'background-1', 'background-2']
+		.map((key) => themeRGB(preset[key]))
+		.filter(Boolean)
+	if (!backgrounds.length) backgrounds.push(dark ? [22, 22, 22] : [255, 255, 255])
+	for (const [key, limit] of [
+		['text-0', 0.035],
+		['text-1', 0.065],
+		['text-2', 0.12],
+		['links', 0.18],
+	]) {
+		if (!source[key]) continue
+		preset[key] = fitThemeColor(
+			source[key],
+			dark,
+			(rgb) =>
+				(dark || themeLuminance(rgb) <= limit) &&
+				backgrounds.every((bg) => themeContrast(rgb, bg) >= (key === 'text-0' ? 7 : 4.5)),
+		)
+	}
+	const border = themeRGB(source.borders)
+	if (border) {
+		const min = dark ? 0.09 : 0.35,
+			max = dark ? 0.3 : 0.65
+		const brighten = themeLuminance(border) < min
+		preset.borders = fitThemeColor(source.borders, brighten, (rgb) =>
+			brighten ? themeLuminance(rgb) >= min : themeLuminance(rgb) <= max,
+		)
+	}
+	if (source.sidebar) {
+		// Only recolor solid/gradient colors. Protect url(...) contents, even
+		// when a filename or fragment happens to contain a hex color.
+		preset.sidebar = source.sidebar
+			.split(/(url\([^)]*\))/gi)
+			.map((part) =>
+				/^url\(/i.test(part)
+					? part
+					: part.replace(
+							/#[a-f\d]{8}\b|#[a-f\d]{6}\b|#[a-f\d]{3}\b/gi,
+							(hex) =>
+								surface(hex.length === 9 ? hex.slice(0, 7) : hex) +
+								(hex.length === 9 ? hex.slice(7) : ''),
+						),
+			)
+			.join('')
+		const stops =
+			preset.sidebar
+				.replace(/url\([^)]*\)/gi, '')
+				.match(/#[a-f\d]{8}\b|#[a-f\d]{6}\b|#[a-f\d]{3}\b/gi) || []
+		const sidebarBackgrounds = stops.map((hex) => {
+			const rgb = themeRGB(hex.length === 9 ? hex.slice(0, 7) : hex)
+			const alpha = hex.length === 9 ? parseInt(hex.slice(7), 16) / 255 : 1
+			// Worst-case image brightness beneath the existing overlay.
+			return rgb.map((c) => c * alpha + (dark ? 255 : 0) * (1 - alpha))
+		})
+		if (source['sidebar-text'] && sidebarBackgrounds.length) {
+			preset['sidebar-text'] = fitThemeColor(source['sidebar-text'], dark, (rgb) =>
+				sidebarBackgrounds.every((bg) => themeContrast(rgb, bg) >= 4.5),
+			)
+		}
+	}
+	return preset
 }
 
 function isDarkModeActive() {
-    if (!Object.keys(sourceThemeValues()).length) return false;
-    return options.device_dark === true
-        ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        : options.dark_mode === true;
+	if (!Object.keys(sourceThemeValues()).length) return false
+	return options.device_dark === true
+		? window.matchMedia('(prefers-color-scheme: dark)').matches
+		: options.dark_mode === true
 }
 
 function generateDarkModeCSS() {
-    if (!Object.keys(sourceThemeValues()).length) return "";
-    const render = dark => {
-        const preset = activeThemeValues(dark);
-        if (preset["background-2"]) preset.buttons = preset["background-2"];
-        const link = themeRGB(preset.links);
-        const linkText = link && themeContrast(link, [0, 0, 0]) > themeContrast(link, [255, 255, 255]) ? "#000000" : "#ffffff";
-        let block = ":root{\n" + (link ? `    --bclink-text: ${linkText};\n` : "") + Object.entries(preset)
-            .map(([key, value]) => `    --bc${key}: ${value};\n`).join("") + "}\n";
-        const fullTheme = Object.keys(BC_LIGHT_DEFAULTS).every(key => Object.hasOwn(preset, key));
-        // Partial themes still leave unset colors under Canvas's control.
-        block += DARKMODE_CSS.replace(/\/\*[\s\S]*?\*\//g, "").replace(/([^{}]+)\{([^{}]*)\}/g, (_, selectors, body) => {
-            const declarations = body.split(";").filter(declaration => {
-                const variables = [...declaration.matchAll(/var\(--bc([\w-]+)/g)];
-                return variables.length ? variables.every(match => Object.hasOwn(preset, match[1] === "link-text" ? "links" : match[1])) : fullTheme;
-            }).join(";");
-            return declarations.trim() ? selectors + "{" + declarations + "}" : "";
-        });
-        return block.replace(/color-scheme: dark/g, `color-scheme: ${dark ? "dark" : "light"}`);
-    };
-    // Always emit a light palette in system mode, including for iframes, then
-    // let the media query override it. OS changes also refresh runtime fixes.
-    return options.device_dark === true
-        ? render(false) + "@media (prefers-color-scheme: dark) {\n" + render(true) + "\n}"
-        : render(options.dark_mode === true);
+	if (!Object.keys(sourceThemeValues()).length) return ''
+	const render = (dark) => {
+		const preset = activeThemeValues(dark)
+		if (preset['background-2']) preset.buttons = preset['background-2']
+		const link = themeRGB(preset.links)
+		const linkText =
+			link && themeContrast(link, [0, 0, 0]) > themeContrast(link, [255, 255, 255])
+				? '#000000'
+				: '#ffffff'
+		let block =
+			':root{\n' +
+			(link ? `    --bclink-text: ${linkText};\n` : '') +
+			Object.entries(preset)
+				.map(([key, value]) => `    --bc${key}: ${value};\n`)
+				.join('') +
+			'}\n'
+		const fullTheme = Object.keys(BC_LIGHT_DEFAULTS).every((key) =>
+			Object.hasOwn(preset, key),
+		)
+		// Partial themes still leave unset colors under Canvas's control.
+		block += DARKMODE_CSS.replace(/\/\*[\s\S]*?\*\//g, '').replace(
+			/([^{}]+)\{([^{}]*)\}/g,
+			(_, selectors, body) => {
+				const declarations = body
+					.split(';')
+					.filter((declaration) => {
+						const variables = [...declaration.matchAll(/var\(--bc([\w-]+)/g)]
+						return variables.length
+							? variables.every((match) =>
+									Object.hasOwn(preset, match[1] === 'link-text' ? 'links' : match[1]),
+								)
+							: fullTheme
+					})
+					.join(';')
+				return declarations.trim() ? selectors + '{' + declarations + '}' : ''
+			},
+		)
+		return block.replace(
+			/color-scheme: dark/g,
+			`color-scheme: ${dark ? 'dark' : 'light'}`,
+		)
+	}
+	// Always emit a light palette in system mode, including for iframes, then
+	// let the media query override it. OS changes also refresh runtime fixes.
+	return options.device_dark === true
+		? render(false) + '@media (prefers-color-scheme: dark) {\n' + render(true) + '\n}'
+		: render(options.dark_mode === true)
 }
 
-let darkStyleInserted = false;
+let darkStyleInserted = false
 // --- Submission tray dark-mode fixer ---------------------------------------
 // The comment chip on the grades page (…/grades) opens an InstUI
 // "Submission Comments Tray". Its "Attempt N Feedback" card, close-button
@@ -4347,135 +5105,151 @@ let darkStyleInserted = false;
 // the tray and recolor at runtime, scoped strictly to elements inside it.
 // Touched elements are tagged (data-crdarkfix) so turning dark mode off can
 // restore the original colors.
-let submissionTrayObserver = null;
-let submissionTrayFixScheduled = false;
+let submissionTrayObserver = null
+let submissionTrayFixScheduled = false
 
 function crApplySubmissionTrayFix(el, props) {
-    const applied = el.dataset.crdarkfix ? el.dataset.crdarkfix.split(" ") : [];
-    for (const prop of Object.keys(props)) {
-        if (typeof props[prop] !== "string" || !props[prop].trim()) continue;
-        if (!applied.includes(prop)) applied.push(prop);
-        el.style.setProperty(prop, props[prop], "important");
-    }
-    el.dataset.crdarkfix = applied.join(" ");
+	const applied = el.dataset.crdarkfix ? el.dataset.crdarkfix.split(' ') : []
+	for (const prop of Object.keys(props)) {
+		if (typeof props[prop] !== 'string' || !props[prop].trim()) continue
+		if (!applied.includes(prop)) applied.push(prop)
+		el.style.setProperty(prop, props[prop], 'important')
+	}
+	el.dataset.crdarkfix = applied.join(' ')
 }
 
 function fixSubmissionTrayColors(root) {
-    const preset = activeThemeValues();
-    if (!Object.keys(preset).length) return;
-    const light = (r, g, b) => r >= 225 && g >= 225 && b >= 225;
-    const darkInk = (r, g, b) => r <= 70 && g <= 70 && b <= 70;
-    const rgb = (str) => { const m = str && str.match(/rgb\((\d+), ?(\d+), ?(\d+)/); return m ? [+m[1], +m[2], +m[3]] : null; };
-    root.querySelectorAll("*").forEach(el => {
-        if (el instanceof HTMLImageElement || el instanceof HTMLVideoElement) return;
-        const cs = getComputedStyle(el);
-        const bg = rgb(cs.backgroundColor);
-        if (bg && light(bg[0], bg[1], bg[2])) {
-            // light card/surface -> theme surface with readable text
-            crApplySubmissionTrayFix(el, {
-                "background-color": preset["background-2"],
-                "color": preset["text-0"]
-            });
-        } else {
-            const c = rgb(cs.color);
-            if (c && darkInk(c[0], c[1], c[2])) {
-                // dark ink on dark tray (headings, icon glyphs)
-                crApplySubmissionTrayFix(el, { "color": preset["text-0"] });
-            }
-        }
-        const bc = rgb(cs.borderColor);
-        if (bc && light(bc[0], bc[1], bc[2])) {
-            crApplySubmissionTrayFix(el, { "border-color": preset["borders"] });
-        }
-    });
+	const preset = activeThemeValues()
+	if (!Object.keys(preset).length) return
+	const light = (r, g, b) => r >= 225 && g >= 225 && b >= 225
+	const darkInk = (r, g, b) => r <= 70 && g <= 70 && b <= 70
+	const rgb = (str) => {
+		const m = str && str.match(/rgb\((\d+), ?(\d+), ?(\d+)/)
+		return m ? [+m[1], +m[2], +m[3]] : null
+	}
+	root.querySelectorAll('*').forEach((el) => {
+		if (el instanceof HTMLImageElement || el instanceof HTMLVideoElement) return
+		const cs = getComputedStyle(el)
+		const bg = rgb(cs.backgroundColor)
+		if (bg && light(bg[0], bg[1], bg[2])) {
+			// light card/surface -> theme surface with readable text
+			crApplySubmissionTrayFix(el, {
+				'background-color': preset['background-2'],
+				color: preset['text-0'],
+			})
+		} else {
+			const c = rgb(cs.color)
+			if (c && darkInk(c[0], c[1], c[2])) {
+				// dark ink on dark tray (headings, icon glyphs)
+				crApplySubmissionTrayFix(el, { color: preset['text-0'] })
+			}
+		}
+		const bc = rgb(cs.borderColor)
+		if (bc && light(bc[0], bc[1], bc[2])) {
+			crApplySubmissionTrayFix(el, { 'border-color': preset['borders'] })
+		}
+	})
 }
 
 function setupSubmissionTrayWatcher() {
-    if (submissionTrayObserver) return;
-    const run = () => {
-        submissionTrayFixScheduled = false;
-        if (!isDarkModeActive()) return;
-        const tray = document.querySelector('[data-testid="submission-tray"]');
-        if (tray) fixSubmissionTrayColors(tray);
-    };
-    // Canvas mutates the DOM constantly; debounce to one run per frame (same
-    // pattern as the footer observer in startExtension). Comments load into
-    // the tray asynchronously, so re-run whenever the tray subtree changes.
-    submissionTrayObserver = new MutationObserver(() => {
-        if (submissionTrayFixScheduled) return;
-        submissionTrayFixScheduled = true;
-        requestAnimationFrame(run);
-    });
-    submissionTrayObserver.observe(document.documentElement, { childList: true, subtree: true });
-    run();
+	if (submissionTrayObserver) return
+	const run = () => {
+		submissionTrayFixScheduled = false
+		if (!isDarkModeActive()) return
+		const tray = document.querySelector('[data-testid="submission-tray"]')
+		if (tray) fixSubmissionTrayColors(tray)
+	}
+	// Canvas mutates the DOM constantly; debounce to one run per frame (same
+	// pattern as the footer observer in startExtension). Comments load into
+	// the tray asynchronously, so re-run whenever the tray subtree changes.
+	submissionTrayObserver = new MutationObserver(() => {
+		if (submissionTrayFixScheduled) return
+		submissionTrayFixScheduled = true
+		requestAnimationFrame(run)
+	})
+	submissionTrayObserver.observe(document.documentElement, {
+		childList: true,
+		subtree: true,
+	})
+	run()
 }
 
 function teardownSubmissionTrayFixes() {
-    if (submissionTrayObserver) {
-        submissionTrayObserver.disconnect();
-        submissionTrayObserver = null;
-    }
-    document.querySelectorAll("[data-crdarkfix]").forEach(el => {
-        (el.dataset.crdarkfix || "").split(" ").forEach(prop => el.style.removeProperty(prop));
-        delete el.dataset.crdarkfix;
-    });
+	if (submissionTrayObserver) {
+		submissionTrayObserver.disconnect()
+		submissionTrayObserver = null
+	}
+	document.querySelectorAll('[data-crdarkfix]').forEach((el) => {
+		;(el.dataset.crdarkfix || '')
+			.split(' ')
+			.forEach((prop) => el.style.removeProperty(prop))
+		delete el.dataset.crdarkfix
+	})
 }
 
 function toggleDarkMode() {
-    const css = generateDarkModeCSS();
-    const darkOn = isDarkModeActive();
-    // "No Theme" (an empty palette) must also release the extension's own
-    // Canvas styling: content.css scopes those base control/surface rules
-    // under this class so Canvas regains its native look.
-    document.documentElement.classList.toggle("canvasrefined-theme-active",
-        Object.keys(sourceThemeValues()).length > 0);
-    // Reuse the existing #darkcss style if present (never create a duplicate), so a
-    // document_start dark-mode bootstrap and later updates stay on one element.
-    let style = document.querySelector("#darkcss");
-    if (!style) {
-        style = document.createElement('style');
-        style.id = 'darkcss';
-        document.documentElement.append(style);
-    }
-    style.textContent = css;
-    style.className = darkOn ? "canvasrefined-darkmode-enabled" : "";
-    darkStyleInserted = true;
-    // The InstUI submission tray is themed at runtime (emotion class hashes
-    // change between Canvas releases); keep the watcher in sync with the
-    // current mode, and undo inline fixes when dark mode turns off.
-    teardownSubmissionTrayFixes();
-    if (darkOn) setupSubmissionTrayWatcher();
-    runiframeChecker();
+	const css = generateDarkModeCSS()
+	const darkOn = isDarkModeActive()
+	// "No Theme" (an empty palette) must also release the extension's own
+	// Canvas styling: content.css scopes those base control/surface rules
+	// under this class so Canvas regains its native look.
+	document.documentElement.classList.toggle(
+		'canvasrefined-theme-active',
+		Object.keys(sourceThemeValues()).length > 0,
+	)
+	// Reuse the existing #darkcss style if present (never create a duplicate), so a
+	// document_start dark-mode bootstrap and later updates stay on one element.
+	let style = document.querySelector('#darkcss')
+	if (!style) {
+		style = document.createElement('style')
+		style.id = 'darkcss'
+		document.documentElement.append(style)
+	}
+	style.textContent = css
+	style.className = darkOn ? 'canvasrefined-darkmode-enabled' : ''
+	darkStyleInserted = true
+	// The InstUI submission tray is themed at runtime (emotion class hashes
+	// change between Canvas releases); keep the watcher in sync with the
+	// current mode, and undo inline fixes when dark mode turns off.
+	teardownSubmissionTrayFixes()
+	if (darkOn) setupSubmissionTrayWatcher()
+	runiframeChecker()
 }
 
-let iframeObserver;
+let iframeObserver
 function runiframeChecker() {
-    if (current_page === "/" || current_page === "") return;
-    if (iframeObserver) iframeObserver.disconnect();
-    const updateFrame = frame => {
-        try {
-            const doc = frame.contentDocument;
-            if (!doc?.documentElement || !doc.body) return;
-            let style = doc.getElementById("darkcss");
-            if (!style) {
-                style = doc.createElement("style");
-                style.id = "darkcss";
-                doc.documentElement.prepend(style);
-            }
-            style.textContent = generateDarkModeCSS() + "\nhtml, *, *::before, *::after {animation:none !important;transition:none !important;scroll-behavior:auto !important;}";
-            doc.body.classList.toggle("canvasrefined--darkmode--enabled", isDarkModeActive());
-        } catch (_) { /* Cross-origin or detached frame. */ }
-    };
-    // Existing editors must receive each live theme edit too.
-    document.querySelectorAll("iframe").forEach(updateFrame);
-    if (!Object.keys(sourceThemeValues()).length) return;
-    iframeObserver = new MutationObserver(mutations => {
-        mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
-            if (node.nodeName === "IFRAME") updateFrame(node);
-            node.querySelectorAll?.("iframe").forEach(updateFrame);
-        }));
-    });
-    iframeObserver.observe(document.documentElement, { childList: true, subtree: true });
+	if (current_page === '/' || current_page === '') return
+	if (iframeObserver) iframeObserver.disconnect()
+	const updateFrame = (frame) => {
+		try {
+			const doc = frame.contentDocument
+			if (!doc?.documentElement || !doc.body) return
+			let style = doc.getElementById('darkcss')
+			if (!style) {
+				style = doc.createElement('style')
+				style.id = 'darkcss'
+				doc.documentElement.prepend(style)
+			}
+			style.textContent =
+				generateDarkModeCSS() +
+				'\nhtml, *, *::before, *::after {animation:none !important;transition:none !important;scroll-behavior:auto !important;}'
+			doc.body.classList.toggle('canvasrefined--darkmode--enabled', isDarkModeActive())
+		} catch (_) {
+			/* Cross-origin or detached frame. */
+		}
+	}
+	// Existing editors must receive each live theme edit too.
+	document.querySelectorAll('iframe').forEach(updateFrame)
+	if (!Object.keys(sourceThemeValues()).length) return
+	iframeObserver = new MutationObserver((mutations) => {
+		mutations.forEach((mutation) =>
+			mutation.addedNodes.forEach((node) => {
+				if (node.nodeName === 'IFRAME') updateFrame(node)
+				node.querySelectorAll?.('iframe').forEach(updateFrame)
+			}),
+		)
+	})
+	iframeObserver.observe(document.documentElement, { childList: true, subtree: true })
 }
 
 /*
@@ -4487,273 +5261,352 @@ Hide personal details (screenshot privacy mode)
 // so the same course always shows the same fake name everywhere — dashboard
 // cards, the Better Todo List and recent feedback.
 const FAKE_COURSES = [
-    { name: "Algebra II", teacher: "Martinez" },
-    { name: "AP Biology", teacher: "Nguyen" },
-    { name: "Art History", teacher: "Kowalski" },
-    { name: "Astronomy", teacher: "Delgado" },
-    { name: "Chemistry", teacher: "Patel" },
-    { name: "Computer Science", teacher: "Brooks" },
-    { name: "Creative Writing", teacher: "Ellis" },
-    { name: "European History", teacher: "Fischer" },
-    { name: "Geography", teacher: "Okafor" },
-    { name: "Marine Biology", teacher: "Silva" },
-    { name: "Physics", teacher: "Jensen" },
-    { name: "Psychology", teacher: "Moreau" },
-    { name: "Spanish III", teacher: "Rivera" },
-    { name: "Statistics", teacher: "Chen" },
-    { name: "World History", teacher: "Adler" },
-];
-const FAKE_SCHOOL_NAME = "Ridgeview High School";
+	{ name: 'Algebra II', teacher: 'Martinez' },
+	{ name: 'AP Biology', teacher: 'Nguyen' },
+	{ name: 'Art History', teacher: 'Kowalski' },
+	{ name: 'Astronomy', teacher: 'Delgado' },
+	{ name: 'Chemistry', teacher: 'Patel' },
+	{ name: 'Computer Science', teacher: 'Brooks' },
+	{ name: 'Creative Writing', teacher: 'Ellis' },
+	{ name: 'European History', teacher: 'Fischer' },
+	{ name: 'Geography', teacher: 'Okafor' },
+	{ name: 'Marine Biology', teacher: 'Silva' },
+	{ name: 'Physics', teacher: 'Jensen' },
+	{ name: 'Psychology', teacher: 'Moreau' },
+	{ name: 'Spanish III', teacher: 'Rivera' },
+	{ name: 'Statistics', teacher: 'Chen' },
+	{ name: 'World History', teacher: 'Adler' },
+]
+const FAKE_SCHOOL_NAME = 'Ridgeview High School'
 const FAKE_ASSIGNMENT_TITLES = [
-    "Homework 4", "Reading Response", "Lab Report 2", "Practice Problems",
-    "Unit Quiz", "Essay Draft", "Worksheet 7", "Group Project",
-    "Chapter Review", "Study Guide", "Discussion Post", "Exit Ticket",
-    "Vocabulary Quiz", "Lab Worksheet", "Project Proposal", "Test Review",
-    "Notes Check", "Article Summary", "Problem Set 3", "Class Survey",
-];
+	'Homework 4',
+	'Reading Response',
+	'Lab Report 2',
+	'Practice Problems',
+	'Unit Quiz',
+	'Essay Draft',
+	'Worksheet 7',
+	'Group Project',
+	'Chapter Review',
+	'Study Guide',
+	'Discussion Post',
+	'Exit Ticket',
+	'Vocabulary Quiz',
+	'Lab Worksheet',
+	'Project Proposal',
+	'Test Review',
+	'Notes Check',
+	'Article Summary',
+	'Problem Set 3',
+	'Class Survey',
+]
 const FAKE_FEEDBACK_COMMENTS = [
-    "Nice work!", "Good effort.", "Well done!", "Keep it up!", "Solid job!",
-    "Great improvement!", "Strong submission.", "Excellent detail.",
-];
+	'Nice work!',
+	'Good effort.',
+	'Well done!',
+	'Keep it up!',
+	'Solid job!',
+	'Great improvement!',
+	'Strong submission.',
+	'Excellent detail.',
+]
 
 // FNV-1a — small, dependency-free, deterministic string hash.
 function anonHash(str) {
-    let h = 2166136261;
-    const s = String(str);
-    for (let i = 0; i < s.length; i++) {
-        h ^= s.charCodeAt(i);
-        h = Math.imul(h, 16777619);
-    }
-    return h >>> 0;
+	let h = 2166136261
+	const s = String(str)
+	for (let i = 0; i < s.length; i++) {
+		h ^= s.charCodeAt(i)
+		h = Math.imul(h, 16777619)
+	}
+	return h >>> 0
 }
 
 // key -> index into FAKE_COURSES. Hash-based so a course keeps its fake name
 // across reloads, with linear probing so every real course gets a UNIQUE fake
 // course. Once the pool is exhausted (more than 15 courses), reuse is allowed.
-const anonCourseMap = new Map();
+const anonCourseMap = new Map()
 function getAnonCourse(key) {
-    // DOM links use "id:123"; planner data and settings use 123.
-    const k = String(key ?? "unknown").replace(/^id:(\d+)$/, "$1");
-    if (!anonCourseMap.has(k)) {
-        const used = new Set(anonCourseMap.values());
-        let idx = anonHash(k) % FAKE_COURSES.length;
-        if (used.size < FAKE_COURSES.length) {
-            while (used.has(idx)) idx = (idx + 1) % FAKE_COURSES.length;
-        }
-        anonCourseMap.set(k, idx);
-    }
-    return FAKE_COURSES[anonCourseMap.get(k)];
+	// DOM links use "id:123"; planner data and settings use 123.
+	const k = String(key ?? 'unknown').replace(/^id:(\d+)$/, '$1')
+	if (!anonCourseMap.has(k)) {
+		const used = new Set(anonCourseMap.values())
+		let idx = anonHash(k) % FAKE_COURSES.length
+		if (used.size < FAKE_COURSES.length) {
+			while (used.has(idx)) idx = (idx + 1) % FAKE_COURSES.length
+		}
+		anonCourseMap.set(k, idx)
+	}
+	return FAKE_COURSES[anonCourseMap.get(k)]
 }
 function fakeCourseLabel(key) {
-    const c = getAnonCourse(key);
-    return `${c.name} - ${c.teacher}`;
+	const c = getAnonCourse(key)
+	return `${c.name} - ${c.teacher}`
 }
 
 // "a:<assignment id>" when the id is known, "t:<title text>" otherwise.
 function fakeAssignmentTitle(key) {
-    return FAKE_ASSIGNMENT_TITLES[anonHash(String(key)) % FAKE_ASSIGNMENT_TITLES.length];
+	return FAKE_ASSIGNMENT_TITLES[anonHash(String(key)) % FAKE_ASSIGNMENT_TITLES.length]
 }
 function fakeFeedbackComment(key) {
-    return FAKE_FEEDBACK_COMMENTS[anonHash(String(key)) % FAKE_FEEDBACK_COMMENTS.length];
+	return FAKE_FEEDBACK_COMMENTS[anonHash(String(key)) % FAKE_FEEDBACK_COMMENTS.length]
 }
 
 // Deterministic fake "x out of 20" score for recent feedback entries.
 function fakeFeedbackScore(key) {
-    const earned = 13 + (anonHash(String(key)) % 8);
-    return `${earned} out of 20`;
+	const earned = 13 + (anonHash(String(key)) % 8)
+	return `${earned} out of 20`
 }
 
 // Deterministic fake dashboard grade: a plausible percent.
 function fakeGradeText(key) {
-    const h = anonHash(String(key));
-    const percent = Math.round((70 + (h % 300) / 10) * 10) / 10;
-    return `${percent}%`;
+	const h = anonHash(String(key))
+	const percent = Math.round((70 + (h % 300) / 10) * 10) / 10
+	return `${percent}%`
 }
 
 // Term strings look like "2026/2027 - Campolindo High School - Year": keep the
 // year and the term type, swap the school name for a fake one.
 function anonFakeTerm(orig) {
-    const parts = String(orig).split(" - ").map(p => p.trim()).filter(p => p !== "");
-    if (parts.length >= 3) return `${parts[0]} - ${FAKE_SCHOOL_NAME} - ${parts[parts.length - 1]}`;
-    return FAKE_SCHOOL_NAME;
+	const parts = String(orig)
+		.split(' - ')
+		.map((p) => p.trim())
+		.filter((p) => p !== '')
+	if (parts.length >= 3)
+		return `${parts[0]} - ${FAKE_SCHOOL_NAME} - ${parts[parts.length - 1]}`
+	return FAKE_SCHOOL_NAME
 }
 
 // Render-time helpers so text baked into todo/assignment templates is fake
 // from the start (a DOM pass alone can't beat async re-renders clobbering it).
 function anonCourseNameForItem(item) {
-    const real = item?.context_name ?? "";
-    if (options.hide_personal_details !== true) return real;
-    return fakeCourseLabel(item?.course_id ?? item?.context_id ?? item?.plannable?.course_id ?? "name:" + String(real).trim().toLowerCase());
+	const real = item?.context_name ?? ''
+	if (options.hide_personal_details !== true) return real
+	return fakeCourseLabel(
+		item?.course_id ??
+			item?.context_id ??
+			item?.plannable?.course_id ??
+			'name:' + String(real).trim().toLowerCase(),
+	)
 }
 function anonTitleForItem(item) {
-    const real = item?.plannable?.title ?? "";
-    if (options.hide_personal_details !== true) return real;
-    const id = item?.plannable_id ?? item?.plannable?.id;
-    return fakeAssignmentTitle(id != null ? "a:" + id : "t:" + String(real).trim());
+	const real = item?.plannable?.title ?? ''
+	if (options.hide_personal_details !== true) return real
+	const id = item?.plannable_id ?? item?.plannable?.id
+	return fakeAssignmentTitle(id != null ? 'a:' + id : 't:' + String(real).trim())
 }
 
 // Marked-text helpers. Original text/attributes are stashed in dataset entries
 // so toggling the option off restores the real content in place.
 function anonText(el, computeFake) {
-    if (!el) return;
-    const current = el.textContent;
-    const previous = el.dataset.crAnonOrig;
-    if (previous !== undefined && current === computeFake(previous)) return;
-    // Canvas can rewrite an existing node without removing our markers.
-    el.dataset.crAnonOrig = current;
-    const fake = computeFake(current);
-    if (current !== fake) el.textContent = fake;
+	if (!el) return
+	const current = el.textContent
+	const previous = el.dataset.crAnonOrig
+	if (previous !== undefined && current === computeFake(previous)) return
+	// Canvas can rewrite an existing node without removing our markers.
+	el.dataset.crAnonOrig = current
+	const fake = computeFake(current)
+	if (current !== fake) el.textContent = fake
 }
 function anonAttr(el, attr, computeFake) {
-    if (!el) return;
-    const current = el.getAttribute(attr);
-    if (current == null) return;
-    const attrs = JSON.parse(el.dataset.crAnonAttrs || "{}");
-    if (attrs[attr] !== undefined && current === computeFake(attrs[attr])) return;
-    attrs[attr] = current;
-    el.dataset.crAnonAttrs = JSON.stringify(attrs);
-    const fake = computeFake(current);
-    if (current !== fake) el.setAttribute(attr, fake);
+	if (!el) return
+	const current = el.getAttribute(attr)
+	if (current == null) return
+	const attrs = JSON.parse(el.dataset.crAnonAttrs || '{}')
+	if (attrs[attr] !== undefined && current === computeFake(attrs[attr])) return
+	attrs[attr] = current
+	el.dataset.crAnonAttrs = JSON.stringify(attrs)
+	const fake = computeFake(current)
+	if (current !== fake) el.setAttribute(attr, fake)
 }
 function restoreAnonymized(root = document) {
-    root.querySelectorAll("[data-cr-anon-orig]").forEach(el => {
-        el.textContent = el.dataset.crAnonOrig;
-        delete el.dataset.crAnonOrig;
-    });
-    root.querySelectorAll("[data-cr-anon-attrs]").forEach(el => {
-        try {
-            const attrs = JSON.parse(el.dataset.crAnonAttrs);
-            for (const [attr, value] of Object.entries(attrs)) el.setAttribute(attr, value);
-        } catch (e) { /* malformed marker: leave as-is */ }
-        delete el.dataset.crAnonAttrs;
-    });
+	root.querySelectorAll('[data-cr-anon-orig]').forEach((el) => {
+		el.textContent = el.dataset.crAnonOrig
+		delete el.dataset.crAnonOrig
+	})
+	root.querySelectorAll('[data-cr-anon-attrs]').forEach((el) => {
+		try {
+			const attrs = JSON.parse(el.dataset.crAnonAttrs)
+			for (const [attr, value] of Object.entries(attrs)) el.setAttribute(attr, value)
+		} catch (e) {
+			/* malformed marker: leave as-is */
+		}
+		delete el.dataset.crAnonAttrs
+	})
 }
 
 // Anonymize one dashboard card's visible + screenreader text.
 function anonymizeDashboardCard(card) {
-    const link = card.querySelector('.ic-DashboardCard__link[href*="/courses/"]');
-    const idMatch = link ? (link.getAttribute("href") || "").match(/courses\/(\d+)/) : null;
-    const titleNode = card.querySelector(".ic-DashboardCard__header-title span, .ic-DashboardCard__header-title");
-    const key = idMatch
-        ? "id:" + idMatch[1]
-        : "name:" + (titleNode?.dataset.crAnonOrig ?? titleNode?.textContent ?? "").trim().toLowerCase();
-    const fakeLabel = fakeCourseLabel(key);
+	const link = card.querySelector('.ic-DashboardCard__link[href*="/courses/"]')
+	const idMatch = link ? (link.getAttribute('href') || '').match(/courses\/(\d+)/) : null
+	const titleNode = card.querySelector(
+		'.ic-DashboardCard__header-title span, .ic-DashboardCard__header-title',
+	)
+	const key = idMatch
+		? 'id:' + idMatch[1]
+		: 'name:' +
+			(titleNode?.dataset.crAnonOrig ?? titleNode?.textContent ?? '').trim().toLowerCase()
+	const fakeLabel = fakeCourseLabel(key)
 
-    // Snapshot the real names BEFORE anything is anonymized so substring
-    // replacement in aria-labels/screenreader spans works off originals.
-    // Both forms matter: the h2 text is the course nickname ("Calculus BC -
-    // Schoen") while the title attr/subtitle use the full course name.
-    const titleEl = card.querySelector(".ic-DashboardCard__header-title");
-    const origNames = [];
-    if (titleEl) {
-        origNames.push((JSON.parse(titleEl.dataset.crAnonAttrs || "{}").title || titleEl.getAttribute("title") || "").trim());
-        const inner = titleEl.querySelector("span") || titleEl;
-        origNames.push((inner.dataset.crAnonOrig ?? inner.textContent).trim());
-    }
-    const subtitleEl = card.querySelector(".ic-DashboardCard__header-subtitle");
-    if (subtitleEl) {
-        origNames.push((subtitleEl.dataset.crAnonOrig ?? subtitleEl.textContent).trim());
-        origNames.push((JSON.parse(subtitleEl.dataset.crAnonAttrs || "{}").title || subtitleEl.getAttribute("title") || "").trim());
-    }
-    const uniqueOrigNames = [...new Set(origNames.filter(n => n && n.length > 1))];
-    const replaceNames = (s) => {
-        let out = String(s);
-        uniqueOrigNames.forEach(n => { out = out.split(n).join(fakeLabel); });
-        return out;
-    };
+	// Snapshot the real names BEFORE anything is anonymized so substring
+	// replacement in aria-labels/screenreader spans works off originals.
+	// Both forms matter: the h2 text is the course nickname ("Calculus BC -
+	// Schoen") while the title attr/subtitle use the full course name.
+	const titleEl = card.querySelector('.ic-DashboardCard__header-title')
+	const origNames = []
+	if (titleEl) {
+		origNames.push(
+			(
+				JSON.parse(titleEl.dataset.crAnonAttrs || '{}').title ||
+				titleEl.getAttribute('title') ||
+				''
+			).trim(),
+		)
+		const inner = titleEl.querySelector('span') || titleEl
+		origNames.push((inner.dataset.crAnonOrig ?? inner.textContent).trim())
+	}
+	const subtitleEl = card.querySelector('.ic-DashboardCard__header-subtitle')
+	if (subtitleEl) {
+		origNames.push((subtitleEl.dataset.crAnonOrig ?? subtitleEl.textContent).trim())
+		origNames.push(
+			(
+				JSON.parse(subtitleEl.dataset.crAnonAttrs || '{}').title ||
+				subtitleEl.getAttribute('title') ||
+				''
+			).trim(),
+		)
+	}
+	const uniqueOrigNames = [...new Set(origNames.filter((n) => n && n.length > 1))]
+	const replaceNames = (s) => {
+		let out = String(s)
+		uniqueOrigNames.forEach((n) => {
+			out = out.split(n).join(fakeLabel)
+		})
+		return out
+	}
 
-    if (titleEl) {
-        const inner = titleEl.querySelector("span") || titleEl;
-        anonText(inner, () => fakeLabel);
-        anonAttr(titleEl, "title", () => fakeLabel);
-    }
-    if (subtitleEl) {
-        anonText(subtitleEl, () => fakeLabel);
-        anonAttr(subtitleEl, "title", () => fakeLabel);
-    }
-    const termEl = card.querySelector(".ic-DashboardCard__header-term");
-    if (termEl) {
-        anonText(termEl, anonFakeTerm);
-        anonAttr(termEl, "title", anonFakeTerm);
-    }
-    // querySelectorAll only matches descendants, so the card's own
-    // aria-label needs handling separately.
-    anonAttr(card, "aria-label", replaceNames);
-    card.querySelectorAll("[aria-label]").forEach(el => anonAttr(el, "aria-label", replaceNames));
-    card.querySelectorAll(".screenreader-only").forEach(el => anonText(el, replaceNames));
-    // The fake grade is normally written directly by insertGrades(); this
-    // covers cards rendered before that ran or with grades unavailable.
-    const gradeEl = card.querySelector(".canvasrefined-card-grade");
-    if (gradeEl && gradeEl.textContent.trim() !== "") anonText(gradeEl, () => fakeGradeText(key));
+	if (titleEl) {
+		const inner = titleEl.querySelector('span') || titleEl
+		anonText(inner, () => fakeLabel)
+		anonAttr(titleEl, 'title', () => fakeLabel)
+	}
+	if (subtitleEl) {
+		anonText(subtitleEl, () => fakeLabel)
+		anonAttr(subtitleEl, 'title', () => fakeLabel)
+	}
+	const termEl = card.querySelector('.ic-DashboardCard__header-term')
+	if (termEl) {
+		anonText(termEl, anonFakeTerm)
+		anonAttr(termEl, 'title', anonFakeTerm)
+	}
+	// querySelectorAll only matches descendants, so the card's own
+	// aria-label needs handling separately.
+	anonAttr(card, 'aria-label', replaceNames)
+	card
+		.querySelectorAll('[aria-label]')
+		.forEach((el) => anonAttr(el, 'aria-label', replaceNames))
+	card.querySelectorAll('.screenreader-only').forEach((el) => anonText(el, replaceNames))
+	// The fake grade is normally written directly by insertGrades(); this
+	// covers cards rendered before that ran or with grades unavailable.
+	const gradeEl = card.querySelector('.canvasrefined-card-grade')
+	if (gradeEl && gradeEl.textContent.trim() !== '')
+		anonText(gradeEl, () => fakeGradeText(key))
 }
 
 // Anonymize one recent-feedback entry (the classic right-sidebar widget, which
 // the Better Todo List re-appends as-is).
 function anonymizeFeedbackLink(a) {
-    const details = a.querySelector(".event-details");
-    if (!details) return;
-    const href = a.getAttribute("href") || "";
-    const cMatch = href.match(/courses\/(\d+)/);
-    const aMatch = href.match(/assignments\/(\d+)/);
-    const contextEl = details.querySelector(".event-details__context");
-    const key = cMatch
-        ? "id:" + cMatch[1]
-        : "name:" + (contextEl?.dataset.crAnonOrig ?? contextEl?.textContent ?? "").trim().toLowerCase();
-    const fakeLabel = fakeCourseLabel(key);
+	const details = a.querySelector('.event-details')
+	if (!details) return
+	const href = a.getAttribute('href') || ''
+	const cMatch = href.match(/courses\/(\d+)/)
+	const aMatch = href.match(/assignments\/(\d+)/)
+	const contextEl = details.querySelector('.event-details__context')
+	const key = cMatch
+		? 'id:' + cMatch[1]
+		: 'name:' +
+			(contextEl?.dataset.crAnonOrig ?? contextEl?.textContent ?? '').trim().toLowerCase()
+	const fakeLabel = fakeCourseLabel(key)
 
-    if (contextEl) anonText(contextEl, () => fakeLabel);
-    const titleEl = details.querySelector(".recent_feedback_title");
-    if (titleEl) anonText(titleEl, () => fakeAssignmentTitle(aMatch ? "a:" + aMatch[1] : "t:" + (titleEl.dataset.crAnonOrig ?? titleEl.textContent).trim()));
-    const scoreEl = details.querySelector("p strong");
-    if (scoreEl && /out of|\/.|%/.test(scoreEl.textContent)) {
-        anonText(scoreEl, () => fakeFeedbackScore(aMatch ? "a:" + aMatch[1] : "t:" + (titleEl ? titleEl.textContent : "")));
-    }
-    // The comment is the last <p> and is quoted feedback text.
-    const ps = details.querySelectorAll("p");
-    const commentP = ps.length ? ps[ps.length - 1] : null;
-    if (commentP && commentP !== scoreEl?.parentElement && !commentP.querySelector("strong")) {
-        anonText(commentP, (orig) => {
-            const t = orig.trim();
-            return t.startsWith('"') ? `"${fakeFeedbackComment(aMatch ? "a:" + aMatch[1] : "t:" + t)}"` : fakeFeedbackComment(aMatch ? "a:" + aMatch[1] : "t:" + t);
-        });
-    }
+	if (contextEl) anonText(contextEl, () => fakeLabel)
+	const titleEl = details.querySelector('.recent_feedback_title')
+	if (titleEl)
+		anonText(titleEl, () =>
+			fakeAssignmentTitle(
+				aMatch
+					? 'a:' + aMatch[1]
+					: 't:' + (titleEl.dataset.crAnonOrig ?? titleEl.textContent).trim(),
+			),
+		)
+	const scoreEl = details.querySelector('p strong')
+	if (scoreEl && /out of|\/.|%/.test(scoreEl.textContent)) {
+		anonText(scoreEl, () =>
+			fakeFeedbackScore(
+				aMatch ? 'a:' + aMatch[1] : 't:' + (titleEl ? titleEl.textContent : ''),
+			),
+		)
+	}
+	// The comment is the last <p> and is quoted feedback text.
+	const ps = details.querySelectorAll('p')
+	const commentP = ps.length ? ps[ps.length - 1] : null
+	if (
+		commentP &&
+		commentP !== scoreEl?.parentElement &&
+		!commentP.querySelector('strong')
+	) {
+		anonText(commentP, (orig) => {
+			const t = orig.trim()
+			return t.startsWith('"')
+				? `"${fakeFeedbackComment(aMatch ? 'a:' + aMatch[1] : 't:' + t)}"`
+				: fakeFeedbackComment(aMatch ? 'a:' + aMatch[1] : 't:' + t)
+		})
+	}
 }
 
 // One anonymizer sweep over the current DOM.
 function anonymizePersonalDetails(root = document) {
-    if (options.hide_personal_details !== true) return;
-    try {
-        root.querySelectorAll(".ic-DashboardCard").forEach(anonymizeDashboardCard);
-        root.querySelectorAll(".recent_feedback a[href]").forEach(anonymizeFeedbackLink);
-        root.querySelectorAll("#global_nav_profile_link [title], #global_nav_profile_link [aria-label], #global_nav_profile_link img[alt]").forEach(el => {
-            for (const attr of ["title", "aria-label", "alt"]) anonAttr(el, attr, () => "Anonymous user");
-        });
-        root.querySelectorAll(".canvasrefined-reminder-content").forEach(link => {
-            const title = link.querySelector(".canvasrefined-reminder-title");
-            const id = (link.getAttribute("href") || "").match(/assignments\/(\d+)/)?.[1];
-            anonText(title, orig => fakeAssignmentTitle(id ? "a:" + id : "t:" + orig.trim()));
-        });
-        const profile = root.querySelector("#global_nav_profile_link");
-        for (const attr of ["title", "aria-label"]) anonAttr(profile, attr, () => "Account");
-    } catch (e) {
-        logError(e);
-    }
+	if (options.hide_personal_details !== true) return
+	try {
+		root.querySelectorAll('.ic-DashboardCard').forEach(anonymizeDashboardCard)
+		root.querySelectorAll('.recent_feedback a[href]').forEach(anonymizeFeedbackLink)
+		root
+			.querySelectorAll(
+				'#global_nav_profile_link [title], #global_nav_profile_link [aria-label], #global_nav_profile_link img[alt]',
+			)
+			.forEach((el) => {
+				for (const attr of ['title', 'aria-label', 'alt'])
+					anonAttr(el, attr, () => 'Anonymous user')
+			})
+		root.querySelectorAll('.canvasrefined-reminder-content').forEach((link) => {
+			const title = link.querySelector('.canvasrefined-reminder-title')
+			const id = (link.getAttribute('href') || '').match(/assignments\/(\d+)/)?.[1]
+			anonText(title, (orig) => fakeAssignmentTitle(id ? 'a:' + id : 't:' + orig.trim()))
+		})
+		const profile = root.querySelector('#global_nav_profile_link')
+		for (const attr of ['title', 'aria-label']) anonAttr(profile, attr, () => 'Account')
+	} catch (e) {
+		logError(e)
+	}
 }
 
 // Keep private editable content out of screenshots without changing saved data.
 // CSS also covers widgets/avatars mounted asynchronously by Canvas.
 function applyPersonalDetailsPrivacyStyle() {
-    let style = document.getElementById("canvasrefined-personal-details-privacy");
-    if (options.hide_personal_details !== true) {
-        if (style) style.remove();
-        return;
-    }
-    document.querySelector(".canvasrefined-gpa-dialog[open]")?.close();
-    if (style) return;
-    style = document.createElement("style");
-    style.id = "canvasrefined-personal-details-privacy";
-    const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="32" fill="#d9dfe5"/><circle cx="32" cy="23" r="12" fill="#596774"/><path d="M10 60v-6a22 22 0 0 1 44 0v6" fill="#596774"/></svg>');
-    style.textContent = `
+	let style = document.getElementById('canvasrefined-personal-details-privacy')
+	if (options.hide_personal_details !== true) {
+		if (style) style.remove()
+		return
+	}
+	document.querySelector('.canvasrefined-gpa-dialog[open]')?.close()
+	if (style) return
+	style = document.createElement('style')
+	style.id = 'canvasrefined-personal-details-privacy'
+	const avatar =
+		'data:image/svg+xml,' +
+		encodeURIComponent(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="32" fill="#d9dfe5"/><circle cx="32" cy="23" r="12" fill="#596774"/><path d="M10 60v-6a22 22 0 0 1 44 0v6" fill="#596774"/></svg>',
+		)
+	style.textContent = `
         #global_nav_profile_link .ic-avatar {
             background: url("${avatar}") center / cover no-repeat !important;
         }
@@ -4768,61 +5621,64 @@ function applyPersonalDetailsPrivacyStyle() {
         #canvasrefined-global-search-header-btn, #canvasrefined-global-search-modal {
             display: none !important;
         }
-    `;
-    (document.head || document.documentElement).append(style);
+    `
+	;(document.head || document.documentElement).append(style)
 }
 
 // Course image removal (small checkbox under the toggle): hides the course
 // photos on dashboard cards via a style element, so no upload/refresh is
 // needed and unchecking restores them instantly.
 function applyCourseImageHiding() {
-    const on = options.hide_course_images === true;
-    let style = document.getElementById("canvasrefined-hide-course-images");
-    if (on && !style) {
-        style = document.createElement("style");
-        style.id = "canvasrefined-hide-course-images";
-        style.textContent = `
+	const on = options.hide_course_images === true
+	let style = document.getElementById('canvasrefined-hide-course-images')
+	if (on && !style) {
+		style = document.createElement('style')
+		style.id = 'canvasrefined-hide-course-images'
+		style.textContent = `
             .ic-DashboardCard__header_image { background-image: none !important; }
             .ic-DashboardCard__header_image img { display: none !important; }
-        `;
-        (document.head || document.documentElement).append(style);
-    } else if (!on && style) {
-        style.remove();
-    }
+        `
+		;(document.head || document.documentElement).append(style)
+	} else if (!on && style) {
+		style.remove()
+	}
 }
 
-let personalDetailsObserver = null;
-let anonPassScheduled = false;
+let personalDetailsObserver = null
+let anonPassScheduled = false
 
 // Master switch: starts/stops the DOM watcher and (de)anonymizes in place.
 function setupPersonalDetailsHiding() {
-    applyCourseImageHiding();
-    applyPersonalDetailsPrivacyStyle();
-    hideTodoPreview();
-    if (options.hide_personal_details === true) {
-        document.getElementById("canvasrefined-global-search-modal")?.remove();
-        if (!personalDetailsObserver) {
-            personalDetailsObserver = new MutationObserver(() => {
-                if (anonPassScheduled) return;
-                anonPassScheduled = true;
-                requestAnimationFrame(() => {
-                    anonPassScheduled = false;
-                    anonymizePersonalDetails();
-                });
-            });
-            personalDetailsObserver.observe(document.documentElement, {
-                childList: true, subtree: true, characterData: true,
-                attributes: true, attributeFilter: ["title", "aria-label", "alt", "src", "srcset"]
-            });
-        }
-        anonymizePersonalDetails();
-    } else {
-        if (personalDetailsObserver) {
-            personalDetailsObserver.disconnect();
-            personalDetailsObserver = null;
-        }
-        restoreAnonymized();
-    }
+	applyCourseImageHiding()
+	applyPersonalDetailsPrivacyStyle()
+	hideTodoPreview()
+	if (options.hide_personal_details === true) {
+		document.getElementById('canvasrefined-global-search-modal')?.remove()
+		if (!personalDetailsObserver) {
+			personalDetailsObserver = new MutationObserver(() => {
+				if (anonPassScheduled) return
+				anonPassScheduled = true
+				requestAnimationFrame(() => {
+					anonPassScheduled = false
+					anonymizePersonalDetails()
+				})
+			})
+			personalDetailsObserver.observe(document.documentElement, {
+				childList: true,
+				subtree: true,
+				characterData: true,
+				attributes: true,
+				attributeFilter: ['title', 'aria-label', 'alt', 'src', 'srcset'],
+			})
+		}
+		anonymizePersonalDetails()
+	} else {
+		if (personalDetailsObserver) {
+			personalDetailsObserver.disconnect()
+			personalDetailsObserver = null
+		}
+		restoreAnonymized()
+	}
 }
 
 /*
@@ -4837,208 +5693,283 @@ Dashboard grades
 // "+" grades unreachable and displayed e.g. 100% as "A". Cutoffs are coerced
 // with Number() so string values carried in by imported themes still match.
 function percentToLetterGrade(percent, courseId) {
-    if (typeof percent !== "number") return null;
-    return getGradeThresholds(courseId).find(grade => percent >= grade.cutoff)?.letter ?? null;
+	if (typeof percent !== 'number') return null
+	return (
+		getGradeThresholds(courseId).find((grade) => percent >= grade.cutoff)?.letter ?? null
+	)
 }
 
 // Shared by letter-grade calculations and the analytics chart's grade zones.
 function getGradeThresholds(courseId) {
-    const shared = options.gpa_calc_bounds;
-    const custom = options.gpa_threshold_mode === "course" ? options.gpa_course_bounds?.[courseId] : null;
-    return Object.entries(shared || {})
-        .map(([letter, values]) => ({ letter, cutoff: Number(custom?.[letter] ?? values?.cutoff) }))
-        .filter(grade => Number.isFinite(grade.cutoff))
-        .sort((a, b) => b.cutoff - a.cutoff);
+	const shared = options.gpa_calc_bounds
+	const custom =
+		options.gpa_threshold_mode === 'course' ? options.gpa_course_bounds?.[courseId] : null
+	return Object.entries(shared || {})
+		.map(([letter, values]) => ({
+			letter,
+			cutoff: Number(custom?.[letter] ?? values?.cutoff),
+		}))
+		.filter((grade) => Number.isFinite(grade.cutoff))
+		.sort((a, b) => b.cutoff - a.cutoff)
 }
 
 function insertGrades() {
-    if (options.dashboard_grades === true) {
-        if (!grades) getGrades();
-        grades.then(data => {
-            try {
-                let cards = document.querySelectorAll('.ic-DashboardCard');
-                if (cards.length === 0 || cards[0].querySelectorAll(".ic-DashboardCard__link").length === 0) return;
-                for (let i = 0; i < cards.length; i++) {
-                    let course_id = parseInt(cards[i].querySelector(".ic-DashboardCard__link").href.split("courses/")[1]);
-                    data.forEach(grade => {
-                        if (course_id === grade.id) {
-                            const enrollment = grade.enrollments?.[0];
-                            let gradepercent = enrollment?.has_grading_periods === true ? enrollment.current_period_computed_current_score : enrollment?.computed_current_score;
-                            if (gradepercent == null || gradepercent === "") {
-                                cards[i].querySelector(".canvasrefined-card-grade")?.remove();
-                                return;
-                            }
-                            let percent = gradepercent + "%";
-                            let gradeContainer = cards[i].querySelector(".canvasrefined-card-grade") || makeElement("a", cards[i].querySelector(".ic-DashboardCard__header"), { "className": "canvasrefined-card-grade" });
-                            // "Hide personal details": show a deterministic fake grade instead.
-                            gradeContainer.textContent = options.hide_personal_details === true ? fakeGradeText("id:" + course_id) : percent;
-                            if (options.grade_hover === true) {
-                                gradeContainer.classList.add("canvasrefined-hover-only");
-                            } else {
-                                gradeContainer.classList.remove("canvasrefined-hover-only");
-                            }
-                            gradeContainer.setAttribute("href", `${domain}/courses/${course_id}/grades`);
-                            gradeContainer.style.display = "block";
-                        }
-                    });
-
-                }
-            } catch (e) {
-                logError(e);
-            }
-        }).catch(e => logError(e));
-    } else {
-        document.querySelectorAll('.canvasrefined-card-grade').forEach(grade => {
-            grade.style.display = "none";
-        });
-    }
+	if (options.dashboard_grades === true) {
+		if (!grades) getGrades()
+		grades
+			.then((data) => {
+				try {
+					let cards = document.querySelectorAll('.ic-DashboardCard')
+					if (
+						cards.length === 0 ||
+						cards[0].querySelectorAll('.ic-DashboardCard__link').length === 0
+					)
+						return
+					for (let i = 0; i < cards.length; i++) {
+						let course_id = parseInt(
+							cards[i].querySelector('.ic-DashboardCard__link').href.split('courses/')[1],
+						)
+						data.forEach((grade) => {
+							if (course_id === grade.id) {
+								const enrollment = grade.enrollments?.[0]
+								let gradepercent =
+									enrollment?.has_grading_periods === true
+										? enrollment.current_period_computed_current_score
+										: enrollment?.computed_current_score
+								if (gradepercent == null || gradepercent === '') {
+									cards[i].querySelector('.canvasrefined-card-grade')?.remove()
+									return
+								}
+								let percent = gradepercent + '%'
+								let gradeContainer =
+									cards[i].querySelector('.canvasrefined-card-grade') ||
+									makeElement('a', cards[i].querySelector('.ic-DashboardCard__header'), {
+										className: 'canvasrefined-card-grade',
+									})
+								// "Hide personal details": show a deterministic fake grade instead.
+								gradeContainer.textContent =
+									options.hide_personal_details === true
+										? fakeGradeText('id:' + course_id)
+										: percent
+								if (options.grade_hover === true) {
+									gradeContainer.classList.add('canvasrefined-hover-only')
+								} else {
+									gradeContainer.classList.remove('canvasrefined-hover-only')
+								}
+								gradeContainer.setAttribute(
+									'href',
+									`${domain}/courses/${course_id}/grades`,
+								)
+								gradeContainer.style.display = 'block'
+							}
+						})
+					}
+				} catch (e) {
+					logError(e)
+				}
+			})
+			.catch((e) => logError(e))
+	} else {
+		document.querySelectorAll('.canvasrefined-card-grade').forEach((grade) => {
+			grade.style.display = 'none'
+		})
+	}
 }
 
 /*
 Card assignments
 */
 
-
 function createCardAssignment(assignment) {
-    let assignmentContainer = document.createElement("div");
-    assignmentContainer.className = "canvasrefined-assignment-container";
-    let assignmentName = makeElement("a", assignmentContainer, { "className": "canvasrefined-assignment-link", "textContent": anonTitleForItem(assignment), "href": assignment.html_url });
-    let assignmentDueAt = makeElement("span", assignmentContainer, { "className": "canvasrefined-assignment-dueat", "textContent": formatCardDue(new Date(assignment.plannable_date)) });
-    if (assignment.overdue === true) {
-        assignmentDueAt.classList.add("canvasrefined-assignment-overdue");
-        if (options.card_overdue_always_red === true) assignmentDueAt.classList.add("canvasrefined-overdue-red");
-    }
-    if (assignment?.submissions?.submitted === true) {
-        assignmentContainer.classList.add("canvasrefined-completed");
-    } else {
-        if (options.assignment_states[assignment.plannable_id]?.["crs"] === true) {
-            assignmentContainer.classList.add("canvasrefined-completed");
-        }
-    }
-    assignmentDueAt.addEventListener('mouseup', function () {
-        assignmentContainer.classList.toggle("canvasrefined-completed");
-        const status = assignmentContainer.classList.contains("canvasrefined-completed");
-        setAssignmentState(assignment.plannable_id, { "crs": status, "expire": assignment.plannable_date });
-    });
-    return assignmentContainer;
+	let assignmentContainer = document.createElement('div')
+	assignmentContainer.className = 'canvasrefined-assignment-container'
+	let assignmentName = makeElement('a', assignmentContainer, {
+		className: 'canvasrefined-assignment-link',
+		textContent: anonTitleForItem(assignment),
+		href: assignment.html_url,
+	})
+	let assignmentDueAt = makeElement('span', assignmentContainer, {
+		className: 'canvasrefined-assignment-dueat',
+		textContent: formatCardDue(new Date(assignment.plannable_date)),
+	})
+	if (assignment.overdue === true) {
+		assignmentDueAt.classList.add('canvasrefined-assignment-overdue')
+		if (options.card_overdue_always_red === true)
+			assignmentDueAt.classList.add('canvasrefined-overdue-red')
+	}
+	if (assignment?.submissions?.submitted === true) {
+		assignmentContainer.classList.add('canvasrefined-completed')
+	} else {
+		if (options.assignment_states[assignment.plannable_id]?.['crs'] === true) {
+			assignmentContainer.classList.add('canvasrefined-completed')
+		}
+	}
+	assignmentDueAt.addEventListener('mouseup', function () {
+		assignmentContainer.classList.toggle('canvasrefined-completed')
+		const status = assignmentContainer.classList.contains('canvasrefined-completed')
+		setAssignmentState(assignment.plannable_id, {
+			crs: status,
+			expire: assignment.plannable_date,
+		})
+	})
+	return assignmentContainer
 }
 
-let cardAssignments;
+let cardAssignments
 
 function preloadAssignmentEls() {
-    return new Promise((resolve) => {
-        let assignmentEls = {};
-        const now = new Date();
-        // Resolve (never reject, never hang): a throw inside the data callback
-        // previously left this promise pending forever, so every dashboard
-        // card kept showing its blinking "loading" skeleton indefinitely.
-        const finish = () => resolve(assignmentEls);
-        if (!assignments || typeof assignments.then !== "function") { finish(); return; }
-        assignments.then(data => {
-            try {
-                data = combineAssignments(data);
-                data.forEach(item => {
-                    let due = new Date(item.plannable_date);
-                    item.overdue = now >= due;
-                    let o = {
-                        "submitted": item.submissions && item.submissions.submitted === true,
-                        "override": item.planner_override && item.planner_override.marked_complete,
-                        "type": item.plannable_type,
-                        "due": due,
-                        "el": createCardAssignment(item)
-                    }
-                    if (assignmentEls[item.course_id]) {
-                        assignmentEls[item.course_id].push(o);
-                    } else {
-                        assignmentEls[item.course_id] = [o];
-                    }
-                });
-            } catch (e) {
-                logError(e);
-            } finally {
-                finish();
-            }
-        }).catch(e => {
-            logError(e);
-            finish();
-        });
-    });
+	return new Promise((resolve) => {
+		let assignmentEls = {}
+		const now = new Date()
+		// Resolve (never reject, never hang): a throw inside the data callback
+		// previously left this promise pending forever, so every dashboard
+		// card kept showing its blinking "loading" skeleton indefinitely.
+		const finish = () => resolve(assignmentEls)
+		if (!assignments || typeof assignments.then !== 'function') {
+			finish()
+			return
+		}
+		assignments
+			.then((data) => {
+				try {
+					data = combineAssignments(data)
+					data.forEach((item) => {
+						let due = new Date(item.plannable_date)
+						item.overdue = now >= due
+						let o = {
+							submitted: item.submissions && item.submissions.submitted === true,
+							override: item.planner_override && item.planner_override.marked_complete,
+							type: item.plannable_type,
+							due: due,
+							el: createCardAssignment(item),
+						}
+						if (assignmentEls[item.course_id]) {
+							assignmentEls[item.course_id].push(o)
+						} else {
+							assignmentEls[item.course_id] = [o]
+						}
+					})
+				} catch (e) {
+					logError(e)
+				} finally {
+					finish()
+				}
+			})
+			.catch((e) => {
+				logError(e)
+				finish()
+			})
+	})
 }
 
 function loadCardAssignments() {
-    if (options.assignments_due !== true) {
-        document.querySelectorAll(".canvasrefined-card-assignment").forEach(card => {
-            card.style.display = "none";
-        });
-        return;
-    }
-    setupCardAssignments();
-    if (!cardAssignments || typeof cardAssignments.then !== "function") return;
-    // Render-generation guard: cardAssignments is reassigned whenever the
-    // planner data refreshes; a stale callback re-queried the live cards and
-    // re-appended outdated rows over the fresh render.
-    const renderGen = ++cardRenderGen;
-    cardAssignments.then(els => {
-        if (renderGen !== cardRenderGen) return;
-        try {
-            let cards = document.querySelectorAll('.ic-DashboardCard');
-            if (cards.length === 0) return;
-            const now = new Date();
+	if (options.assignments_due !== true) {
+		document.querySelectorAll('.canvasrefined-card-assignment').forEach((card) => {
+			card.style.display = 'none'
+		})
+		return
+	}
+	setupCardAssignments()
+	if (!cardAssignments || typeof cardAssignments.then !== 'function') return
+	// Render-generation guard: cardAssignments is reassigned whenever the
+	// planner data refreshes; a stale callback re-queried the live cards and
+	// re-appended outdated rows over the fresh render.
+	const renderGen = ++cardRenderGen
+	cardAssignments.then((els) => {
+		if (renderGen !== cardRenderGen) return
+		try {
+			let cards = document.querySelectorAll('.ic-DashboardCard')
+			if (cards.length === 0) return
+			const now = new Date()
 
-            cards.forEach(card => {
-                let count = 0;
-                let link = card.querySelector(".ic-DashboardCard__link");
-                if (!link) return;
-                let course_id = link.href.split("courses/")[1];
-                let cardContainer = card.querySelector('.canvasrefined-card-container');
-                if (!cardContainer) return;
-                cardContainer.textContent = "";
-                if (cardContainer.parentElement) {
-                    cardContainer.parentElement.style.display = "block";
-                }
+			cards.forEach((card) => {
+				let count = 0
+				let link = card.querySelector('.ic-DashboardCard__link')
+				if (!link) return
+				let course_id = link.href.split('courses/')[1]
+				let cardContainer = card.querySelector('.canvasrefined-card-container')
+				if (!cardContainer) return
+				cardContainer.textContent = ''
+				if (cardContainer.parentElement) {
+					cardContainer.parentElement.style.display = 'block'
+				}
 
-                if (els[course_id]) {
-                    els[course_id].forEach(assignment => {
-                        if (count >= options.num_assignments) return;
-                        if (options.hide_completed_cards === true && assignment.submitted === true) return;
-                        if ((options.card_overdues !== true && now >= assignment.due) || (options.card_overdues === true && assignment.submitted === true)) return;
-                        if (options.card_future_dues === false && now < assignment.due) return;
-                        if (assignment.type !== "assignment" && assignment.type !== "quiz" && assignment.type !== "discussion_topic") return;
-                        if (assignment.override === true) return;
-                        //assignment.el.querySelector(".canvasrefined-assignment-dueat").textContent = formatCardDue(assignment.due);
-                        cardContainer.appendChild(assignment.el);
-                        count++;
-                    });
-                }
+				if (els[course_id]) {
+					els[course_id].forEach((assignment) => {
+						if (count >= options.num_assignments) return
+						if (options.hide_completed_cards === true && assignment.submitted === true)
+							return
+						if (
+							(options.card_overdues !== true && now >= assignment.due) ||
+							(options.card_overdues === true && assignment.submitted === true)
+						)
+							return
+						if (options.card_future_dues === false && now < assignment.due) return
+						if (
+							assignment.type !== 'assignment' &&
+							assignment.type !== 'quiz' &&
+							assignment.type !== 'discussion_topic'
+						)
+							return
+						if (assignment.override === true) return
+						//assignment.el.querySelector(".canvasrefined-assignment-dueat").textContent = formatCardDue(assignment.due);
+						cardContainer.appendChild(assignment.el)
+						count++
+					})
+				}
 
-                if (count === 0) {
-                    let assignmentContainer = makeElement("div", cardContainer, { "className": "canvasrefined-assignment-container" });
-                    let assignmentDivLink = makeElement("a", assignmentContainer, { "className": "canvasrefined-assignment-link", "textContent": "None" });
-                }
-            });
-        } catch (e) {
-            logError(e);
-        }
-    });
+				if (count === 0) {
+					let assignmentContainer = makeElement('div', cardContainer, {
+						className: 'canvasrefined-assignment-container',
+					})
+					let assignmentDivLink = makeElement('a', assignmentContainer, {
+						className: 'canvasrefined-assignment-link',
+						textContent: 'None',
+					})
+				}
+			})
+		} catch (e) {
+			logError(e)
+		}
+	})
 }
 
-
 function setupCardAssignments() {
-    if (options.assignments_due !== true) return;
-    try {
-        let containersCount = document.querySelectorAll('.canvasrefined-card-container').length;
-        if (document.querySelectorAll('.ic-DashboardCard').length > 0 && containersCount > 0) return;
-        let cards = document.querySelectorAll('.ic-DashboardCard');
-        cards.forEach(card => {
-            let assignmentContainer = card.querySelector(".canvasrefined-card-assignment") || makeElement("div", card, { "className": "canvasrefined-card-assignment" });
-            let assignmentsDueHeader = card.querySelector(".canvasrefined-card-header-container") || makeElement("div", assignmentContainer, { "className": "canvasrefined-card-header-container" });
-            let assignmentsDueLabel = card.querySelector(".canvasrefined-card-header") || makeElement("h3", assignmentsDueHeader, { "className": "canvasrefined-card-header", "textContent": chrome.i18n.getMessage("due") });
-            let cardContainer = card.querySelector(".canvasrefined-card-container") || makeElement("div", assignmentContainer, { "className": "canvasrefined-card-container" });
-            let skeletonText = card.querySelector(".canvasrefined-skeleton-text") || makeElement("div", cardContainer, { "className": "canvasrefined-skeleton-text" });
-        });
-    } catch (e) {
-        logError(e);
-    }
+	if (options.assignments_due !== true) return
+	try {
+		let containersCount = document.querySelectorAll(
+			'.canvasrefined-card-container',
+		).length
+		if (document.querySelectorAll('.ic-DashboardCard').length > 0 && containersCount > 0)
+			return
+		let cards = document.querySelectorAll('.ic-DashboardCard')
+		cards.forEach((card) => {
+			let assignmentContainer =
+				card.querySelector('.canvasrefined-card-assignment') ||
+				makeElement('div', card, { className: 'canvasrefined-card-assignment' })
+			let assignmentsDueHeader =
+				card.querySelector('.canvasrefined-card-header-container') ||
+				makeElement('div', assignmentContainer, {
+					className: 'canvasrefined-card-header-container',
+				})
+			let assignmentsDueLabel =
+				card.querySelector('.canvasrefined-card-header') ||
+				makeElement('h3', assignmentsDueHeader, {
+					className: 'canvasrefined-card-header',
+					textContent: chrome.i18n.getMessage('due'),
+				})
+			let cardContainer =
+				card.querySelector('.canvasrefined-card-container') ||
+				makeElement('div', assignmentContainer, {
+					className: 'canvasrefined-card-container',
+				})
+			let skeletonText =
+				card.querySelector('.canvasrefined-skeleton-text') ||
+				makeElement('div', cardContainer, { className: 'canvasrefined-skeleton-text' })
+		})
+	} catch (e) {
+		logError(e)
+	}
 }
 
 /*
@@ -5046,83 +5977,88 @@ Card customization
 */
 
 function getCardId(card) {
-    let link = card.querySelector(".ic-DashboardCard__link");
-    if (!link) return -1;
-    let href = link.href;
-    if (!href || !href.includes("courses/")) return -1;
-    let id = href.split("courses/")[1];
-    if (!id) return -1;
-    // no ~
-    if (!id.includes("~")) return id;
+	let link = card.querySelector('.ic-DashboardCard__link')
+	if (!link) return -1
+	let href = link.href
+	if (!href || !href.includes('courses/')) return -1
+	let id = href.split('courses/')[1]
+	if (!id) return -1
+	// no ~
+	if (!id.includes('~')) return id
 
-    // has ~ but dashboard card method is used
-    if (options["custom_cards"][id]) return id;
+	// has ~ but dashboard card method is used
+	if (options['custom_cards'][id]) return id
 
-    // weird case, some canvases replace consecutive 0s with a ~ in the id
-    // but the number of 0s isn't consistent between schools
-    id = id.split("~");
-    let re = new RegExp(`${id[0]}0+${id[1]}`);
-    for (const c of Object.keys(options["custom_cards"])) {
-        if (c.match(re)) return c;
-    }
-    return -1;
+	// weird case, some canvases replace consecutive 0s with a ~ in the id
+	// but the number of 0s isn't consistent between schools
+	id = id.split('~')
+	let re = new RegExp(`${id[0]}0+${id[1]}`)
+	for (const c of Object.keys(options['custom_cards'])) {
+		if (c.match(re)) return c
+	}
+	return -1
 }
 
-const originalCardImages = new WeakMap();
+const originalCardImages = new WeakMap()
 function applyCardImage(card, image) {
-    const hero = card.querySelector(".ic-DashboardCard__header_hero");
-    const header = card.querySelector(".ic-DashboardCard__header");
-    let container = card.querySelector(".ic-DashboardCard__header_image");
-    if (!hero || !header) return;
-    if (image && image !== "none" && !originalCardImages.has(card)) {
-        originalCardImages.set(card, {
-            container,
-            backgroundImage: container?.style.backgroundImage || "",
-            opacity: hero.style.opacity,
-        });
-    }
-    if (!image || image === "none") {
-        const original = originalCardImages.get(card);
-        if (!original) return;
-        if (original.container) {
-            original.container.style.backgroundImage = original.backgroundImage;
-        } else if (container) {
-            header.prepend(hero);
-            container.remove();
-        }
-        hero.style.opacity = original.opacity;
-        originalCardImages.delete(card);
-    } else {
-        container ||= makeElement("div", card, { className: "ic-DashboardCard__header_image" });
-        header.prepend(container);
-        container.appendChild(hero);
-        container.style.backgroundImage = `url("${image}")`;
-        hero.style.opacity = .5;
-    }
+	const hero = card.querySelector('.ic-DashboardCard__header_hero')
+	const header = card.querySelector('.ic-DashboardCard__header')
+	let container = card.querySelector('.ic-DashboardCard__header_image')
+	if (!hero || !header) return
+	if (image && image !== 'none' && !originalCardImages.has(card)) {
+		originalCardImages.set(card, {
+			container,
+			backgroundImage: container?.style.backgroundImage || '',
+			opacity: hero.style.opacity,
+		})
+	}
+	if (!image || image === 'none') {
+		const original = originalCardImages.get(card)
+		if (!original) return
+		if (original.container) {
+			original.container.style.backgroundImage = original.backgroundImage
+		} else if (container) {
+			header.prepend(hero)
+			container.remove()
+		}
+		hero.style.opacity = original.opacity
+		originalCardImages.delete(card)
+	} else {
+		container ||= makeElement('div', card, {
+			className: 'ic-DashboardCard__header_image',
+		})
+		header.prepend(container)
+		container.appendChild(hero)
+		container.style.backgroundImage = `url("${image}")`
+		hero.style.opacity = 0.5
+	}
 }
 
 function customizeCards(c = null) {
-    if (!options.custom_cards) return;
-    try {
-        let cards = c ? c : document.querySelectorAll('.ic-DashboardCard');
-        if (cards.length && cards.length > 0 && cards[0].querySelectorAll(".ic-DashboardCard__link").length === 0) return;
+	if (!options.custom_cards) return
+	try {
+		let cards = c ? c : document.querySelectorAll('.ic-DashboardCard')
+		if (
+			cards.length &&
+			cards.length > 0 &&
+			cards[0].querySelectorAll('.ic-DashboardCard__link').length === 0
+		)
+			return
 
-        cards.forEach(card => {
-            const id = getCardId(card);
-            let cardOptions = options["custom_cards"][id] || null;
-            if (!cardOptions) return;
-            // hide card
-            card.style.display = (cardOptions.hidden === true || cardOptions.hide === true) ? "none" : "inline-block";
+		cards.forEach((card) => {
+			const id = getCardId(card)
+			let cardOptions = options['custom_cards'][id] || null
+			if (!cardOptions) return
+			// hide card
+			card.style.display =
+				cardOptions.hidden === true || cardOptions.hide === true ? 'none' : 'inline-block'
 
-            // card image
-            applyCardImage(card, cardOptions.img);
-
-        });
-
-
-    } catch (e) {
-        logError(e);
-    }
+			// card image
+			applyCardImage(card, cardOptions.img)
+		})
+	} catch (e) {
+		logError(e)
+	}
 }
 
 /*
@@ -5130,336 +6066,461 @@ GPA calculator
 */
 
 function calculateGPA2() {
-    let numCredits = 0, weightedQualityPoints = 0;
-    document.querySelectorAll('.canvasrefined-gpa-course').forEach(course => {
-        const weight = course.querySelector('.canvasrefined-course-weight').value;
-        const credits = parseFloat(course.querySelector('.canvasrefined-course-credit').value);
-        const grade = parseFloat(course.querySelector('.canvasrefined-course-percent').value);
-        const letter = Number.isFinite(grade) ? (percentToLetterGrade(grade, course.dataset.courseId) || "F") : "--";
-        course.querySelector(".canvasrefined-gpa-letter-grade").textContent = letter;
-        if (weight === "dnc" || !credits || !Number.isFinite(grade)) return;
-        const gpa = Number(options.gpa_calc_bounds[letter].gpa);
+	let numCredits = 0,
+		weightedQualityPoints = 0
+	document.querySelectorAll('.canvasrefined-gpa-course').forEach((course) => {
+		const weight = course.querySelector('.canvasrefined-course-weight').value
+		const credits = parseFloat(course.querySelector('.canvasrefined-course-credit').value)
+		const grade = parseFloat(course.querySelector('.canvasrefined-course-percent').value)
+		const letter = Number.isFinite(grade)
+			? percentToLetterGrade(grade, course.dataset.courseId) || 'F'
+			: '--'
+		course.querySelector('.canvasrefined-gpa-letter-grade').textContent = letter
+		if (weight === 'dnc' || !credits || !Number.isFinite(grade)) return
+		const gpa = Number(options.gpa_calc_bounds[letter].gpa)
 
-        let weightMultiplier = 0;
-        if (weight === "ap") {
-            weightMultiplier = 1;
-        } else if (weight === "honors") {
-            weightMultiplier = .5;
-        }
+		let weightMultiplier = 0
+		if (weight === 'ap') {
+			weightMultiplier = 1
+		} else if (weight === 'honors') {
+			weightMultiplier = 0.5
+		}
 
-        weightedQualityPoints += (gpa + weightMultiplier) * credits;
-        numCredits += credits;
-
-    });
-    document.querySelector("#canvasrefined-gpa-weighted").textContent = (weightedQualityPoints / numCredits).toFixed(2);
+		weightedQualityPoints += (gpa + weightMultiplier) * credits
+		numCredits += credits
+	})
+	document.querySelector('#canvasrefined-gpa-weighted').textContent = (
+		weightedQualityPoints / numCredits
+	).toFixed(2)
 }
 
 // Serialize writes so rapid edits to different courses (or a reset) save in order.
-let gpaSettingsWrite = Promise.resolve();
+let gpaSettingsWrite = Promise.resolve()
 function saveGpaCourseUpdates(updates) {
-    const cards = { ...options.custom_cards };
-    Object.entries(updates).forEach(([id, update]) => {
-        cards[id] = { ...cards[id], ...update };
-    });
-    options.custom_cards = cards;
-    gpaSettingsWrite = gpaSettingsWrite.then(() => new Promise(resolve => {
-        chrome.storage.sync.get("custom_cards", storage => {
-            const saved = { ...storage.custom_cards };
-            Object.entries(updates).forEach(([id, update]) => {
-                saved[id] = { ...saved[id], ...update };
-            });
-            chrome.storage.sync.set({ custom_cards: saved }, resolve);
-        });
-    })).catch(logError);
-    return gpaSettingsWrite;
+	const cards = { ...options.custom_cards }
+	Object.entries(updates).forEach(([id, update]) => {
+		cards[id] = { ...cards[id], ...update }
+	})
+	options.custom_cards = cards
+	gpaSettingsWrite = gpaSettingsWrite
+		.then(
+			() =>
+				new Promise((resolve) => {
+					chrome.storage.sync.get('custom_cards', (storage) => {
+						const saved = { ...storage.custom_cards }
+						Object.entries(updates).forEach(([id, update]) => {
+							saved[id] = { ...saved[id], ...update }
+						})
+						chrome.storage.sync.set({ custom_cards: saved }, resolve)
+					})
+				}),
+		)
+		.catch(logError)
+	return gpaSettingsWrite
 }
 
 function changeGPASettings(course_id, update) {
-    saveGpaCourseUpdates({ [course_id]: update });
-    calculateGPA2();
+	saveGpaCourseUpdates({ [course_id]: update })
+	calculateGPA2()
 }
 
 function refreshGpaWhatIfMode() {
-    const enabled = options.gpa_what_if === true;
-    const toggle = document.querySelector('.canvasrefined-gpa-what-if');
-    if (toggle) toggle.checked = enabled;
-    const reset = document.querySelector('.canvasrefined-gpa-reset-grades');
-    if (reset) reset.hidden = !enabled;
-    document.querySelectorAll('.canvasrefined-gpa-course').forEach(course => {
-        const input = course.querySelector('.canvasrefined-course-percent');
-        const saved = options.custom_cards?.[course.dataset.courseId]?.gr;
-        input.readOnly = !enabled;
-        input.value = enabled && saved != null ? saved : course.dataset.currentGrade;
-    });
-    if (document.querySelector('#canvasrefined-gpa-weighted')) calculateGPA2();
+	const enabled = options.gpa_what_if === true
+	const toggle = document.querySelector('.canvasrefined-gpa-what-if')
+	if (toggle) toggle.checked = enabled
+	const reset = document.querySelector('.canvasrefined-gpa-reset-grades')
+	if (reset) reset.hidden = !enabled
+	document.querySelectorAll('.canvasrefined-gpa-course').forEach((course) => {
+		const input = course.querySelector('.canvasrefined-course-percent')
+		const saved = options.custom_cards?.[course.dataset.courseId]?.gr
+		input.readOnly = !enabled
+		input.value = enabled && saved != null ? saved : course.dataset.currentGrade
+	})
+	if (document.querySelector('#canvasrefined-gpa-weighted')) calculateGPA2()
 }
 
 function createGpaWhatIfControls(container) {
-    const controls = makeElement('div', container, { className: 'canvasrefined-gpa-what-if-controls' });
-    const label = makeElement('label', controls, { className: 'canvasrefined-gpa-what-if-label' });
-    const toggle = makeElement('input', label, { type: 'checkbox', className: 'canvasrefined-gpa-what-if' });
-    toggle.setAttribute('role', 'switch');
-    makeElement('span', label, { textContent: 'What-if mode' });
-    toggle.addEventListener('change', () => {
-        options.gpa_what_if = toggle.checked;
-        refreshGpaWhatIfMode();
-        chrome.storage.sync.set({ gpa_what_if: options.gpa_what_if });
-    });
-    const reset = makeElement('button', controls, {
-        type: 'button', className: 'canvasrefined-custom-btn canvasrefined-gpa-reset-grades',
-        textContent: 'Reset to current grades', hidden: true
-    });
-    reset.addEventListener('click', () => {
-        if (options.gpa_what_if !== true) return;
-        const updates = {};
-        Object.entries(options.custom_cards || {}).forEach(([id, card]) => {
-            if (card.gr != null) updates[id] = { gr: null };
-        });
-        saveGpaCourseUpdates(updates);
-        refreshGpaWhatIfMode();
-    });
-    container.insertBefore(controls, container.querySelector('.canvasrefined-gpa-courses-container'));
+	const controls = makeElement('div', container, {
+		className: 'canvasrefined-gpa-what-if-controls',
+	})
+	const label = makeElement('label', controls, {
+		className: 'canvasrefined-gpa-what-if-label',
+	})
+	const toggle = makeElement('input', label, {
+		type: 'checkbox',
+		className: 'canvasrefined-gpa-what-if',
+	})
+	toggle.setAttribute('role', 'switch')
+	makeElement('span', label, { textContent: 'What-if mode' })
+	toggle.addEventListener('change', () => {
+		options.gpa_what_if = toggle.checked
+		refreshGpaWhatIfMode()
+		chrome.storage.sync.set({ gpa_what_if: options.gpa_what_if })
+	})
+	const reset = makeElement('button', controls, {
+		type: 'button',
+		className: 'canvasrefined-custom-btn canvasrefined-gpa-reset-grades',
+		textContent: 'Reset to current grades',
+		hidden: true,
+	})
+	reset.addEventListener('click', () => {
+		if (options.gpa_what_if !== true) return
+		const updates = {}
+		Object.entries(options.custom_cards || {}).forEach(([id, card]) => {
+			if (card.gr != null) updates[id] = { gr: null }
+		})
+		saveGpaCourseUpdates(updates)
+		refreshGpaWhatIfMode()
+	})
+	container.insertBefore(
+		controls,
+		container.querySelector('.canvasrefined-gpa-courses-container'),
+	)
 }
 
 function createGPACalcCourse(location, course) {
+	let customs
+	if (course.access_restricted_by_date === true) {
+		return null
+	} else if (options.custom_cards && options.custom_cards[course.id]) {
+		customs = options.custom_cards[course.id]
+	} else {
+		return
+		customs = {
+			name: course.name,
+			hidden: false,
+			weight: 'regular',
+			credits: 1,
+			gr: null,
+		}
+	}
+	if (customs.hidden === true || customs.hide === true) return
 
-    let customs;
-    if (course.access_restricted_by_date === true) {
-        return null;
-    } else if (options.custom_cards && options.custom_cards[course.id]) {
-        customs = options.custom_cards[course.id];
-    } else {
-        return;
-        customs = { "name": course.name, "hidden": false, "weight": "regular", "credits": 1, "gr": null };
-    }
-    if (customs.hidden === true || customs.hide === true) return;
+	let courseContainer = makeElement('div', location, {
+		className: 'canvasrefined-gpa-course',
+		innerHTML: '<div class="canvasrefined-gpa-letter-grade"></div>',
+	})
+	courseContainer.dataset.courseId = String(course.id)
+	const courseLabel = course.name || course.course_code || ''
+	let courseName = makeElement('p', courseContainer, {
+		className: 'canvasrefined-gpa-name',
+		textContent: courseLabel,
+	})
+	let changerContainer = makeElement('div', courseContainer, {
+		className: 'canvasrefined-gpa-percent-container',
+	})
 
-    let courseContainer = makeElement("div", location, { "className": "canvasrefined-gpa-course", "innerHTML": '<div class="canvasrefined-gpa-letter-grade"></div>' });
-    courseContainer.dataset.courseId = String(course.id);
-    const courseLabel = course.name || course.course_code || "";
-    let courseName = makeElement("p", courseContainer, { "className": "canvasrefined-gpa-name", "textContent": courseLabel });
-    let changerContainer = makeElement("div", courseContainer, { "className": "canvasrefined-gpa-percent-container" });
+	let credits = makeElement('div', courseContainer, {
+		className: 'canvasrefined-course-credits',
+		innerHTML:
+			'<input class="canvasrefined-course-credit" value="1"><span class="canvasrefined-course-percent-sign">cr</span>',
+	})
+	let creditsChanger = credits.querySelector('.canvasrefined-course-credit')
+	creditsChanger.value = customs.credits
+	creditsChanger.setAttribute('aria-label', `${courseLabel} credits`)
+	let changer = makeElement('input', changerContainer, {
+		className: 'canvasrefined-course-percent',
+	})
+	changer.setAttribute('aria-label', `${courseLabel} percentage`)
+	let percent = makeElement('span', changerContainer, {
+		className: 'canvasrefined-course-percent-sign',
+		textContent: '%',
+	})
+	const enrollment = course.enrollments?.[0]
+	let courseGrade =
+		enrollment?.has_grading_periods === true
+			? enrollment.current_period_computed_current_score
+			: enrollment?.computed_current_score
+	courseContainer.dataset.currentGrade = courseGrade ?? '--'
+	changer.readOnly = options.gpa_what_if !== true
 
-    let credits = makeElement("div", courseContainer, { "className": "canvasrefined-course-credits", "innerHTML": '<input class="canvasrefined-course-credit" value="1"></input><span class="canvasrefined-course-percent-sign">cr</span>' });
-    let creditsChanger = credits.querySelector(".canvasrefined-course-credit");
-    creditsChanger.value = customs.credits;
-    creditsChanger.setAttribute("aria-label", `${courseLabel} credits`);
-    let changer = makeElement("input", changerContainer, { "className": "canvasrefined-course-percent" });
-    changer.setAttribute("aria-label", `${courseLabel} percentage`);
-    let percent = makeElement("span", changerContainer, { "className": "canvasrefined-course-percent-sign", "textContent": "%" });
-    const enrollment = course.enrollments?.[0];
-    let courseGrade = enrollment?.has_grading_periods === true ? enrollment.current_period_computed_current_score : enrollment?.computed_current_score;
-    courseContainer.dataset.currentGrade = courseGrade ?? "--";
-    changer.readOnly = options.gpa_what_if !== true;
+	if (options.gpa_what_if === true && customs.gr != null) {
+		changer.value = customs['gr']
+	} else if (courseGrade != null) {
+		changer.value = courseGrade
+	} else {
+		changer.value = '--'
+	}
 
-    if (options.gpa_what_if === true && customs.gr != null) {
-        changer.value = customs["gr"];
-    } else if (courseGrade != null) {
-        changer.value = courseGrade;
-    } else {
-        changer.value = "--";
-    }
+	let weightSelections = makeElement('form', courseContainer, {
+		className: 'canvasrefined-course-weights',
+	})
+	weightSelections.innerHTML =
+		'<select name="weight-selection" class="canvasrefined-course-weight"><option value="dnc">Do not count</option><option value="regular">Regular/College</option><option value="honors">Honors</option><option value="ap">AP/IB</option></select>'
+	let weightChanger = weightSelections.querySelector('.canvasrefined-course-weight')
+	weightChanger.value = changer.value === '--' ? 'dnc' : customs.weight
+	weightChanger.setAttribute('aria-label', `${courseLabel} weighting`)
+	weightChanger.addEventListener('change', () =>
+		changeGPASettings(course.id, {
+			weight: weightSelections.querySelector('.canvasrefined-course-weight').value,
+		}),
+	)
 
-    let weightSelections = makeElement("form", courseContainer, { "className": "canvasrefined-course-weights" });
-    weightSelections.innerHTML = '<select name="weight-selection" class="canvasrefined-course-weight"><option value="dnc">Do not count</option><option value="regular">Regular/College</option><option value="honors">Honors</option><option value="ap">AP/IB</option></select>';
-    let weightChanger = weightSelections.querySelector(".canvasrefined-course-weight");
-    weightChanger.value = changer.value === "--" ? "dnc" : customs.weight;
-    weightChanger.setAttribute("aria-label", `${courseLabel} weighting`);
-    weightChanger.addEventListener('change', () => changeGPASettings(course.id, { "weight": weightSelections.querySelector(".canvasrefined-course-weight").value }));
+	changer.addEventListener('input', (e) => {
+		if (options.gpa_what_if === true) {
+			changeGPASettings(course.id, { gr: e.target.value })
+		} else {
+			changer.value = courseGrade ?? '--'
+		}
+	})
 
-    changer.addEventListener('input', (e) => {
-        if (options.gpa_what_if === true) {
-            changeGPASettings(course.id, { "gr": e.target.value });
-        } else {
-            changer.value = courseGrade ?? "--";
-        }
-    });
-
-    credits.querySelector(".canvasrefined-course-credit").addEventListener('input', () => changeGPASettings(course.id, { "credits": credits.querySelector(".canvasrefined-course-credit").value }));
-    return courseContainer;
+	credits.querySelector('.canvasrefined-course-credit').addEventListener('input', () =>
+		changeGPASettings(course.id, {
+			credits: credits.querySelector('.canvasrefined-course-credit').value,
+		}),
+	)
+	return courseContainer
 }
 
 function gpaIsOurControl(el) {
-    return !el || el.id === "canvasrefined-global-search-header-btn" || el.classList?.contains("canvasrefined-gpa-customize-btn") || el.classList?.contains("canvasrefined-gpa-view-btn") || !!el.closest?.(".canvasrefined-gpa-header-mount, .canvasrefined-gpa-dialog, .canvasrefined-gpa-card, .canvasrefined-gpa");
+	return (
+		!el ||
+		el.id === 'canvasrefined-global-search-header-btn' ||
+		el.classList?.contains('canvasrefined-gpa-customize-btn') ||
+		el.classList?.contains('canvasrefined-gpa-view-btn') ||
+		!!el.closest?.(
+			'.canvasrefined-gpa-header-mount, .canvasrefined-gpa-dialog, .canvasrefined-gpa-card, .canvasrefined-gpa',
+		)
+	)
 }
 
 // Ask the background service worker to open the extension's settings page.
 function openSettingsPage() {
-    try {
-        const request = chrome.runtime.sendMessage({ message: "canvasrefined:open-settings" });
-        if (request && typeof request.catch === "function") request.catch(() => {});
-    } catch (e) { /* extension context invalidated */ }
+	try {
+		const request = chrome.runtime.sendMessage({ message: 'canvasrefined:open-settings' })
+		if (request && typeof request.catch === 'function') request.catch(() => {})
+	} catch (e) {
+		/* extension context invalidated */
+	}
 }
 
 function ensureGpaCustomizeButton() {
-    const existing = document.querySelector(".canvasrefined-gpa-customize-btn");
-    if (existing) return existing;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "canvasrefined-gpa-customize-btn";
-    button.textContent = "Customize";
-    button.addEventListener("click", openSettingsPage);
-    return button;
+	const existing = document.querySelector('.canvasrefined-gpa-customize-btn')
+	if (existing) return existing
+	const button = document.createElement('button')
+	button.type = 'button'
+	button.className = 'canvasrefined-gpa-customize-btn'
+	button.textContent = 'Customize'
+	button.addEventListener('click', openSettingsPage)
+	return button
 }
 
 // The ⋮ control, including when Canvas wraps the button in a menu span.
 function gpaHeaderAnchor() {
-    const root = document.querySelector(".ic-Dashboard-header")
-        || document.querySelector("#dashboard_header_container")
-        || document.querySelector("#DashboardHeaderContainer");
-    if (!root) return null;
-    const buttons = [...root.querySelectorAll("button")].filter(button => !gpaIsOurControl(button));
-    const labeled = buttons.find(button => /dashboard options|more options/i.test(
-        `${button.getAttribute("aria-label") || ""} ${button.getAttribute("title") || ""} ${button.textContent || ""}`
-    ));
-    const button = labeled || buttons.reduce((best, candidate) => {
-        if (!best) return candidate;
-        return candidate.getBoundingClientRect().right > best.getBoundingClientRect().right ? candidate : best;
-    }, null);
-    const row = (button && (button.closest(".ic-Dashboard-header__actions") || button.closest(".ic-Dashboard-header__layout")))
-        || root.querySelector(".ic-Dashboard-header__actions");
-    if (!row) return null;
-    let before = button || null;
-    while (before && before.parentElement && before.parentElement !== row) before = before.parentElement;
-    if (before && !row.contains(before)) before = null;
-    return { row, before };
+	const root =
+		document.querySelector('.ic-Dashboard-header') ||
+		document.querySelector('#dashboard_header_container') ||
+		document.querySelector('#DashboardHeaderContainer')
+	if (!root) return null
+	const buttons = [...root.querySelectorAll('button')].filter(
+		(button) => !gpaIsOurControl(button),
+	)
+	const labeled = buttons.find((button) =>
+		/dashboard options|more options/i.test(
+			`${button.getAttribute('aria-label') || ''} ${button.getAttribute('title') || ''} ${button.textContent || ''}`,
+		),
+	)
+	const button =
+		labeled ||
+		buttons.reduce((best, candidate) => {
+			if (!best) return candidate
+			return candidate.getBoundingClientRect().right > best.getBoundingClientRect().right
+				? candidate
+				: best
+		}, null)
+	const row =
+		(button &&
+			(button.closest('.ic-Dashboard-header__actions') ||
+				button.closest('.ic-Dashboard-header__layout'))) ||
+		root.querySelector('.ic-Dashboard-header__actions')
+	if (!row) return null
+	let before = button || null
+	while (before && before.parentElement && before.parentElement !== row)
+		before = before.parentElement
+	if (before && !row.contains(before)) before = null
+	return { row, before }
 }
 
 // The dashboard shows one entry point; summary and calculator share a dialog.
 function ensureGpaDialog(card, calculator) {
-    let dialog = document.querySelector(".canvasrefined-gpa-dialog");
-    if (!dialog) {
-        dialog = document.createElement("dialog");
-        dialog.id = "canvasrefined-gpa-dialog";
-        dialog.className = "canvasrefined-gpa-dialog";
-        dialog.setAttribute("aria-labelledby", "canvasrefined-gpa-dialog-title");
-        const header = makeElement("div", dialog, { className: "canvasrefined-gpa-dialog-header" });
-        makeElement("h2", header, { id: "canvasrefined-gpa-dialog-title", textContent: "GPA" });
-        const close = makeElement("button", header, { type: "button", className: "canvasrefined-custom-btn", textContent: "Close" });
-        close.setAttribute("aria-label", "Close GPA");
-        close.addEventListener("click", () => dialog.close());
-        dialog.addEventListener("click", event => {
-            if (event.target !== dialog) return;
-            const rect = dialog.getBoundingClientRect();
-            if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
-        });
-        document.body.appendChild(dialog);
-    }
-    if (card.parentElement !== dialog) dialog.appendChild(card);
-    if (calculator.parentElement !== dialog) dialog.appendChild(calculator);
-    return dialog;
+	let dialog = document.querySelector('.canvasrefined-gpa-dialog')
+	if (!dialog) {
+		dialog = document.createElement('dialog')
+		dialog.id = 'canvasrefined-gpa-dialog'
+		dialog.className = 'canvasrefined-gpa-dialog'
+		dialog.setAttribute('aria-labelledby', 'canvasrefined-gpa-dialog-title')
+		const header = makeElement('div', dialog, {
+			className: 'canvasrefined-gpa-dialog-header',
+		})
+		makeElement('h2', header, {
+			id: 'canvasrefined-gpa-dialog-title',
+			textContent: 'GPA',
+		})
+		const close = makeElement('button', header, {
+			type: 'button',
+			className: 'canvasrefined-custom-btn',
+			textContent: 'Close',
+		})
+		close.setAttribute('aria-label', 'Close GPA')
+		close.addEventListener('click', () => dialog.close())
+		dialog.addEventListener('click', (event) => {
+			if (event.target !== dialog) return
+			const rect = dialog.getBoundingClientRect()
+			if (
+				event.clientX < rect.left ||
+				event.clientX > rect.right ||
+				event.clientY < rect.top ||
+				event.clientY > rect.bottom
+			)
+				dialog.close()
+		})
+		document.body.appendChild(dialog)
+	}
+	if (card.parentElement !== dialog) dialog.appendChild(card)
+	if (calculator.parentElement !== dialog) dialog.appendChild(calculator)
+	return dialog
 }
 
 function placeGpaWidgets(card, calculator) {
-    if (!card || !calculator) return false;
-    const dialog = ensureGpaDialog(card, calculator);
-    const show = options.gpa_calc === true;
-    if ((!show || options.hide_personal_details === true) && dialog.open) dialog.close();
-    let view = document.querySelector(".canvasrefined-gpa-view-btn");
-    if (!view) {
-        view = document.createElement("button");
-        view.type = "button";
-        view.className = "canvasrefined-gpa-view-btn";
-        view.textContent = "View GPA";
-        view.setAttribute("aria-haspopup", "dialog");
-        view.setAttribute("aria-controls", dialog.id);
-        view.addEventListener("click", () => {
-            if (options.gpa_calc === true && options.hide_personal_details !== true && !dialog.open) dialog.showModal();
-        });
-    }
-    const customize = ensureGpaCustomizeButton();
-    view.hidden = !show;
-    customize.style.display = show ? "inline-flex" : "none";
-    const anchor = gpaHeaderAnchor();
-    if (anchor) {
-        const { row, before } = anchor;
-        let mount = row.querySelector(":scope > .canvasrefined-gpa-header-mount");
-        if (!mount) {
-            mount = document.createElement("div");
-            mount.className = "canvasrefined-gpa-header-mount";
-        }
-        const slot = (customize.parentElement === row && customize.nextElementSibling === before) ? customize : before;
-        if (slot && slot !== mount) {
-            if (mount.nextElementSibling !== slot) row.insertBefore(mount, slot);
-            if (before) before.style.order = "2";
-        } else if (!mount.parentElement) {
-            row.appendChild(mount);
-        }
-        mount.style.order = "1";
-        customize.style.order = "1";
-        if (view.parentElement !== mount) mount.appendChild(view);
-        if (customize.parentElement !== row || mount.nextElementSibling !== customize) row.insertBefore(customize, mount.nextSibling);
-        mount.hidden = !show;
-        return true;
-    }
+	if (!card || !calculator) return false
+	const dialog = ensureGpaDialog(card, calculator)
+	const show = options.gpa_calc === true
+	if ((!show || options.hide_personal_details === true) && dialog.open) dialog.close()
+	let view = document.querySelector('.canvasrefined-gpa-view-btn')
+	if (!view) {
+		view = document.createElement('button')
+		view.type = 'button'
+		view.className = 'canvasrefined-gpa-view-btn'
+		view.textContent = 'View GPA'
+		view.setAttribute('aria-haspopup', 'dialog')
+		view.setAttribute('aria-controls', dialog.id)
+		view.addEventListener('click', () => {
+			if (
+				options.gpa_calc === true &&
+				options.hide_personal_details !== true &&
+				!dialog.open
+			)
+				dialog.showModal()
+		})
+	}
+	const customize = ensureGpaCustomizeButton()
+	view.hidden = !show
+	customize.style.display = show ? 'inline-flex' : 'none'
+	const anchor = gpaHeaderAnchor()
+	if (anchor) {
+		const { row, before } = anchor
+		let mount = row.querySelector(':scope > .canvasrefined-gpa-header-mount')
+		if (!mount) {
+			mount = document.createElement('div')
+			mount.className = 'canvasrefined-gpa-header-mount'
+		}
+		const slot =
+			customize.parentElement === row && customize.nextElementSibling === before
+				? customize
+				: before
+		if (slot && slot !== mount) {
+			if (mount.nextElementSibling !== slot) row.insertBefore(mount, slot)
+			if (before) before.style.order = '2'
+		} else if (!mount.parentElement) {
+			row.appendChild(mount)
+		}
+		mount.style.order = '1'
+		customize.style.order = '1'
+		if (view.parentElement !== mount) mount.appendChild(view)
+		if (customize.parentElement !== row || mount.nextElementSibling !== customize)
+			row.insertBefore(customize, mount.nextSibling)
+		mount.hidden = !show
+		return true
+	}
 
-    const dashboardContainer = document.querySelector(".ic-DashboardCard__box__container") || document.querySelector("#DashboardCard_Container");
-    if (!dashboardContainer) return false;
-    customize.style.order = "";
-    if (options.gpa_calc_prepend === true) {
-        if (dashboardContainer.firstElementChild !== view || view.nextElementSibling !== customize) {
-            dashboardContainer.insertBefore(view, dashboardContainer.firstChild);
-            dashboardContainer.insertBefore(customize, view.nextSibling);
-        }
-    } else if (view.nextElementSibling !== customize || dashboardContainer.lastElementChild !== customize) {
-        dashboardContainer.appendChild(view);
-        dashboardContainer.appendChild(customize);
-    }
-    return false;
+	const dashboardContainer =
+		document.querySelector('.ic-DashboardCard__box__container') ||
+		document.querySelector('#DashboardCard_Container')
+	if (!dashboardContainer) return false
+	customize.style.order = ''
+	if (options.gpa_calc_prepend === true) {
+		if (
+			dashboardContainer.firstElementChild !== view ||
+			view.nextElementSibling !== customize
+		) {
+			dashboardContainer.insertBefore(view, dashboardContainer.firstChild)
+			dashboardContainer.insertBefore(customize, view.nextSibling)
+		}
+	} else if (
+		view.nextElementSibling !== customize ||
+		dashboardContainer.lastElementChild !== customize
+	) {
+		dashboardContainer.appendChild(view)
+		dashboardContainer.appendChild(customize)
+	}
+	return false
 }
 
 function setupGPACalc() {
-    if (current_page !== "/" && current_page !== "") return;
-    try {
-        grades?.then(result => {
+	if (current_page !== '/' && current_page !== '') return
+	try {
+		grades
+			?.then((result) => {
+				const sortableContainer = document.querySelector(
+					'.ic-DashboardCard__box__container',
+				)
+				const dashboardContainer =
+					sortableContainer || document.querySelector('#DashboardCard_Container')
+				if (!dashboardContainer) return
 
-            const sortableContainer = document.querySelector(".ic-DashboardCard__box__container");
-            const dashboardContainer = sortableContainer || document.querySelector("#DashboardCard_Container");
-            if (!dashboardContainer) return;
+				let container2 = document.querySelector('.canvasrefined-gpa-card')
+				let container = document.querySelector('.canvasrefined-gpa')
+				const alreadyRendered =
+					container2?.dataset?.canvasrefinedGpaRendered === 'true' &&
+					container?.dataset?.canvasrefinedGpaRendered === 'true'
 
-            let container2 = document.querySelector(".canvasrefined-gpa-card");
-            let container = document.querySelector(".canvasrefined-gpa");
-            const alreadyRendered = container2?.dataset?.canvasrefinedGpaRendered === "true" && container?.dataset?.canvasrefinedGpaRendered === "true";
+				if (!container2) {
+					container2 = document.createElement('div')
+					container2.className = 'canvasrefined-gpa-card'
+				}
+				if (!container) {
+					container = document.createElement('div')
+					container.className = 'canvasrefined-gpa'
+				}
 
-            if (!container2) {
-                container2 = document.createElement("div");
-                container2.className = "canvasrefined-gpa-card";
-            }
-            if (!container) {
-                container = document.createElement("div");
-                container.className = "canvasrefined-gpa";
-            }
+				if (!alreadyRendered) {
+					container2.innerHTML =
+						'<h3 class="canvasrefined-gpa-header">Weighted GPA</h3><p id="canvasrefined-gpa-weighted"></p>'
 
-            if (!alreadyRendered) {
-                container2.innerHTML = '<h3 class="canvasrefined-gpa-header">Weighted GPA</h3><p id="canvasrefined-gpa-weighted"></p>';
+					container.innerHTML =
+						'<h3 class="canvasrefined-gpa-header">GPA Calculator</h3><div class="canvasrefined-gpa-courses-container"><div class="canvasrefined-gpa-courses"></div></div>'
+					createGpaWhatIfControls(container)
 
-                container.innerHTML = '<h3 class="canvasrefined-gpa-header">GPA Calculator</h3><div class="canvasrefined-gpa-courses-container"><div class="canvasrefined-gpa-courses"></div></div>';
-                createGpaWhatIfControls(container);
+					placeGpaWidgets(container2, container)
 
-                placeGpaWidgets(container2, container);
+					let location = document.querySelector('.canvasrefined-gpa-courses')
+					if (!location) return
 
-                let location = document.querySelector(".canvasrefined-gpa-courses");
-                if (!location) return;
+					result.forEach((course) => createGPACalcCourse(location, course))
 
-                result.forEach(course => createGPACalcCourse(location, course));
+					container2.dataset.canvasrefinedGpaRendered = 'true'
+					container.dataset.canvasrefinedGpaRendered = 'true'
+				} else {
+					placeGpaWidgets(container2, container)
+				}
 
-                container2.dataset.canvasrefinedGpaRendered = "true";
-                container.dataset.canvasrefinedGpaRendered = "true";
-            } else {
-                placeGpaWidgets(container2, container);
-            }
+				try {
+					if (
+						sortableContainer &&
+						window.jQuery &&
+						window.jQuery.fn &&
+						window.jQuery.fn.sortable
+					) {
+						window.jQuery(sortableContainer).sortable('refresh')
+					}
+				} catch (e) {}
 
-            try {
-                if (sortableContainer && window.jQuery && window.jQuery.fn && window.jQuery.fn.sortable) {
-                    window.jQuery(sortableContainer).sortable('refresh');
-                }
-            } catch (e) {}
-
-            refreshGpaWhatIfMode();
-        }).catch(e => logError(e));
-    } catch (e) {
-        logError(e);
-    }
+				refreshGpaWhatIfMode()
+			})
+			.catch((e) => logError(e))
+	} catch (e) {
+		logError(e)
+	}
 }
 
 /*
@@ -5469,63 +6530,98 @@ Smaller features
 // Debounced wrapper around applyAestheticChanges for card-style options that
 // can fire many storage onChanged events in quick succession (number inputs).
 // See the "cardPadding"/"imageSize"/etc. cases in applyOptionsChanges.
-let aestheticDebounceTimer = null;
+let aestheticDebounceTimer = null
 function debouncedApplyAestheticChanges(delay = 150) {
-    if (aestheticDebounceTimer) clearTimeout(aestheticDebounceTimer);
-    aestheticDebounceTimer = setTimeout(() => {
-        aestheticDebounceTimer = null;
-        applyAestheticChanges();
-    }, delay);
+	if (aestheticDebounceTimer) clearTimeout(aestheticDebounceTimer)
+	aestheticDebounceTimer = setTimeout(() => {
+		aestheticDebounceTimer = null
+		applyAestheticChanges()
+	}, delay)
 }
 
 function applyAestheticChanges() {
-    // Quiz safe mode: don't inject custom layout/aesthetic CSS on quiz pages.
-    if (quizSafeModeActive()) return;
-    let style = document.querySelector("#canvasrefined-aesthetics") || document.createElement('style');
-    style.id = "canvasrefined-aesthetics";
-    style.textContent = "";
-    if (options.condensed_cards === true) style.textContent += ".ic-DashboardCard__header_hero {height:60px!important}.ic-DashboardCard__header-subtitle, .ic-DashboardCard__header-term{display:none}";
-    const nicknameSize = options.course_nickname_font_size ?? (options.emphasize_course_name === true ? "medium" : "small");
-    const courseIdSize = options.course_id_font_size ?? (options.emphasize_course_name === true ? "small" : "medium");
-    if (nicknameSize !== "small" || courseIdSize !== "medium") {
-        // The sheet is cleared above, so measure Canvas's native sizes. Extend
-        // the Small-to-Medium difference equally for Large and Extra Large.
-        const sizes = { small: ".875rem", medium: "1.25rem", large: "1.625rem", extra_large: "2rem" };
-        const title = document.querySelector(".ic-DashboardCard__header-title");
-        const subtitle = document.querySelector(".ic-DashboardCard__header-subtitle");
-        if (title && subtitle) {
-            const small = parseFloat(getComputedStyle(title.querySelector("span") || title).fontSize);
-            const medium = parseFloat(getComputedStyle(subtitle).fontSize);
-            if (Number.isFinite(small) && small > 0 && Number.isFinite(medium) && medium > small) {
-                Object.keys(sizes).forEach((key, index) => {
-                    sizes[key] = `${small + (medium - small) * index}px`;
-                });
-            }
-        }
-        style.textContent += `.ic-DashboardCard .ic-DashboardCard__header-title, .ic-DashboardCard .ic-DashboardCard__header-title span{font-size:${sizes[nicknameSize] || sizes.small}!important}.ic-DashboardCard .ic-DashboardCard__header-subtitle{font-size:${sizes[courseIdSize] || sizes.medium}!important}`;
-    }
-    if (options.remlogo === true) style.textContent += ".ic-app-header__logomark-container{display:none}";
-    if (options.disable_color_overlay === true) style.textContent += ".ic-DashboardCard__header_hero{opacity: 0!important} .ic-DashboardCard__header-button-bg{opacity: 1!important}";
-    if (options.full_width === true) style.textContent += "#wrapper,.ic-Layout-wrapper{max-width:100%!important}";
-    if (options.center_cards === true) style.textContent += ".ic-DashboardCard__box__container{display:flex!important;flex-wrap:wrap!important;justify-content:center!important;align-items:flex-start!important}";
-    if (options.imageSize !== undefined && options.imageSize !== 100) style.textContent += `.ic-DashboardCard__header_image {transform: scale(${options.imageSize / 100})!important; }`;
-    // Fall back to the old format until the install/update migration has run.
-    const cardMargin = options.cardMargin ?? (options.cardSpacing === undefined || options.cardSpacing === 0 ? 36 : Number(options.cardSpacing) / 2);
-    if (Number.isFinite(Number(cardMargin)) && Number(cardMargin) >= 0 && Number(cardMargin) !== 36) {
-        style.textContent += `.ic-DashboardCard {margin-right: ${Number(cardMargin)}px!important; margin-bottom: ${Number(cardMargin)}px!important;}`;
-    }
-    if (options.cardWidth !== undefined && options.cardWidth !== 262) style.textContent += `.ic-DashboardCard {width: ${options.cardWidth}px!important;}`;
-    // Inner card padding. Applied to the whole .ic-DashboardCard box so the
-    // hero header, title, and action buttons all get breathing room from the
-    // card's edges. Canvas sizes the card with border-box + a fixed width,
-    // so padding alone squishes the content area (narrower image/rows)
-    // instead of expanding the card — switch to content-box so the padding
-    // grows the card outward and the content keeps its full width.
-    // Guarded by > 0 (default).
-    if (options.cardPadding !== undefined && Number(options.cardPadding) > 0) {
-        style.textContent += `.ic-DashboardCard {padding: ${options.cardPadding}px!important; box-sizing: content-box!important;}`;
-    }
-    document.documentElement.appendChild(style);
+	// Quiz safe mode: don't inject custom layout/aesthetic CSS on quiz pages.
+	if (quizSafeModeActive()) return
+	let style =
+		document.querySelector('#canvasrefined-aesthetics') || document.createElement('style')
+	style.id = 'canvasrefined-aesthetics'
+	style.textContent = ''
+	if (options.condensed_cards === true)
+		style.textContent +=
+			'.ic-DashboardCard__header_hero {height:60px!important}.ic-DashboardCard__header-subtitle, .ic-DashboardCard__header-term{display:none}'
+	const nicknameSize =
+		options.course_nickname_font_size ??
+		(options.emphasize_course_name === true ? 'medium' : 'small')
+	const courseIdSize =
+		options.course_id_font_size ??
+		(options.emphasize_course_name === true ? 'small' : 'medium')
+	if (nicknameSize !== 'small' || courseIdSize !== 'medium') {
+		// The sheet is cleared above, so measure Canvas's native sizes. Extend
+		// the Small-to-Medium difference equally for Large and Extra Large.
+		const sizes = {
+			small: '.875rem',
+			medium: '1.25rem',
+			large: '1.625rem',
+			extra_large: '2rem',
+		}
+		const title = document.querySelector('.ic-DashboardCard__header-title')
+		const subtitle = document.querySelector('.ic-DashboardCard__header-subtitle')
+		if (title && subtitle) {
+			const small = parseFloat(
+				getComputedStyle(title.querySelector('span') || title).fontSize,
+			)
+			const medium = parseFloat(getComputedStyle(subtitle).fontSize)
+			if (
+				Number.isFinite(small) &&
+				small > 0 &&
+				Number.isFinite(medium) &&
+				medium > small
+			) {
+				Object.keys(sizes).forEach((key, index) => {
+					sizes[key] = `${small + (medium - small) * index}px`
+				})
+			}
+		}
+		style.textContent += `.ic-DashboardCard .ic-DashboardCard__header-title, .ic-DashboardCard .ic-DashboardCard__header-title span{font-size:${sizes[nicknameSize] || sizes.small}!important}.ic-DashboardCard .ic-DashboardCard__header-subtitle{font-size:${sizes[courseIdSize] || sizes.medium}!important}`
+	}
+	if (options.remlogo === true)
+		style.textContent += '.ic-app-header__logomark-container{display:none}'
+	if (options.disable_color_overlay === true)
+		style.textContent +=
+			'.ic-DashboardCard__header_hero{opacity: 0!important} .ic-DashboardCard__header-button-bg{opacity: 1!important}'
+	if (options.full_width === true)
+		style.textContent += '#wrapper,.ic-Layout-wrapper{max-width:100%!important}'
+	if (options.center_cards === true)
+		style.textContent +=
+			'.ic-DashboardCard__box__container{display:flex!important;flex-wrap:wrap!important;justify-content:center!important;align-items:flex-start!important}'
+	if (options.imageSize !== undefined && options.imageSize !== 100)
+		style.textContent += `.ic-DashboardCard__header_image {transform: scale(${options.imageSize / 100})!important; }`
+	// Fall back to the old format until the install/update migration has run.
+	const cardMargin =
+		options.cardMargin ??
+		(options.cardSpacing === undefined || options.cardSpacing === 0
+			? 36
+			: Number(options.cardSpacing) / 2)
+	if (
+		Number.isFinite(Number(cardMargin)) &&
+		Number(cardMargin) >= 0 &&
+		Number(cardMargin) !== 36
+	) {
+		style.textContent += `.ic-DashboardCard {margin-right: ${Number(cardMargin)}px!important; margin-bottom: ${Number(cardMargin)}px!important;}`
+	}
+	if (options.cardWidth !== undefined && options.cardWidth !== 262)
+		style.textContent += `.ic-DashboardCard {width: ${options.cardWidth}px!important;}`
+	// Inner card padding. Applied to the whole .ic-DashboardCard box so the
+	// hero header, title, and action buttons all get breathing room from the
+	// card's edges. Canvas sizes the card with border-box + a fixed width,
+	// so padding alone squishes the content area (narrower image/rows)
+	// instead of expanding the card — switch to content-box so the padding
+	// grows the card outward and the content keeps its full width.
+	// Guarded by > 0 (default).
+	if (options.cardPadding !== undefined && Number(options.cardPadding) > 0) {
+		style.textContent += `.ic-DashboardCard {padding: ${options.cardPadding}px!important; box-sizing: content-box!important;}`
+	}
+	document.documentElement.appendChild(style)
 }
 
 /*
@@ -5534,83 +6630,92 @@ Shows an info box explaining the extension hasn't been approved by all teachers,
 with a toggle for Quiz Safe Mode and a "Don't show again" button.
 */
 function setupQuizSafeModeBanner() {
-    if (!isQuizPreTakePage()) return;
-    if (document.getElementById("canvasrefined-quiz-safe-banner")) return;
+	if (!isQuizPreTakePage()) return
+	if (document.getElementById('canvasrefined-quiz-safe-banner')) return
 
-    chrome.storage.local.get("quiz_safe_mode_reminder_dismissed", local => {
-        if (local && local.quiz_safe_mode_reminder_dismissed === true) return;
-        chrome.storage.sync.get("quiz_safe_mode", sync => {
-            const safeModeOn = sync && sync.quiz_safe_mode === true;
-            injectQuizSafeModeBanner(safeModeOn);
-        });
-    });
+	chrome.storage.local.get('quiz_safe_mode_reminder_dismissed', (local) => {
+		if (local && local.quiz_safe_mode_reminder_dismissed === true) return
+		chrome.storage.sync.get('quiz_safe_mode', (sync) => {
+			const safeModeOn = sync && sync.quiz_safe_mode === true
+			injectQuizSafeModeBanner(safeModeOn)
+		})
+	})
 }
 
 function injectQuizSafeModeBanner(safeModeOn) {
-    // Only inject into a real Canvas content container — never <body>, which
-    // would place the banner outside the content area if it renders too early.
-    const findContainer = () =>
-        document.querySelector(".ic-Layout-contentMain") ||
-        document.querySelector("#content") ||
-        document.querySelector("#main");
+	// Only inject into a real Canvas content container — never <body>, which
+	// would place the banner outside the content area if it renders too early.
+	const findContainer = () =>
+		document.querySelector('.ic-Layout-contentMain') ||
+		document.querySelector('#content') ||
+		document.querySelector('#main')
 
-    const insertInto = (container) => {
-        if (!container) return false;
-        if (document.getElementById("canvasrefined-quiz-safe-banner")) return true;
+	const insertInto = (container) => {
+		if (!container) return false
+		if (document.getElementById('canvasrefined-quiz-safe-banner')) return true
 
-        const banner = makeElement("div", container, {
-            id: "canvasrefined-quiz-safe-banner",
-            className: "canvasrefined-quiz-safe-banner",
-        }, true);
+		const banner = makeElement(
+			'div',
+			container,
+			{
+				id: 'canvasrefined-quiz-safe-banner',
+				className: 'canvasrefined-quiz-safe-banner',
+			},
+			true,
+		)
 
-        makeElement("div", banner, {
-            className: "canvasrefined-quiz-safe-title",
-            textContent: "Canvas Enhanced — Quiz Safe Mode",
-        });
+		makeElement('div', banner, {
+			className: 'canvasrefined-quiz-safe-title',
+			textContent: 'Canvas Enhanced — Quiz Safe Mode',
+		})
 
-        makeElement("p", banner, {
-            className: "canvasrefined-quiz-safe-info",
-            textContent: "This extension hasn't been 100% approved by all teachers. Quiz Safe Mode turns off most Canvas Enhanced features that could interfere with this quiz page, giving you the default Canvas quiz experience.",
-        });
+		makeElement('p', banner, {
+			className: 'canvasrefined-quiz-safe-info',
+			textContent:
+				"This extension hasn't been 100% approved by all teachers. Quiz Safe Mode turns off most Canvas Enhanced features that could interfere with this quiz page, giving you the default Canvas quiz experience.",
+		})
 
-        const toggleRow = makeElement("div", banner, { className: "canvasrefined-quiz-safe-row" });
-        const toggleWrap = makeElement("label", toggleRow, { className: "canvasrefined-quiz-safe-toggle" });
-        const checkbox = makeElement("input", toggleWrap, { type: "checkbox" });
-        checkbox.checked = !!safeModeOn;
-        checkbox.addEventListener("change", () => {
-            chrome.storage.sync.set({ quiz_safe_mode: checkbox.checked });
-            // The storage.onChanged listener (applyOptionsChanges) reloads quiz pages.
-        });
-        makeElement("span", toggleWrap, {
-            className: "canvasrefined-quiz-safe-toggle-label",
-            textContent: "Enable Quiz Safe Mode",
-        });
+		const toggleRow = makeElement('div', banner, {
+			className: 'canvasrefined-quiz-safe-row',
+		})
+		const toggleWrap = makeElement('label', toggleRow, {
+			className: 'canvasrefined-quiz-safe-toggle',
+		})
+		const checkbox = makeElement('input', toggleWrap, { type: 'checkbox' })
+		checkbox.checked = !!safeModeOn
+		checkbox.addEventListener('change', () => {
+			chrome.storage.sync.set({ quiz_safe_mode: checkbox.checked })
+			// The storage.onChanged listener (applyOptionsChanges) reloads quiz pages.
+		})
+		makeElement('span', toggleWrap, {
+			className: 'canvasrefined-quiz-safe-toggle-label',
+			textContent: 'Enable Quiz Safe Mode',
+		})
 
-        const dismissBtn = makeElement("button", toggleRow, {
-            className: "canvasrefined-quiz-safe-dismiss",
- type: "button",
-            textContent: "Don't show again",
-            title: "Hides this reminder permanently. You can still toggle Quiz Safe Mode in the extension settings page.",
-        });
-        dismissBtn.addEventListener("click", () => {
-            chrome.storage.local.set({ quiz_safe_mode_reminder_dismissed: true });
-            banner.remove();
-        });
+		const dismissBtn = makeElement('button', toggleRow, {
+			className: 'canvasrefined-quiz-safe-dismiss',
+			type: 'button',
+			textContent: "Don't show again",
+			title:
+				'Hides this reminder permanently. You can still toggle Quiz Safe Mode in the extension settings page.',
+		})
+		dismissBtn.addEventListener('click', () => {
+			chrome.storage.local.set({ quiz_safe_mode_reminder_dismissed: true })
+			banner.remove()
+		})
 
-        return true;
-    };
+		return true
+	}
 
-    if (insertInto(findContainer())) return;
+	if (insertInto(findContainer())) return
 
-    // Content container not ready yet; wait for it (never fall back to <body>).
-    const obs = new MutationObserver(() => {
-        if (insertInto(findContainer())) obs.disconnect();
-    });
-    obs.observe(document.documentElement, { childList: true, subtree: true });
-    setTimeout(() => obs.disconnect(), 15000);
+	// Content container not ready yet; wait for it (never fall back to <body>).
+	const obs = new MutationObserver(() => {
+		if (insertInto(findContainer())) obs.disconnect()
+	})
+	obs.observe(document.documentElement, { childList: true, subtree: true })
+	setTimeout(() => obs.disconnect(), 15000)
 }
-
-
 
 // =============================================================================
 // Global Canvas Search
@@ -5619,113 +6724,122 @@ function injectQuizSafeModeBanner(safeModeOn) {
 // global navigation.
 // =============================================================================
 
-let globalSearchIndex = null;            // [{type,title,course,courseId,url}]
-let globalSearchIndexPromise = null;     // in-flight build so concurrent opens share one fetch
-let globalSearchIndexAt = 0;             // ms timestamp of last successful build
-const GLOBAL_SEARCH_INDEX_TTL = 10 * 60 * 1000; // 10 minutes
-const GLOBAL_SEARCH_STORAGE_KEY = "canvasrefined_global_search_index";
+let globalSearchIndex = null // [{type,title,course,courseId,url}]
+let globalSearchIndexPromise = null // in-flight build so concurrent opens share one fetch
+let globalSearchIndexAt = 0 // ms timestamp of last successful build
+const GLOBAL_SEARCH_INDEX_TTL = 10 * 60 * 1000 // 10 minutes
+const GLOBAL_SEARCH_STORAGE_KEY = 'canvasrefined_global_search_index'
 
 function setupGlobalSearch() {
-    // Rebuild the index fresh on every page load so newly-concluded/hidden
-    // courses never linger from a previous session's cache.
-    invalidateGlobalSearchIndex();
-    ensureGlobalSearchButton();
+	// Rebuild the index fresh on every page load so newly-concluded/hidden
+	// courses never linger from a previous session's cache.
+	invalidateGlobalSearchIndex()
+	ensureGlobalSearchButton()
 }
 
 // Search icon used by the sidebar trigger.
-const GLOBAL_SEARCH_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle cx="11" cy="11" r="7" stroke="var(--bcsidebar-text)" stroke-width="2" fill="none"/><path d="m20 20-3.2-3.2" stroke="var(--bcsidebar-text)" stroke-width="2" stroke-linecap="round"/></g></svg>`;
+const GLOBAL_SEARCH_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle cx="11" cy="11" r="7" stroke="var(--bcsidebar-text)" stroke-width="2" fill="none"/><path d="m20 20-3.2-3.2" stroke="var(--bcsidebar-text)" stroke-width="2" stroke-linecap="round"/></g></svg>`
 
 // Placement: a search trigger is injected into Canvas' native global nav
 // and, on the dashboard, into the header actions row.
 // There is no floating button. A rAF-debounced MutationObserver re-evaluates
 // placement as Canvas renders/SPA-navigates/rebuilds the sidebar.
-let _gsPlacementObserver = null;
-let _gsPlacementScheduled = false;
+let _gsPlacementObserver = null
+let _gsPlacementScheduled = false
 function ensureGlobalSearchButton() {
-    placeGlobalSearchTrigger();
-    if (_gsPlacementObserver) return;
-    _gsPlacementObserver = new MutationObserver(() => {
-        if (_gsPlacementScheduled) return;
-        _gsPlacementScheduled = true;
-        requestAnimationFrame(() => {
-            _gsPlacementScheduled = false;
-            placeGlobalSearchTrigger();
-        });
-    });
-    _gsPlacementObserver.observe(document.documentElement, { childList: true, subtree: true });
+	placeGlobalSearchTrigger()
+	if (_gsPlacementObserver) return
+	_gsPlacementObserver = new MutationObserver(() => {
+		if (_gsPlacementScheduled) return
+		_gsPlacementScheduled = true
+		requestAnimationFrame(() => {
+			_gsPlacementScheduled = false
+			placeGlobalSearchTrigger()
+		})
+	})
+	_gsPlacementObserver.observe(document.documentElement, {
+		childList: true,
+		subtree: true,
+	})
 }
 
 function placeGlobalSearchTrigger() {
-    // Native global nav (the slim icon bar) — always present, so always add.
-    ensureGlobalSearchNativeSidebarButton();
+	// Native global nav (the slim icon bar) — always present, so always add.
+	ensureGlobalSearchNativeSidebarButton()
 
-    // Dashboard header button (in addition to the sidebar triggers).
-    const anchor = gpaHeaderAnchor();
-    if (isDashboardPage() && anchor) {
-        ensureGlobalSearchHeaderButton(anchor.row, anchor.before);
-    } else {
-        document.getElementById("canvasrefined-global-search-header-btn")?.remove();
-    }
+	// Dashboard header button (in addition to the sidebar triggers).
+	const anchor = gpaHeaderAnchor()
+	if (isDashboardPage() && anchor) {
+		ensureGlobalSearchHeaderButton(anchor.row, anchor.before)
+	} else {
+		document.getElementById('canvasrefined-global-search-header-btn')?.remove()
+	}
 }
 
 // --- Native global-nav trigger ----------------------------------------------
 
 function ensureGlobalSearchNativeSidebarButton() {
-    const navMenu = document.getElementById("menu");
-    if (!navMenu) return;
-    if (navMenu.querySelector("#canvasrefined-gs-nav-item")) return;
-    const li = document.createElement("li");
-    li.id = "canvasrefined-gs-nav-item";
-    li.className = "ic-app-header__menu-list-item canvasrefined-gs-nav-item";
-    const link = document.createElement("a");
-    link.className = "ic-app-header__menu-list-link";
-    link.href = "#";
-    link.setAttribute("role", "button");
-    link.title = "Search Canvas";
-    link.setAttribute("aria-label", "Search Canvas");
-    link.innerHTML = `<span class="menu-item-icon-container" aria-hidden="true">${GLOBAL_SEARCH_ICON_SVG}</span><span class="menu-item__text">Search</span>`;
-    link.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); openGlobalSearchModal(); });
-    li.appendChild(link);
-    // Append so the search item appears at the bottom of the global nav.
-    navMenu.appendChild(li);
+	const navMenu = document.getElementById('menu')
+	if (!navMenu) return
+	if (navMenu.querySelector('#canvasrefined-gs-nav-item')) return
+	const li = document.createElement('li')
+	li.id = 'canvasrefined-gs-nav-item'
+	li.className = 'ic-app-header__menu-list-item canvasrefined-gs-nav-item'
+	const link = document.createElement('a')
+	link.className = 'ic-app-header__menu-list-link'
+	link.href = '#'
+	link.setAttribute('role', 'button')
+	link.title = 'Search Canvas'
+	link.setAttribute('aria-label', 'Search Canvas')
+	link.innerHTML = `<span class="menu-item-icon-container" aria-hidden="true">${GLOBAL_SEARCH_ICON_SVG}</span><span class="menu-item__text">Search</span>`
+	link.addEventListener('click', (e) => {
+		e.preventDefault()
+		e.stopPropagation()
+		openGlobalSearchModal()
+	})
+	li.appendChild(link)
+	// Append so the search item appears at the bottom of the global nav.
+	navMenu.appendChild(li)
 }
 
 // --- Dashboard header trigger -----------------------------------------------
 
 function ensureGlobalSearchHeaderButton(headerActions, before) {
-    let btn = document.getElementById("canvasrefined-global-search-header-btn");
-    if (!btn) {
-        btn = document.createElement("button");
-        btn.id = "canvasrefined-global-search-header-btn";
-        btn.type = "button";
-        btn.className = "canvasrefined-gs-header-btn";
-        btn.title = "Search Canvas";
-        btn.setAttribute("aria-label", "Search Canvas");
-        btn.setAttribute("aria-haspopup", "dialog");
-        btn.setAttribute("aria-controls", "canvasrefined-global-search-modal");
-        btn.textContent = "Search";
-        btn.addEventListener("click", openGlobalSearchModal);
-    }
-    // Keep Search directly before View GPA, including after Canvas rebuilds
-    // the header or GPA finishes loading asynchronously.
-    const slot = headerActions.querySelector(":scope > .canvasrefined-gpa-header-mount")
-        || headerActions.querySelector(":scope > .canvasrefined-gpa-customize-btn")
-        || before || null;
-    btn.style.order = "1";
-    if (btn.parentElement !== headerActions || btn.nextSibling !== slot) {
-        headerActions.insertBefore(btn, slot);
-    }
+	let btn = document.getElementById('canvasrefined-global-search-header-btn')
+	if (!btn) {
+		btn = document.createElement('button')
+		btn.id = 'canvasrefined-global-search-header-btn'
+		btn.type = 'button'
+		btn.className = 'canvasrefined-gs-header-btn'
+		btn.title = 'Search Canvas'
+		btn.setAttribute('aria-label', 'Search Canvas')
+		btn.setAttribute('aria-haspopup', 'dialog')
+		btn.setAttribute('aria-controls', 'canvasrefined-global-search-modal')
+		btn.textContent = 'Search'
+		btn.addEventListener('click', openGlobalSearchModal)
+	}
+	// Keep Search directly before View GPA, including after Canvas rebuilds
+	// the header or GPA finishes loading asynchronously.
+	const slot =
+		headerActions.querySelector(':scope > .canvasrefined-gpa-header-mount') ||
+		headerActions.querySelector(':scope > .canvasrefined-gpa-customize-btn') ||
+		before ||
+		null
+	btn.style.order = '1'
+	if (btn.parentElement !== headerActions || btn.nextSibling !== slot) {
+		headerActions.insertBefore(btn, slot)
+	}
 }
 
 function openGlobalSearchModal() {
-    if (options.hide_personal_details === true) return;
-    if (document.getElementById("canvasrefined-global-search-modal")) return;
+	if (options.hide_personal_details === true) return
+	if (document.getElementById('canvasrefined-global-search-modal')) return
 
-    const modal = document.createElement("div");
-    modal.id = "canvasrefined-global-search-modal";
-    modal.className = "canvasrefined-gs-modal";
-    modal.dataset.open = "true";
-    modal.innerHTML = `
+	const modal = document.createElement('div')
+	modal.id = 'canvasrefined-global-search-modal'
+	modal.className = 'canvasrefined-gs-modal'
+	modal.dataset.open = 'true'
+	modal.innerHTML = `
         <div class="canvasrefined-gs-card" role="dialog" aria-modal="true" aria-label="Search Canvas">
             <div class="canvasrefined-gs-input-row">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="canvasrefined-gs-input-icon"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -5738,78 +6852,91 @@ function openGlobalSearchModal() {
                 <span><kbd>Enter</kbd> open</span>
                 <span><kbd>Esc</kbd> close</span>
             </div>
-        </div>`;
-    document.body.appendChild(modal);
+        </div>`
+	document.body.appendChild(modal)
 
-    const input = modal.querySelector("#canvasrefined-gs-input");
-    const resultsEl = modal.querySelector("#canvasrefined-gs-results");
-    const closeBtn = modal.querySelector("#canvasrefined-gs-close");
-    let selected = -1;
-    let currentResults = [];
+	const input = modal.querySelector('#canvasrefined-gs-input')
+	const resultsEl = modal.querySelector('#canvasrefined-gs-results')
+	const closeBtn = modal.querySelector('#canvasrefined-gs-close')
+	let selected = -1
+	let currentResults = []
 
-    closeBtn.addEventListener("click", closeGlobalSearchModal);
-    modal.addEventListener("mousedown", (e) => { if (e.target === modal) closeGlobalSearchModal(); });
+	closeBtn.addEventListener('click', closeGlobalSearchModal)
+	modal.addEventListener('mousedown', (e) => {
+		if (e.target === modal) closeGlobalSearchModal()
+	})
 
-    // Keep standard keyboard navigation within the search dialog.
-    modal.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeGlobalSearchModal(); return; }
-        if (e.key === "ArrowDown") {
-            e.preventDefault();
-            selected = Math.min(selected + 1, currentResults.length - 1);
-            renderGlobalSearchSelection(resultsEl, selected);
-        } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            selected = Math.max(selected - 1, 0);
-            renderGlobalSearchSelection(resultsEl, selected);
-        } else if (e.key === "Enter") {
-            e.preventDefault();
-            const item = currentResults[selected];
-            if (item) openGlobalSearchResult(item, false);
-        }
-    });
-    let debounce = null;
-    input.addEventListener("input", () => {
-        clearTimeout(debounce);
-        debounce = setTimeout(() => runGlobalSearch(input.value.trim(), resultsEl).then(res => {
-            currentResults = res;
-            selected = res.length ? 0 : -1;
-            renderGlobalSearchSelection(resultsEl, selected);
-        }), 120);
-    });
+	// Keep standard keyboard navigation within the search dialog.
+	modal.addEventListener('keydown', (e) => {
+		if (e.key === 'Escape') {
+			e.preventDefault()
+			e.stopPropagation()
+			closeGlobalSearchModal()
+			return
+		}
+		if (e.key === 'ArrowDown') {
+			e.preventDefault()
+			selected = Math.min(selected + 1, currentResults.length - 1)
+			renderGlobalSearchSelection(resultsEl, selected)
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault()
+			selected = Math.max(selected - 1, 0)
+			renderGlobalSearchSelection(resultsEl, selected)
+		} else if (e.key === 'Enter') {
+			e.preventDefault()
+			const item = currentResults[selected]
+			if (item) openGlobalSearchResult(item, false)
+		}
+	})
+	let debounce = null
+	input.addEventListener('input', () => {
+		clearTimeout(debounce)
+		debounce = setTimeout(
+			() =>
+				runGlobalSearch(input.value.trim(), resultsEl).then((res) => {
+					currentResults = res
+					selected = res.length ? 0 : -1
+					renderGlobalSearchSelection(resultsEl, selected)
+				}),
+			120,
+		)
+	})
 
-    requestAnimationFrame(() => input.focus());
-    // Kick off indexing immediately so the first keystroke is fast.
-    ensureGlobalSearchIndex();
-    // Render an initial hint.
-    resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">Start typing to search your modules and assignments. Use @coursename to search a specific course, or @grades to open a course's grades page.</div>`;
+	requestAnimationFrame(() => input.focus())
+	// Kick off indexing immediately so the first keystroke is fast.
+	ensureGlobalSearchIndex()
+	// Render an initial hint.
+	resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">Start typing to search your modules and assignments. Use @coursename to search a specific course, or @grades to open a course's grades page.</div>`
 }
 
 function closeGlobalSearchModal() {
-    const modal = document.getElementById("canvasrefined-global-search-modal");
-    if (!modal) return;
-    modal.remove();
+	const modal = document.getElementById('canvasrefined-global-search-modal')
+	if (!modal) return
+	modal.remove()
 }
 
 function openGlobalSearchResult(item, newTab) {
-    if (!item || !item.url) return;
-    if (newTab) {
-        // Opening in a new tab keeps the search menu open so the user can keep
-        // searching. Refocus the input for the next keystroke.
-        window.open(item.url, "_blank", "noopener");
-        const input = document.getElementById("canvasrefined-gs-input");
-        if (input) input.focus();
-    } else {
-        closeGlobalSearchModal();
-        window.location.href = item.url;
-    }
+	if (!item || !item.url) return
+	if (newTab) {
+		// Opening in a new tab keeps the search menu open so the user can keep
+		// searching. Refocus the input for the next keystroke.
+		window.open(item.url, '_blank', 'noopener')
+		const input = document.getElementById('canvasrefined-gs-input')
+		if (input) input.focus()
+	} else {
+		closeGlobalSearchModal()
+		window.location.href = item.url
+	}
 }
 
 function renderGlobalSearchSelection(resultsEl, selected) {
-    const rows = resultsEl.querySelectorAll(".canvasrefined-gs-row");
-    rows.forEach((row, i) => {
-        if (i === selected) { row.classList.add("canvasrefined-gs-selected"); row.scrollIntoView({ block: "nearest" }); }
-        else row.classList.remove("canvasrefined-gs-selected");
-    });
+	const rows = resultsEl.querySelectorAll('.canvasrefined-gs-row')
+	rows.forEach((row, i) => {
+		if (i === selected) {
+			row.classList.add('canvasrefined-gs-selected')
+			row.scrollIntoView({ block: 'nearest' })
+		} else row.classList.remove('canvasrefined-gs-selected')
+	})
 }
 
 // --- Indexing ---------------------------------------------------------------
@@ -5817,232 +6944,262 @@ function renderGlobalSearchSelection(resultsEl, selected) {
 // Drop any cached index so the next access rebuilds it from the API. Called
 // at setup time so every page load starts fresh.
 function invalidateGlobalSearchIndex() {
-    globalSearchIndex = null;
-    globalSearchIndexAt = 0;
-    globalSearchIndexPromise = null;
-    try { chrome.storage.local.remove(GLOBAL_SEARCH_STORAGE_KEY); } catch (_) { /* ignore */ }
+	globalSearchIndex = null
+	globalSearchIndexAt = 0
+	globalSearchIndexPromise = null
+	try {
+		chrome.storage.local.remove(GLOBAL_SEARCH_STORAGE_KEY)
+	} catch (_) {
+		/* ignore */
+	}
 }
 
 async function ensureGlobalSearchIndex() {
-    // A per-session in-memory build is shared across opens so we don't refetch
-    // on every keystroke, but we never serve a persisted cache across reloads.
-    if (globalSearchIndex && (Date.now() - globalSearchIndexAt) < GLOBAL_SEARCH_INDEX_TTL) {
-        return globalSearchIndex;
-    }
-    if (globalSearchIndexPromise) return globalSearchIndexPromise;
+	// A per-session in-memory build is shared across opens so we don't refetch
+	// on every keystroke, but we never serve a persisted cache across reloads.
+	if (globalSearchIndex && Date.now() - globalSearchIndexAt < GLOBAL_SEARCH_INDEX_TTL) {
+		return globalSearchIndex
+	}
+	if (globalSearchIndexPromise) return globalSearchIndexPromise
 
-    globalSearchIndexPromise = (async () => {
-        const index = await buildGlobalSearchIndex();
-        globalSearchIndex = index;
-        globalSearchIndexAt = Date.now();
-        return index;
-    })();
+	globalSearchIndexPromise = (async () => {
+		const index = await buildGlobalSearchIndex()
+		globalSearchIndex = index
+		globalSearchIndexAt = Date.now()
+		return index
+	})()
 
-    try {
-        return await globalSearchIndexPromise;
-    } finally {
-        globalSearchIndexPromise = null;
-    }
+	try {
+		return await globalSearchIndexPromise
+	} finally {
+		globalSearchIndexPromise = null
+	}
 }
 
 async function buildGlobalSearchIndex() {
-    let courses = [];
-    try {
-        // enrollment_state=active excludes concluded/inactive enrollments at the
-        // source so we never index (or waste requests on) past-term courses.
-        courses = await getData(`${domain}/api/v1/courses?enrollment_state=active&per_page=100`);
-    } catch (e) {
-        console.warn("[CanvasRefined] global search: failed to load courses", e);
-        return [];
-    }
-    if (!Array.isArray(courses) || !courses.length) return [];
+	let courses = []
+	try {
+		// enrollment_state=active excludes concluded/inactive enrollments at the
+		// source so we never index (or waste requests on) past-term courses.
+		courses = await getData(
+			`${domain}/api/v1/courses?enrollment_state=active&per_page=100`,
+		)
+	} catch (e) {
+		console.warn('[CanvasRefined] global search: failed to load courses', e)
+		return []
+	}
+	if (!Array.isArray(courses) || !courses.length) return []
 
-    // Skip inactive/concluded/hidden courses. `enrollment_state=active`
-    // already filters at the source, but some institutions return past-term
-    // courses as "active", so we double-check here:
-    //   - access_restricted_by_date (locked courses)
-    //   - concluded === true (Canvas marks concluded courses)
-    //   - term end_date in the past (when the API exposes it)
-    //   - courses the user hid from their dashboard (custom_cards.hidden)
-    const now = Date.now();
-    courses = courses.filter(c => {
-        if (!c || !c.name) return false;
-        if (c.access_restricted_by_date === true) return false;
-        if (c.concluded === true) return false;
-        // term end date check (API may return term.end_at)
-        const endAt = c?.term?.end_at || c?.end_at;
-        if (endAt) {
-            const end = new Date(endAt).getTime();
-            if (!isNaN(end) && end < now) return false;
-        }
-        if (isCourseHidden(c.id)) return false;
-        return true;
-    });
-    // Cap to keep request volume sane.
-    courses = courses.slice(0, 60);
+	// Skip inactive/concluded/hidden courses. `enrollment_state=active`
+	// already filters at the source, but some institutions return past-term
+	// courses as "active", so we double-check here:
+	//   - access_restricted_by_date (locked courses)
+	//   - concluded === true (Canvas marks concluded courses)
+	//   - term end_date in the past (when the API exposes it)
+	//   - courses the user hid from their dashboard (custom_cards.hidden)
+	const now = Date.now()
+	courses = courses.filter((c) => {
+		if (!c || !c.name) return false
+		if (c.access_restricted_by_date === true) return false
+		if (c.concluded === true) return false
+		// term end date check (API may return term.end_at)
+		const endAt = c?.term?.end_at || c?.end_at
+		if (endAt) {
+			const end = new Date(endAt).getTime()
+			if (!isNaN(end) && end < now) return false
+		}
+		if (isCourseHidden(c.id)) return false
+		return true
+	})
+	// Cap to keep request volume sane.
+	courses = courses.slice(0, 60)
 
-    // Canvas can return the same course more than once (multi-role enrollments,
-    // cross-listed sections). Dedupe by id so we don't double-index or double-fetch.
-    const seenCourseIds = new Set();
-    courses = courses.filter(c => {
-        if (seenCourseIds.has(c.id)) return false;
-        seenCourseIds.add(c.id);
-        return true;
-    });
+	// Canvas can return the same course more than once (multi-role enrollments,
+	// cross-listed sections). Dedupe by id so we don't double-index or double-fetch.
+	const seenCourseIds = new Set()
+	courses = courses.filter((c) => {
+		if (seenCourseIds.has(c.id)) return false
+		seenCourseIds.add(c.id)
+		return true
+	})
 
-    const index = [];
-    // Shared dedup state. Keys identify a piece of *content* regardless of where
-    // it surfaced, so the same assignment (which Canvas exposes both as a module
-    // item AND a standalone assignment) collapses to a single result.
-    //   - standalone assignment:  `asn:<courseId>:<assignmentId>`
-    //   - module item with content_id: `<type>:<courseId>:<contentId>`
-    //       (for type "assignment" this becomes `asn:<courseId>:<contentId>` —
-    //        the SAME key as the standalone assignment, so whichever is added
-    //        first wins; we add assignments first to keep the direct URL)
-    //   - module item without content_id (external url/tool): `url:<normalizedUrl>`
-    //   - module itself: `module:<courseId>:<moduleId>`
-    const seenContent = new Set();
+	const index = []
+	// Shared dedup state. Keys identify a piece of *content* regardless of where
+	// it surfaced, so the same assignment (which Canvas exposes both as a module
+	// item AND a standalone assignment) collapses to a single result.
+	//   - standalone assignment:  `asn:<courseId>:<assignmentId>`
+	//   - module item with content_id: `<type>:<courseId>:<contentId>`
+	//       (for type "assignment" this becomes `asn:<courseId>:<contentId>` —
+	//        the SAME key as the standalone assignment, so whichever is added
+	//        first wins; we add assignments first to keep the direct URL)
+	//   - module item without content_id (external url/tool): `url:<normalizedUrl>`
+	//   - module itself: `module:<courseId>:<moduleId>`
+	const seenContent = new Set()
 
-    await Promise.all(courses.map(async (course) => {
-        const courseId = course.id;
-        const courseName = course.name;
-        const courseCode = course.course_code || courseName;
+	await Promise.all(
+		courses.map(async (course) => {
+			const courseId = course.id
+			const courseName = course.name
+			const courseCode = course.course_code || courseName
 
-        // The course itself, so class-name queries surface its homepage and
-        // the @course filter has something to match against.
-        const courseKey = `course:${courseId}`;
-        if (!seenContent.has(courseKey)) {
-            seenContent.add(courseKey);
-            index.push({
-                type: "Course",
-                title: courseName,
-                course: courseName,
-                courseCode,
-                courseId,
-                url: `${domain}/courses/${courseId}`
-            });
-        }
+			// The course itself, so class-name queries surface its homepage and
+			// the @course filter has something to match against.
+			const courseKey = `course:${courseId}`
+			if (!seenContent.has(courseKey)) {
+				seenContent.add(courseKey)
+				index.push({
+					type: 'Course',
+					title: courseName,
+					course: courseName,
+					courseCode,
+					courseId,
+					url: `${domain}/courses/${courseId}`,
+				})
+			}
 
-        // Assignments first so their direct URLs win over the module-item
-        // versions of the same assignment.
-        try {
-            const assignments = await getData(`${domain}/api/v1/courses/${courseId}/assignments?per_page=100`);
-            if (Array.isArray(assignments)) {
-                for (const a of assignments) {
-                    if (!a || !a.name || !a.html_url) continue;
-                    const key = `asn:${courseId}:${a.id}`;
-                    if (seenContent.has(key)) continue;
-                    seenContent.add(key);
-                    index.push({
-                        type: "Assignment",
-                        title: a.name,
-                        course: courseName,
-                        courseCode,
-                        courseId,
-                        url: a.html_url
-                    });
-                }
-            }
-        } catch (_) { /* non-fatal */ }
+			// Assignments first so their direct URLs win over the module-item
+			// versions of the same assignment.
+			try {
+				const assignments = await getData(
+					`${domain}/api/v1/courses/${courseId}/assignments?per_page=100`,
+				)
+				if (Array.isArray(assignments)) {
+					for (const a of assignments) {
+						if (!a || !a.name || !a.html_url) continue
+						const key = `asn:${courseId}:${a.id}`
+						if (seenContent.has(key)) continue
+						seenContent.add(key)
+						index.push({
+							type: 'Assignment',
+							title: a.name,
+							course: courseName,
+							courseCode,
+							courseId,
+							url: a.html_url,
+						})
+					}
+				}
+			} catch (_) {
+				/* non-fatal */
+			}
 
-        // Modules + their items.
-        try {
-            const modules = await getData(`${domain}/api/v1/courses/${courseId}/modules?per_page=100`);
-            if (Array.isArray(modules)) {
-                for (const m of modules) {
-                    if (!m || !m.name) continue;
-                    const modKey = `module:${courseId}:${m.id}`;
-                    if (!seenContent.has(modKey)) {
-                        seenContent.add(modKey);
-                        index.push({
-                            type: "Module",
-                            title: m.name,
-                            course: courseName,
-                            courseCode,
-                            courseId,
-                            url: `${domain}/courses/${courseId}/modules`
-                        });
-                    }
-                    try {
-                        const items = await getData(`${domain}/api/v1/courses/${courseId}/modules/${m.id}/items?per_page=100`);
-                        if (Array.isArray(items)) {
-                            for (const it of items) {
-                                if (!it || !it.title) continue;
-                                // Skip text headers / dividers — no destination page.
-                                const itype = (it.type || "").toLowerCase();
-                                if (itype === "subheader") continue;
-                                // Prefer the real page link (html_url). External
-                                // URL items expose external_url instead; the bare
-                                // `url` field is the API endpoint, never use it.
-                                const url = it.html_url || it.external_url;
-                                if (!url) continue;
+			// Modules + their items.
+			try {
+				const modules = await getData(
+					`${domain}/api/v1/courses/${courseId}/modules?per_page=100`,
+				)
+				if (Array.isArray(modules)) {
+					for (const m of modules) {
+						if (!m || !m.name) continue
+						const modKey = `module:${courseId}:${m.id}`
+						if (!seenContent.has(modKey)) {
+							seenContent.add(modKey)
+							index.push({
+								type: 'Module',
+								title: m.name,
+								course: courseName,
+								courseCode,
+								courseId,
+								url: `${domain}/courses/${courseId}/modules`,
+							})
+						}
+						try {
+							const items = await getData(
+								`${domain}/api/v1/courses/${courseId}/modules/${m.id}/items?per_page=100`,
+							)
+							if (Array.isArray(items)) {
+								for (const it of items) {
+									if (!it || !it.title) continue
+									// Skip text headers / dividers — no destination page.
+									const itype = (it.type || '').toLowerCase()
+									if (itype === 'subheader') continue
+									// Prefer the real page link (html_url). External
+									// URL items expose external_url instead; the bare
+									// `url` field is the API endpoint, never use it.
+									const url = it.html_url || it.external_url
+									if (!url) continue
 
-                                // Build a content-identity key so the same item
-                                // appearing in multiple modules (or mirroring a
-                                // standalone assignment) only produces one result.
-                                let key;
-                                if (itype === "assignment" && it.content_id) {
-                                    key = `asn:${courseId}:${it.content_id}`;
-                                } else if (it.content_id) {
-                                    key = `${itype}:${courseId}:${it.content_id}`;
-                                } else {
-                                    key = `url:${normalizeGlobalSearchUrl(url)}`;
-                                }
-                                if (seenContent.has(key)) continue;
-                                seenContent.add(key);
+									// Build a content-identity key so the same item
+									// appearing in multiple modules (or mirroring a
+									// standalone assignment) only produces one result.
+									let key
+									if (itype === 'assignment' && it.content_id) {
+										key = `asn:${courseId}:${it.content_id}`
+									} else if (it.content_id) {
+										key = `${itype}:${courseId}:${it.content_id}`
+									} else {
+										key = `url:${normalizeGlobalSearchUrl(url)}`
+									}
+									if (seenContent.has(key)) continue
+									seenContent.add(key)
 
-                                index.push({
-                                    type: prettyModuleItemType(it.type),
-                                    title: it.title,
-                                    course: courseName,
-                                    courseCode,
-                                    courseId,
-                                    url
-                                });
-                            }
-                        }
-                    } catch (_) { /* per-module failure is non-fatal */ }
-                }
-            }
-        } catch (_) { /* per-course failure is non-fatal */ }
-    }));
+									index.push({
+										type: prettyModuleItemType(it.type),
+										title: it.title,
+										course: courseName,
+										courseCode,
+										courseId,
+										url,
+									})
+								}
+							}
+						} catch (_) {
+							/* per-module failure is non-fatal */
+						}
+					}
+				}
+			} catch (_) {
+				/* per-course failure is non-fatal */
+			}
+		}),
+	)
 
-    // Final safety net: collapse any remaining normalized-URL duplicates (e.g.
-    // external links whose content_id differed but resolve to the same page).
-    const seen = new Set();
-    return index.filter(item => {
-        const key = normalizeGlobalSearchUrl(item.url);
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
+	// Final safety net: collapse any remaining normalized-URL duplicates (e.g.
+	// external links whose content_id differed but resolve to the same page).
+	const seen = new Set()
+	return index.filter((item) => {
+		const key = normalizeGlobalSearchUrl(item.url)
+		if (!key || seen.has(key)) return false
+		seen.add(key)
+		return true
+	})
 }
 
 function normalizeGlobalSearchUrl(url) {
-    if (!url) return "";
-    try {
-        const u = new URL(url, domain);
-        let path = u.pathname.replace(/\/+$/, ""); // strip trailing slashes
-        // Ignore case + fragment/query for matching purposes.
-        return (u.host.toLowerCase() + path).toLowerCase();
-    } catch (_) {
-        // Non-absolute (shouldn't happen, but be safe) — normalize as-is.
-        return String(url).replace(/\/+$/, "").toLowerCase();
-    }
+	if (!url) return ''
+	try {
+		const u = new URL(url, domain)
+		let path = u.pathname.replace(/\/+$/, '') // strip trailing slashes
+		// Ignore case + fragment/query for matching purposes.
+		return (u.host.toLowerCase() + path).toLowerCase()
+	} catch (_) {
+		// Non-absolute (shouldn't happen, but be safe) — normalize as-is.
+		return String(url).replace(/\/+$/, '').toLowerCase()
+	}
 }
 
 function prettyModuleItemType(type) {
-    switch ((type || "").toLowerCase()) {
-        case "assignment": return "Assignment";
-        case "quiz": return "Quiz";
-        case "discussion": case "discussion_topic": return "Discussion";
-        case "externalurl": return "Link";
-        case "externaltool": return "External Tool";
-        case "file": return "File";
-        case "page": return "Page";
-        case "subheader": return "Section";
-        default: return type || "Item";
-    }
+	switch ((type || '').toLowerCase()) {
+		case 'assignment':
+			return 'Assignment'
+		case 'quiz':
+			return 'Quiz'
+		case 'discussion':
+		case 'discussion_topic':
+			return 'Discussion'
+		case 'externalurl':
+			return 'Link'
+		case 'externaltool':
+			return 'External Tool'
+		case 'file':
+			return 'File'
+		case 'page':
+			return 'Page'
+		case 'subheader':
+			return 'Section'
+		default:
+			return type || 'Item'
+	}
 }
 
 // --- Searching --------------------------------------------------------------
@@ -6051,10 +7208,12 @@ function prettyModuleItemType(type) {
 // anywhere in the full name or the course code, e.g. "101" or "calc"). An
 // empty filter (a bare "@") matches every course.
 function globalSearchCourseMatches(courseEntry, filter) {
-    const f = (filter || "").toLowerCase();
-    if (!f) return true;
-    return (courseEntry.title || "").toLowerCase().includes(f) ||
-        (courseEntry.courseCode || "").toLowerCase().includes(f);
+	const f = (filter || '').toLowerCase()
+	if (!f) return true
+	return (
+		(courseEntry.title || '').toLowerCase().includes(f) ||
+		(courseEntry.courseCode || '').toLowerCase().includes(f)
+	)
 }
 
 // Splits "@Math 101 homework 5" into { courseFilter, content }. The filter is
@@ -6062,219 +7221,231 @@ function globalSearchCourseMatches(courseEntry, filter) {
 // course, so course names with spaces work: whatever remains becomes the
 // content query. Returns null when there is no @token at all (plain search).
 function parseGlobalSearchCourseFilter(query, courseEntries) {
-    const at = query.lastIndexOf("@");
-    if (at < 0) return null;
-    // '@' must start the query or follow whitespace, so email addresses and
-    // URLs the user pastes in aren't split apart.
-    if (at > 0 && !/\s/.test(query[at - 1])) return null;
-    const before = query.slice(0, at).trim();
-    const rest = query.slice(at + 1);
-    // Longest matching prefix; must end at a word boundary (or the end of the
-    // query) so "@mathh" doesn't silently become course "math" + query "h".
-    for (let len = rest.length; len > 0; len--) {
-        if (len < rest.length && rest[len] !== " ") continue;
-        const candidate = rest.slice(0, len).trim().toLowerCase();
-        if (!candidate) continue;
-        if (courseEntries.some(c => globalSearchCourseMatches(c, candidate))) {
-            return { courseFilter: candidate, content: `${before} ${rest.slice(len)}`.trim() };
-        }
-    }
-    if (!rest.trim()) return { courseFilter: "", content: before }; // bare "@" -> all courses
-    return null;
+	const at = query.lastIndexOf('@')
+	if (at < 0) return null
+	// '@' must start the query or follow whitespace, so email addresses and
+	// URLs the user pastes in aren't split apart.
+	if (at > 0 && !/\s/.test(query[at - 1])) return null
+	const before = query.slice(0, at).trim()
+	const rest = query.slice(at + 1)
+	// Longest matching prefix; must end at a word boundary (or the end of the
+	// query) so "@mathh" doesn't silently become course "math" + query "h".
+	for (let len = rest.length; len > 0; len--) {
+		if (len < rest.length && rest[len] !== ' ') continue
+		const candidate = rest.slice(0, len).trim().toLowerCase()
+		if (!candidate) continue
+		if (courseEntries.some((c) => globalSearchCourseMatches(c, candidate))) {
+			return { courseFilter: candidate, content: `${before} ${rest.slice(len)}`.trim() }
+		}
+	}
+	if (!rest.trim()) return { courseFilter: '', content: before } // bare "@" -> all courses
+	return null
 }
 
 function globalSearchRowHtml(item, i) {
-    return `
+	return `
         <div class="canvasrefined-gs-row" data-i="${i}" data-url="${escapeGlobalSearchAttr(item.url)}">
             <div class="canvasrefined-gs-row-main">
-                <span class="canvasrefined-gs-type canvasrefined-gs-type-${escapeGlobalSearchAttr((item.type || "").toLowerCase().replace(/\s+/g, "-"))}">${escapeGlobalSearchHtml(item.type || "")}</span>
-                <span class="canvasrefined-gs-title">${escapeGlobalSearchHtml(item.title || "")}</span>
+                <span class="canvasrefined-gs-type canvasrefined-gs-type-${escapeGlobalSearchAttr((item.type || '').toLowerCase().replace(/\s+/g, '-'))}">${escapeGlobalSearchHtml(item.type || '')}</span>
+                <span class="canvasrefined-gs-title">${escapeGlobalSearchHtml(item.title || '')}</span>
             </div>
-            <span class="canvasrefined-gs-course">${escapeGlobalSearchHtml(item.course || "")}</span>
-        </div>`;
+            <span class="canvasrefined-gs-course">${escapeGlobalSearchHtml(item.course || '')}</span>
+        </div>`
 }
 
 function bindGlobalSearchRows(resultsEl, top) {
-    resultsEl.querySelectorAll(".canvasrefined-gs-row").forEach((row) => {
-        // Plain click / Ctrl+click: honor modifier for new-tab behavior.
-        row.addEventListener("click", (e) => {
-            const url = row.getAttribute("data-url");
-            const item = top.find(x => x.url === url);
-            if (item) openGlobalSearchResult(item, e.ctrlKey || e.metaKey || (e.button === 1));
-        });
-        // Middle-click opens in a new tab without closing the search.
-        row.addEventListener("auxclick", (e) => {
-            if (e.button !== 1) return;
-            e.preventDefault();
-            const url = row.getAttribute("data-url");
-            const item = top.find(x => x.url === url);
-            if (item) openGlobalSearchResult(item, true);
-        });
-    });
+	resultsEl.querySelectorAll('.canvasrefined-gs-row').forEach((row) => {
+		// Plain click / Ctrl+click: honor modifier for new-tab behavior.
+		row.addEventListener('click', (e) => {
+			const url = row.getAttribute('data-url')
+			const item = top.find((x) => x.url === url)
+			if (item) openGlobalSearchResult(item, e.ctrlKey || e.metaKey || e.button === 1)
+		})
+		// Middle-click opens in a new tab without closing the search.
+		row.addEventListener('auxclick', (e) => {
+			if (e.button !== 1) return
+			e.preventDefault()
+			const url = row.getAttribute('data-url')
+			const item = top.find((x) => x.url === url)
+			if (item) openGlobalSearchResult(item, true)
+		})
+	})
 }
 
 async function runGlobalSearch(query, resultsEl) {
-    if (!globalSearchIndex && globalSearchIndexPromise) {
-        resultsEl.innerHTML = `<div class="canvasrefined-gs-loading">Building search index\u2026</div>`;
-    }
-    const index = await ensureGlobalSearchIndex();
-    if (!query) {
-        resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">Start typing to search your modules and assignments. Use @coursename to search a specific course, or @grades to open a course's grades page.</div>`;
-        return [];
-    }
-    if (!index || !index.length) {
-        resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">No modules or assignments found. Open the search again later if your courses are still loading.</div>`;
-        return [];
-    }
+	if (!globalSearchIndex && globalSearchIndexPromise) {
+		resultsEl.innerHTML = `<div class="canvasrefined-gs-loading">Building search index\u2026</div>`
+	}
+	const index = await ensureGlobalSearchIndex()
+	if (!query) {
+		resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">Start typing to search your modules and assignments. Use @coursename to search a specific course, or @grades to open a course's grades page.</div>`
+		return []
+	}
+	if (!index || !index.length) {
+		resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">No modules or assignments found. Open the search again later if your courses are still loading.</div>`
+		return []
+	}
 
-    // "@grades [course filter]" lists course grade pages instead of content.
-    // A bare "@grades" lists every course; "@grades calc" narrows to courses
-    // matching "calc" (same matching as the @course filter). Checked before
-    // the generic @course parse so "@grades" never gets eaten as a course
-    // name (e.g. a course actually called "Grades").
-    const gradesMatch = query.match(/(?:^|\s)@grades(?:\s+(.+))?$/i);
-    if (gradesMatch) {
-        const courseEntries = index.filter(i => i.type === "Course");
-        const filter = (gradesMatch[1] || "").trim();
-        const matching = courseEntries.filter(c => globalSearchCourseMatches(c, filter));
-        if (!matching.length) {
-            resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">${filter ? `No course matches \u201c${escapeGlobalSearchHtml(filter)}\u201d.` : "No courses found to open grades for."}</div>`;
-            return [];
-        }
-        const gradeRows = matching.map(c => ({
-            type: "Grades",
-            title: c.title,
-            course: c.course,
-            courseId: c.courseId,
-            url: `${domain}/courses/${c.courseId}/grades`,
-        }));
-        resultsEl.innerHTML = gradeRows.map((item, i) => globalSearchRowHtml(item, i)).join("");
-        bindGlobalSearchRows(resultsEl, gradeRows);
-        return gradeRows;
-    }
+	// "@grades [course filter]" lists course grade pages instead of content.
+	// A bare "@grades" lists every course; "@grades calc" narrows to courses
+	// matching "calc" (same matching as the @course filter). Checked before
+	// the generic @course parse so "@grades" never gets eaten as a course
+	// name (e.g. a course actually called "Grades").
+	const gradesMatch = query.match(/(?:^|\s)@grades(?:\s+(.+))?$/i)
+	if (gradesMatch) {
+		const courseEntries = index.filter((i) => i.type === 'Course')
+		const filter = (gradesMatch[1] || '').trim()
+		const matching = courseEntries.filter((c) => globalSearchCourseMatches(c, filter))
+		if (!matching.length) {
+			resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">${filter ? `No course matches \u201c${escapeGlobalSearchHtml(filter)}\u201d.` : 'No courses found to open grades for.'}</div>`
+			return []
+		}
+		const gradeRows = matching.map((c) => ({
+			type: 'Grades',
+			title: c.title,
+			course: c.course,
+			courseId: c.courseId,
+			url: `${domain}/courses/${c.courseId}/grades`,
+		}))
+		resultsEl.innerHTML = gradeRows
+			.map((item, i) => globalSearchRowHtml(item, i))
+			.join('')
+		bindGlobalSearchRows(resultsEl, gradeRows)
+		return gradeRows
+	}
 
-    // "@course name" narrows the search to one course. With no other words
-    // after the filter (or a bare "@"), list the matching courses' homepages.
-    const courseEntries = index.filter(i => i.type === "Course");
-    const parsed = parseGlobalSearchCourseFilter(query, courseEntries);
-    let effectiveQuery = query;
-    let allowedCourseIds = null;
-    if (parsed) {
-        effectiveQuery = parsed.content;
-        const matching = courseEntries.filter(c => globalSearchCourseMatches(c, parsed.courseFilter));
-        allowedCourseIds = new Set(matching.map(c => String(c.courseId)));
-        if (!effectiveQuery) {
-            if (!matching.length) {
-                resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">No course matches \u201c${escapeGlobalSearchHtml(parsed.courseFilter)}\u201d.</div>`;
-                return [];
-            }
-            resultsEl.innerHTML = matching.map((item, i) => globalSearchRowHtml(item, i)).join("");
-            bindGlobalSearchRows(resultsEl, matching);
-            return matching;
-        }
-    }
+	// "@course name" narrows the search to one course. With no other words
+	// after the filter (or a bare "@"), list the matching courses' homepages.
+	const courseEntries = index.filter((i) => i.type === 'Course')
+	const parsed = parseGlobalSearchCourseFilter(query, courseEntries)
+	let effectiveQuery = query
+	let allowedCourseIds = null
+	if (parsed) {
+		effectiveQuery = parsed.content
+		const matching = courseEntries.filter((c) =>
+			globalSearchCourseMatches(c, parsed.courseFilter),
+		)
+		allowedCourseIds = new Set(matching.map((c) => String(c.courseId)))
+		if (!effectiveQuery) {
+			if (!matching.length) {
+				resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">No course matches \u201c${escapeGlobalSearchHtml(parsed.courseFilter)}\u201d.</div>`
+				return []
+			}
+			resultsEl.innerHTML = matching
+				.map((item, i) => globalSearchRowHtml(item, i))
+				.join('')
+			bindGlobalSearchRows(resultsEl, matching)
+			return matching
+		}
+	}
 
-    const q = effectiveQuery.toLowerCase();
-    const matches = [];
-    for (const item of index) {
-        // Re-check hidden status at search time so a card hidden after the index
-        // was cached (10-min TTL) never surfaces in results.
-        if (isCourseHidden(item.courseId)) continue;
-        // An @course filter restricts results to that course's entries.
-        if (allowedCourseIds && !allowedCourseIds.has(String(item.courseId))) continue;
-        const t = (item.title || "").toLowerCase();
-        const c = (item.course || "").toLowerCase();
-        let score = -1;
-        if (t.startsWith(q)) score = 100 - t.indexOf(q);
-        else if (t.includes(q)) score = 60 - t.indexOf(q);
-        else if (c.includes(q)) score = 20;
-        // Course homepages float above item matches for class-name queries.
-        if (score >= 0) {
-            if (item.type === "Course" && t.startsWith(q)) score += 40;
-            item._score = score + (t === q ? 50 : 0);
-            matches.push(item);
-        }
-    }
-    matches.sort((a, b) => b._score - a._score);
-    const top = matches.slice(0, 50);
+	const q = effectiveQuery.toLowerCase()
+	const matches = []
+	for (const item of index) {
+		// Re-check hidden status at search time so a card hidden after the index
+		// was cached (10-min TTL) never surfaces in results.
+		if (isCourseHidden(item.courseId)) continue
+		// An @course filter restricts results to that course's entries.
+		if (allowedCourseIds && !allowedCourseIds.has(String(item.courseId))) continue
+		const t = (item.title || '').toLowerCase()
+		const c = (item.course || '').toLowerCase()
+		let score = -1
+		if (t.startsWith(q)) score = 100 - t.indexOf(q)
+		else if (t.includes(q)) score = 60 - t.indexOf(q)
+		else if (c.includes(q)) score = 20
+		// Course homepages float above item matches for class-name queries.
+		if (score >= 0) {
+			if (item.type === 'Course' && t.startsWith(q)) score += 40
+			item._score = score + (t === q ? 50 : 0)
+			matches.push(item)
+		}
+	}
+	matches.sort((a, b) => b._score - a._score)
+	const top = matches.slice(0, 50)
 
-    if (!top.length) {
-        resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">No results for \u201c${escapeGlobalSearchHtml(query)}\u201d.</div>`;
-        return [];
-    }
+	if (!top.length) {
+		resultsEl.innerHTML = `<div class="canvasrefined-gs-hint">No results for \u201c${escapeGlobalSearchHtml(query)}\u201d.</div>`
+		return []
+	}
 
-    resultsEl.innerHTML = top.map((item, i) => globalSearchRowHtml(item, i)).join("");
-    bindGlobalSearchRows(resultsEl, top);
-    return top;
+	resultsEl.innerHTML = top.map((item, i) => globalSearchRowHtml(item, i)).join('')
+	bindGlobalSearchRows(resultsEl, top)
+	return top
 }
 
 function escapeGlobalSearchHtml(s) {
-    return String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+	return String(s).replace(
+		/[&<>"']/g,
+		(ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch],
+	)
 }
 function escapeGlobalSearchAttr(s) {
-    return escapeGlobalSearchHtml(s).replace(/`/g, "&#96;");
+	return escapeGlobalSearchHtml(s).replace(/`/g, '&#96;')
 }
 
 function changeGradientCards() {
-    // Apply the gradient INLINE on each hero instead of via index-based CSS
-    // rules: the gradient is always computed from that hero's actual current
-    // course color, so it stays in sync even when cards are reordered,
-    // re-rendered, or recolored after this pass (the old #gradientcss
-    // "card N" selectors silently drifted onto the wrong cards).
-    // Only background-image is set inline — background-color (the course
-    // color) is left untouched so it can still be read/recolord later.
-    const heroes = document.querySelectorAll('.ic-DashboardCard__header_hero');
-    heroes.forEach(hero => {
-        if (options.gradient_cards !== true) {
-            hero.style.removeProperty("background-image");
-            return;
-        }
-        const rgb = hero.style.backgroundColor;
-        const parts = rgb.match(/\d+(\.\d+)?/g);
-        // No inline course color (e.g. hero not painted yet): leave untouched
-        // rather than guessing NaN colors.
-        if (!parts || parts.length < 3) return;
-        const [r, g, b] = [parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2])];
-        let [h, s, l] = rgbToHsl(r, g, b);
-        let degree = ((h % 60) / 60) >= .66 ? 30 : ((h % 60) / 60) <= .33 ? -30 : 15;
-        let newh = h > 300 ? (360 - (h + 65)) + (65 + degree) : h + 65 + degree;
-        hero.style.backgroundImage = `linear-gradient(115deg, hsl(${h}deg,${s}%,${l}%) 5%, hsl(${newh}deg,${s}%,${l}%) 100%)`;
-    });
+	// Apply the gradient INLINE on each hero instead of via index-based CSS
+	// rules: the gradient is always computed from that hero's actual current
+	// course color, so it stays in sync even when cards are reordered,
+	// re-rendered, or recolored after this pass (the old #gradientcss
+	// "card N" selectors silently drifted onto the wrong cards).
+	// Only background-image is set inline — background-color (the course
+	// color) is left untouched so it can still be read/recolord later.
+	const heroes = document.querySelectorAll('.ic-DashboardCard__header_hero')
+	heroes.forEach((hero) => {
+		if (options.gradient_cards !== true) {
+			hero.style.removeProperty('background-image')
+			return
+		}
+		const rgb = hero.style.backgroundColor
+		const parts = rgb.match(/\d+(\.\d+)?/g)
+		// No inline course color (e.g. hero not painted yet): leave untouched
+		// rather than guessing NaN colors.
+		if (!parts || parts.length < 3) return
+		const [r, g, b] = [parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2])]
+		let [h, s, l] = rgbToHsl(r, g, b)
+		let degree = (h % 60) / 60 >= 0.66 ? 30 : (h % 60) / 60 <= 0.33 ? -30 : 15
+		let newh = h > 300 ? 360 - (h + 65) + (65 + degree) : h + 65 + degree
+		hero.style.backgroundImage = `linear-gradient(115deg, hsl(${h}deg,${s}%,${l}%) 5%, hsl(${newh}deg,${s}%,${l}%) 100%)`
+	})
 
-    updateCardContrast();
+	updateCardContrast()
 
-    // Clean up the legacy index-based stylesheet from older versions.
-    const legacy = document.querySelector("#gradientcss");
-    if (legacy) legacy.remove();
+	// Clean up the legacy index-based stylesheet from older versions.
+	const legacy = document.querySelector('#gradientcss')
+	if (legacy) legacy.remove()
 }
 
 function showUpdateMsg() {
-    // dont run if not on dashboard
-    const el = document.getElementById("announcementWrapper");
-    if (!el) return;
+	// dont run if not on dashboard
+	const el = document.getElementById('announcementWrapper')
+	if (!el) return
 
-    // option off or div already created
-    let div = document.getElementById("canvasrefined-update-msg");
-    if (options.show_updates !== true || options.update_msg === "") {
-        if (div) div.style.display = "none";
-        return;
-    } else if (div) {
-        div.style.display = "flex";
-        return;
-    }
+	// option off or div already created
+	let div = document.getElementById('canvasrefined-update-msg')
+	if (options.show_updates !== true || options.update_msg === '') {
+		if (div) div.style.display = 'none'
+		return
+	} else if (div) {
+		div.style.display = 'flex'
+		return
+	}
 
-    // first creation
-    div = makeElement("div", el, { "id": "canvasrefined-update-msg" });
-    makeElement("p", div, { "textContent": options.update_msg });
-    const close = makeElement("button", div, { "id": "canvasrefined-update-close", "textContent": "Close" });
-    close.addEventListener("click", () => {
-        readUpdate();
-        div.remove();
-    });
+	// first creation
+	div = makeElement('div', el, { id: 'canvasrefined-update-msg' })
+	makeElement('p', div, { textContent: options.update_msg })
+	const close = makeElement('button', div, {
+		id: 'canvasrefined-update-close',
+		textContent: 'Close',
+	})
+	close.addEventListener('click', () => {
+		readUpdate()
+		div.remove()
+	})
 }
 
 function readUpdate() {
-    chrome.storage.sync.set({ "update_msg": "" });
+	chrome.storage.sync.set({ update_msg: '' })
 }
 
 /*
@@ -6282,109 +7453,124 @@ Other functions
 */
 
 function combineAssignments(data) {
-    let combined = Array.isArray(data) ? data : [];
-    const overflows = Array.isArray(options.custom_assignments_overflow) ? options.custom_assignments_overflow : ["custom_assignments"];
-    for (const overflow of overflows) {
-        if (Array.isArray(options[overflow])) combined = combined.concat(options[overflow]);
-    }
-    // Dedupe by planner item identity (same key the cache merge uses), keeping
-    // the LAST occurrence so locally-stored overflow entries win over fetched
-    // ones. Without this, an item present in both the planner data and an
-    // overflow array rendered twice — once on the dashboard cards and once per
-    // copy in the todo list.
-    if (Array.isArray(combined)) {
-        const seen = new Set();
-        const deduped = [];
-        for (let i = combined.length - 1; i >= 0; i--) {
-            const item = combined[i];
-            if (!item) continue;
-            const key = `${item.plannable_type}|${item.plannable_id}`;
-            if (seen.has(key)) continue;
-            seen.add(key);
-            deduped.push(item);
-        }
-        deduped.reverse();
-        combined = deduped;
-    }
-    return combined.sort((a, b) => new Date(a.plannable_date).getTime() - new Date(b.plannable_date).getTime());
+	let combined = Array.isArray(data) ? data : []
+	const overflows = Array.isArray(options.custom_assignments_overflow)
+		? options.custom_assignments_overflow
+		: ['custom_assignments']
+	for (const overflow of overflows) {
+		if (Array.isArray(options[overflow])) combined = combined.concat(options[overflow])
+	}
+	// Dedupe by planner item identity (same key the cache merge uses), keeping
+	// the LAST occurrence so locally-stored overflow entries win over fetched
+	// ones. Without this, an item present in both the planner data and an
+	// overflow array rendered twice — once on the dashboard cards and once per
+	// copy in the todo list.
+	if (Array.isArray(combined)) {
+		const seen = new Set()
+		const deduped = []
+		for (let i = combined.length - 1; i >= 0; i--) {
+			const item = combined[i]
+			if (!item) continue
+			const key = `${item.plannable_type}|${item.plannable_id}`
+			if (seen.has(key)) continue
+			seen.add(key)
+			deduped.push(item)
+		}
+		deduped.reverse()
+		combined = deduped
+	}
+	return combined.sort(
+		(a, b) => new Date(a.plannable_date).getTime() - new Date(b.plannable_date).getTime(),
+	)
 }
 
 function cleanCustomAssignments() {
-    chrome.storage.sync.get("custom_assignments_overflow", overflows => {
-        chrome.storage.sync.get(overflows["custom_assignments_overflow"], storage => {
-            const now = new Date();
+	chrome.storage.sync.get('custom_assignments_overflow', (overflows) => {
+		chrome.storage.sync.get(overflows['custom_assignments_overflow'], (storage) => {
+			const now = new Date()
 
-            overflows["custom_assignments_overflow"].forEach(overflow => {
-                let changed = false;
-                for (let i = 0; i < storage[overflow].length; i++) {
-                    let assignmentDate = new Date(storage[overflow][i].plannable_date);
-                    if (!assignmentDate.getTime() || assignmentDate < now) {
-                        storage[overflow].splice(i, 1);
-                        changed = true;
-                    }
-                }
-                if (changed) chrome.storage.sync.set({ [overflow]: storage[overflow] });
-            });
-
-        });
-    });
+			overflows['custom_assignments_overflow'].forEach((overflow) => {
+				let changed = false
+				for (let i = 0; i < storage[overflow].length; i++) {
+					let assignmentDate = new Date(storage[overflow][i].plannable_date)
+					if (!assignmentDate.getTime() || assignmentDate < now) {
+						storage[overflow].splice(i, 1)
+						changed = true
+					}
+				}
+				if (changed) chrome.storage.sync.set({ [overflow]: storage[overflow] })
+			})
+		})
+	})
 }
 
 function getGrades() {
-    if (options.gpa_calc === true || options.dashboard_grades === true) {
-        grades = getData(`${domain}/api/v1/courses?${/*enrollment_state=active&*/""}include[]=concluded&include[]=total_scores&include[]=computed_current_score&include[]=current_grading_period_scores&per_page=100`)
-            .catch(error => {
-                // Handle the request immediately: Canvas can finish loading its
-                // dashboard after an expired session has already rejected it.
-                logError(error);
-                return [];
-            });
-    }
+	if (options.gpa_calc === true || options.dashboard_grades === true) {
+		grades = getData(
+			`${domain}/api/v1/courses?${/*enrollment_state=active&*/ ''}include[]=concluded&include[]=total_scores&include[]=computed_current_score&include[]=current_grading_period_scores&per_page=100`,
+		).catch((error) => {
+			// Handle the request immediately: Canvas can finish loading its
+			// dashboard after an expired session has already rejected it.
+			logError(error)
+			return []
+		})
+	}
 }
 
 function getColors() {
-    const version = paletteChangeVersion;
-    if (options.tab_icons || options.better_todo) {
-        return getData(`${domain}/api/v1/users/self/colors`).then(data => {
-            if (version !== paletteChangeVersion) return options.custom_cards_3;
-            let cards = options.custom_cards_3;
-            Object.keys(cards).forEach(key => {
-                cards[key] = { ...cards[key], "color": data["custom_colors"]["course_" + key] ? data["custom_colors"]["course_" + key] : null };
-            });
-            chrome.storage.sync.set({ "custom_cards_3": cards });
-            return cards;
-        }).catch(e => {
-            // A failed colors fetch (e.g. an expired session) must not throw an
-            // unhandled rejection or wipe the stored colors — keep the old ones.
-            console.warn("Canvas Enhanced - could not load course colors", e);
-            return options.custom_cards_3;
-        });
-    }
+	const version = paletteChangeVersion
+	if (options.tab_icons || options.better_todo) {
+		return getData(`${domain}/api/v1/users/self/colors`)
+			.then((data) => {
+				if (version !== paletteChangeVersion) return options.custom_cards_3
+				let cards = options.custom_cards_3
+				Object.keys(cards).forEach((key) => {
+					cards[key] = {
+						...cards[key],
+						color: data['custom_colors']['course_' + key]
+							? data['custom_colors']['course_' + key]
+							: null,
+					}
+				})
+				chrome.storage.sync.set({ custom_cards_3: cards })
+				return cards
+			})
+			.catch((e) => {
+				// A failed colors fetch (e.g. an expired session) must not throw an
+				// unhandled rejection or wipe the stored colors — keep the old ones.
+				console.warn('Canvas Enhanced - could not load course colors', e)
+				return options.custom_cards_3
+			})
+	}
 }
 
 function changeFavicon() {
-    if (options.tab_icons !== true) return;
-    let match = current_page.match(/courses\/(?<id>\d*)/);
-    const icon = document.querySelector('link[rel~="icon"]');
-    if (icon && match && match.groups.id && options.custom_cards_3?.[match.groups.id]?.color) {
-        icon.href = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="white" width="128px" height="128px" viewBox="-192 -192 2304.00 2304.00" stroke="white"><g stroke-width="0"><rect x="-192" y="-192" width="2304.00" height="2304.00" rx="0" fill="${options.custom_cards_3[match.groups.id].color.replace("#", "%23")}" strokewidth="0"/></g><g stroke-linecap="round" stroke-linejoin="round"/><g> <path d="M958.568 277.97C1100.42 277.97 1216.48 171.94 1233.67 34.3881 1146.27 12.8955 1054.57 0 958.568 0 864.001 0 770.867 12.8955 683.464 34.3881 700.658 171.94 816.718 277.97 958.568 277.97ZM35.8207 682.031C173.373 699.225 279.403 815.285 279.403 957.136 279.403 1098.99 173.373 1215.05 35.8207 1232.24 12.8953 1144.84 1.43262 1051.7 1.43262 957.136 1.43262 862.569 12.8953 769.434 35.8207 682.031ZM528.713 957.142C528.713 1005.41 489.581 1044.55 441.31 1044.55 393.038 1044.55 353.907 1005.41 353.907 957.142 353.907 908.871 393.038 869.74 441.31 869.74 489.581 869.74 528.713 908.871 528.713 957.142ZM1642.03 957.136C1642.03 1098.99 1748.06 1215.05 1885.61 1232.24 1908.54 1144.84 1920 1051.7 1920 957.136 1920 862.569 1908.54 769.434 1885.61 682.031 1748.06 699.225 1642.03 815.285 1642.03 957.136ZM1567.51 957.142C1567.51 1005.41 1528.38 1044.55 1480.11 1044.55 1431.84 1044.55 1392.71 1005.41 1392.71 957.142 1392.71 908.871 1431.84 869.74 1480.11 869.74 1528.38 869.74 1567.51 908.871 1567.51 957.142ZM958.568 1640.6C816.718 1640.6 700.658 1746.63 683.464 1884.18 770.867 1907.11 864.001 1918.57 958.568 1918.57 1053.14 1918.57 1146.27 1907.11 1233.67 1884.18 1216.48 1746.63 1100.42 1640.6 958.568 1640.6ZM1045.98 1480.11C1045.98 1528.38 1006.85 1567.51 958.575 1567.51 910.304 1567.51 871.172 1528.38 871.172 1480.11 871.172 1431.84 910.304 1392.71 958.575 1392.71 1006.85 1392.71 1045.98 1431.84 1045.98 1480.11ZM1045.98 439.877C1045.98 488.148 1006.85 527.28 958.575 527.28 910.304 527.28 871.172 488.148 871.172 439.877 871.172 391.606 910.304 352.474 958.575 352.474 1006.85 352.474 1045.98 391.606 1045.98 439.877ZM1441.44 1439.99C1341.15 1540.29 1333.98 1697.91 1418.52 1806.8 1579 1712.23 1713.68 1577.55 1806.82 1418.5 1699.35 1332.53 1541.74 1339.7 1441.44 1439.99ZM1414.21 1325.37C1414.21 1373.64 1375.08 1412.77 1326.8 1412.77 1278.53 1412.77 1239.4 1373.64 1239.4 1325.37 1239.4 1277.1 1278.53 1237.97 1326.8 1237.97 1375.08 1237.97 1414.21 1277.1 1414.21 1325.37ZM478.577 477.145C578.875 376.846 586.039 219.234 501.502 110.339 341.024 204.906 206.338 339.592 113.203 498.637 220.666 584.607 378.278 576.01 478.577 477.145ZM679.155 590.32C679.155 638.591 640.024 677.723 591.752 677.723 543.481 677.723 504.349 638.591 504.349 590.32 504.349 542.048 543.481 502.917 591.752 502.917 640.024 502.917 679.155 542.048 679.155 590.32ZM1440 475.712C1540.3 576.01 1697.91 583.174 1806.8 498.637 1712.24 338.159 1577.55 203.473 1418.51 110.339 1332.54 217.801 1341.13 375.413 1440 475.712ZM1414.21 590.32C1414.21 638.591 1375.08 677.723 1326.8 677.723 1278.53 677.723 1239.4 638.591 1239.4 590.32 1239.4 542.048 1278.53 502.917 1326.8 502.917 1375.08 502.917 1414.21 542.048 1414.21 590.32ZM477.145 1438.58C376.846 1338.28 219.234 1331.12 110.339 1415.65 204.906 1576.13 339.593 1710.82 498.637 1805.39 584.607 1696.49 577.443 1538.88 477.145 1438.58ZM679.155 1325.37C679.155 1373.64 640.024 1412.77 591.752 1412.77 543.481 1412.77 504.349 1373.64 504.349 1325.37 504.349 1277.1 543.481 1237.97 591.752 1237.97 640.024 1237.97 679.155 1277.1 679.155 1325.37Z"/></g></svg>`;
-    }
+	if (options.tab_icons !== true) return
+	let match = current_page.match(/courses\/(?<id>\d*)/)
+	const icon = document.querySelector('link[rel~="icon"]')
+	if (
+		icon &&
+		match &&
+		match.groups.id &&
+		options.custom_cards_3?.[match.groups.id]?.color
+	) {
+		icon.href = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="white" width="128px" height="128px" viewBox="-192 -192 2304.00 2304.00" stroke="white"><g stroke-width="0"><rect x="-192" y="-192" width="2304.00" height="2304.00" rx="0" fill="${options.custom_cards_3[match.groups.id].color.replace('#', '%23')}" strokewidth="0"/></g><g stroke-linecap="round" stroke-linejoin="round"/><g> <path d="M958.568 277.97C1100.42 277.97 1216.48 171.94 1233.67 34.3881 1146.27 12.8955 1054.57 0 958.568 0 864.001 0 770.867 12.8955 683.464 34.3881 700.658 171.94 816.718 277.97 958.568 277.97ZM35.8207 682.031C173.373 699.225 279.403 815.285 279.403 957.136 279.403 1098.99 173.373 1215.05 35.8207 1232.24 12.8953 1144.84 1.43262 1051.7 1.43262 957.136 1.43262 862.569 12.8953 769.434 35.8207 682.031ZM528.713 957.142C528.713 1005.41 489.581 1044.55 441.31 1044.55 393.038 1044.55 353.907 1005.41 353.907 957.142 353.907 908.871 393.038 869.74 441.31 869.74 489.581 869.74 528.713 908.871 528.713 957.142ZM1642.03 957.136C1642.03 1098.99 1748.06 1215.05 1885.61 1232.24 1908.54 1144.84 1920 1051.7 1920 957.136 1920 862.569 1908.54 769.434 1885.61 682.031 1748.06 699.225 1642.03 815.285 1642.03 957.136ZM1567.51 957.142C1567.51 1005.41 1528.38 1044.55 1480.11 1044.55 1431.84 1044.55 1392.71 1005.41 1392.71 957.142 1392.71 908.871 1431.84 869.74 1480.11 869.74 1528.38 869.74 1567.51 908.871 1567.51 957.142ZM958.568 1640.6C816.718 1640.6 700.658 1746.63 683.464 1884.18 770.867 1907.11 864.001 1918.57 958.568 1918.57 1053.14 1918.57 1146.27 1907.11 1233.67 1884.18 1216.48 1746.63 1100.42 1640.6 958.568 1640.6ZM1045.98 1480.11C1045.98 1528.38 1006.85 1567.51 958.575 1567.51 910.304 1567.51 871.172 1528.38 871.172 1480.11 871.172 1431.84 910.304 1392.71 958.575 1392.71 1006.85 1392.71 1045.98 1431.84 1045.98 1480.11ZM1045.98 439.877C1045.98 488.148 1006.85 527.28 958.575 527.28 910.304 527.28 871.172 488.148 871.172 439.877 871.172 391.606 910.304 352.474 958.575 352.474 1006.85 352.474 1045.98 391.606 1045.98 439.877ZM1441.44 1439.99C1341.15 1540.29 1333.98 1697.91 1418.52 1806.8 1579 1712.23 1713.68 1577.55 1806.82 1418.5 1699.35 1332.53 1541.74 1339.7 1441.44 1439.99ZM1414.21 1325.37C1414.21 1373.64 1375.08 1412.77 1326.8 1412.77 1278.53 1412.77 1239.4 1373.64 1239.4 1325.37 1239.4 1277.1 1278.53 1237.97 1326.8 1237.97 1375.08 1237.97 1414.21 1277.1 1414.21 1325.37ZM478.577 477.145C578.875 376.846 586.039 219.234 501.502 110.339 341.024 204.906 206.338 339.592 113.203 498.637 220.666 584.607 378.278 576.01 478.577 477.145ZM679.155 590.32C679.155 638.591 640.024 677.723 591.752 677.723 543.481 677.723 504.349 638.591 504.349 590.32 504.349 542.048 543.481 502.917 591.752 502.917 640.024 502.917 679.155 542.048 679.155 590.32ZM1440 475.712C1540.3 576.01 1697.91 583.174 1806.8 498.637 1712.24 338.159 1577.55 203.473 1418.51 110.339 1332.54 217.801 1341.13 375.413 1440 475.712ZM1414.21 590.32C1414.21 638.591 1375.08 677.723 1326.8 677.723 1278.53 677.723 1239.4 638.591 1239.4 590.32 1239.4 542.048 1278.53 502.917 1326.8 502.917 1375.08 502.917 1414.21 542.048 1414.21 590.32ZM477.145 1438.58C376.846 1338.28 219.234 1331.12 110.339 1415.65 204.906 1576.13 339.593 1710.82 498.637 1805.39 584.607 1696.49 577.443 1538.88 477.145 1438.58ZM679.155 1325.37C679.155 1373.64 640.024 1412.77 591.752 1412.77 543.481 1412.77 504.349 1373.64 504.349 1325.37 504.349 1277.1 543.481 1237.97 591.752 1237.97 640.024 1237.97 679.155 1277.1 679.155 1325.37Z"/></g></svg>`
+	}
 }
 
-
 function getAssignments() {
-    if (options.assignments_due === true || options.better_todo === true) {
-        assignments = loadPlannerItems();
-        cardAssignments = preloadAssignmentEls();
-        // setupBetterTodo bails (instead of mounting a permanently-empty
-        // shell) when the data promise isn't ready yet — the common case on
-        // first run or after an expired session, when the initial fetch takes
-        // seconds. Once data resolves, try mounting the sidebar in case the
-        // dashboard has gone quiet since the last MutationObserver burst;
-        // setupBetterTodo's own guards make this a no-op everywhere it
-        // shouldn't run (wrong page, quiz, already mounted).
-        assignments.then(() => setupBetterTodo());
-    }
+	if (options.assignments_due === true || options.better_todo === true) {
+		assignments = loadPlannerItems()
+		cardAssignments = preloadAssignmentEls()
+		// setupBetterTodo bails (instead of mounting a permanently-empty
+		// shell) when the data promise isn't ready yet — the common case on
+		// first run or after an expired session, when the initial fetch takes
+		// seconds. Once data resolves, try mounting the sidebar in case the
+		// dashboard has gone quiet since the last MutationObserver burst;
+		// setupBetterTodo's own guards make this a no-op everywhere it
+		// shouldn't run (wrong page, quiz, already mounted).
+		assignments.then(() => setupBetterTodo())
+	}
 }
 
 // ===================== Planner items (cached) =====================
@@ -6403,21 +7589,21 @@ function getAssignments() {
 // older than a year are intentionally dropped. (Concluded courses are
 // excluded by the planner API by default, so this is history from the
 // user's active courses only.)
-const PLANNER_CACHE_KEY = "planner_cache_v1";
-const PLANNER_LOOKBACK_DAYS = 365;   // max history fetched from Canvas
-const PLANNER_WINDOW_DAYS = 14;     // per-load "what changed" refresh window
-const PLANNER_FULL_REFRESH_DAYS = 7; // min time between full lookback walks
+const PLANNER_CACHE_KEY = 'planner_cache_v1'
+const PLANNER_LOOKBACK_DAYS = 365 // max history fetched from Canvas
+const PLANNER_WINDOW_DAYS = 14 // per-load "what changed" refresh window
+const PLANNER_FULL_REFRESH_DAYS = 7 // min time between full lookback walks
 // Hard cap on pages fetched (50 pages * 100 items = 5000 items) as a safety
 // net against a malformed/misbehaving next link.
-const PLANNER_MAX_PAGES = 50;
+const PLANNER_MAX_PAGES = 50
 
 function plannerDateDaysAgo(days) {
-    return new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+	return new Date(Date.now() - days * 86400000).toISOString().slice(0, 10)
 }
 
 // Stable identity for a planner item (same pair the complete-toggle uses).
 function plannerItemKey(item) {
-    return `${item.plannable_type}|${item.plannable_id}`;
+	return `${item.plannable_type}|${item.plannable_id}`
 }
 
 // ===================== Active-enrollment filter =====================
@@ -6429,32 +7615,32 @@ function plannerItemKey(item) {
 // filtered to real, current classes. Returns null on failure so callers
 // skip filtering instead of hiding everything.
 async function fetchActiveCourseIds() {
-    const ids = new Set();
-    let url = `${domain}/api/v1/courses?enrollment_state=active&per_page=100`;
-    // 10 pages * 100 courses is far beyond any real enrollment count; just a
-    // safety net against a malformed next link.
-    for (let page = 0; page < 10 && url; page++) {
-        let response;
-        let data;
-        try {
-            response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
-            data = await response.json();
-        } catch (e) {
-            return null;
-        }
-        if (!response.ok || !Array.isArray(data)) return null;
-        for (const course of data) {
-            if (course && course.id != null) ids.add(String(course.id));
-        }
-        url = getNextPageUrl(response.headers.get("Link"));
-    }
-    return ids;
+	const ids = new Set()
+	let url = `${domain}/api/v1/courses?enrollment_state=active&per_page=100`
+	// 10 pages * 100 courses is far beyond any real enrollment count; just a
+	// safety net against a malformed next link.
+	for (let page = 0; page < 10 && url; page++) {
+		let response
+		let data
+		try {
+			response = await fetch(url, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+			})
+			data = await response.json()
+		} catch (e) {
+			return null
+		}
+		if (!response.ok || !Array.isArray(data)) return null
+		for (const course of data) {
+			if (course && course.id != null) ids.add(String(course.id))
+		}
+		url = getNextPageUrl(response.headers.get('Link'))
+	}
+	return ids
 }
 
 // Keeps only items belonging to courses in `courseIds` (Set or array).
@@ -6462,39 +7648,53 @@ async function fetchActiveCourseIds() {
 // filtering is applied. Personal items with no course context (planner
 // notes, non-course contexts like groups) are always kept.
 function filterPlannerItemsByActiveCourses(items, courseIds) {
-    if (!courseIds) return items;
-    const active = (courseIds instanceof Set) ? courseIds : new Set(courseIds.map(String));
-    return items.filter(item => {
-        const cid = item.course_id ?? (item.context_type === "course" ? item.context_id : null);
-        return cid == null || active.has(String(cid));
-    });
+	if (!courseIds) return items
+	const active = courseIds instanceof Set ? courseIds : new Set(courseIds.map(String))
+	return items.filter((item) => {
+		const cid =
+			item.course_id ?? (item.context_type === 'course' ? item.context_id : null)
+		return cid == null || active.has(String(cid))
+	})
 }
 
 async function readPlannerCache() {
-    try {
-        const result = await chrome.storage.local.get(PLANNER_CACHE_KEY);
-        const cache = result && result[PLANNER_CACHE_KEY];
-        if (cache && Array.isArray(cache.items)) return cache;
-    } catch (e) { /* storage unavailable; fall back to live fetch */ }
-    return null;
+	try {
+		const result = await chrome.storage.local.get(PLANNER_CACHE_KEY)
+		const cache = result && result[PLANNER_CACHE_KEY]
+		if (cache && Array.isArray(cache.items)) return cache
+	} catch (e) {
+		/* storage unavailable; fall back to live fetch */
+	}
+	return null
 }
 
 function writePlannerCache(items, lastFullRefresh, activeCourseIds, minRefreshedAt = 0) {
-    try {
-        // Cross-tab last-writer-wins guard: several Canvas tabs can refresh the
-        // shared cache concurrently, and a slower tab merging from an older
-        // snapshot must not overwrite a newer write. Skip when storage already
-        // holds a cache refreshed after our snapshot was taken. Losing the
-        // write is non-fatal — the other tab's data is fresher.
-        chrome.storage.local.get(PLANNER_CACHE_KEY, result => {
-            try {
-                const current = result && result[PLANNER_CACHE_KEY];
-                if (current && ((current.refreshedAt || 0) > minRefreshedAt)) return;
-                const p = chrome.storage.local.set({ [PLANNER_CACHE_KEY]: { items, lastFullRefresh, activeCourseIds, refreshedAt: Date.now() } });
-                if (p && typeof p.catch === "function") p.catch(() => {});
-            } catch (e) { /* cache write failure is non-fatal */ }
-        });
-    } catch (e) { /* cache write failure is non-fatal */ }
+	try {
+		// Cross-tab last-writer-wins guard: several Canvas tabs can refresh the
+		// shared cache concurrently, and a slower tab merging from an older
+		// snapshot must not overwrite a newer write. Skip when storage already
+		// holds a cache refreshed after our snapshot was taken. Losing the
+		// write is non-fatal — the other tab's data is fresher.
+		chrome.storage.local.get(PLANNER_CACHE_KEY, (result) => {
+			try {
+				const current = result && result[PLANNER_CACHE_KEY]
+				if (current && (current.refreshedAt || 0) > minRefreshedAt) return
+				const p = chrome.storage.local.set({
+					[PLANNER_CACHE_KEY]: {
+						items,
+						lastFullRefresh,
+						activeCourseIds,
+						refreshedAt: Date.now(),
+					},
+				})
+				if (p && typeof p.catch === 'function') p.catch(() => {})
+			} catch (e) {
+				/* cache write failure is non-fatal */
+			}
+		})
+	} catch (e) {
+		/* cache write failure is non-fatal */
+	}
 }
 
 // Fetches every page of /api/v1/planner/items with a due date on/after
@@ -6506,48 +7706,48 @@ function writePlannerCache(items, lastFullRefresh, activeCourseIds, minRefreshed
 // into the cache used to wipe real data whenever the Canvas session had
 // expired (the reported "reload after SSO login breaks everything" bug).
 async function fetchPlannerItemsSince(startDate) {
-    const allItems = [];
-    let url = `${domain}/api/v1/planner/items?start_date=${startDate}&per_page=100`;
-    for (let page = 0; page < PLANNER_MAX_PAGES && url; page++) {
-        let response;
-        let data;
-        try {
-            response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
-            data = await response.json();
-        } catch (e) {
-            return null;
-        }
-        if (!response.ok || !Array.isArray(data)) return null;
-        // Deep-clone via JSON to unwrap Firefox Xray objects so nested props
-        // are mutable (same as getData).
-        try {
-            allItems.push(...JSON.parse(JSON.stringify(data)));
-        } catch (_) {
-            allItems.push(...data);
-        }
-        url = getNextPageUrl(response.headers.get("Link"));
-    }
-    return allItems;
+	const allItems = []
+	let url = `${domain}/api/v1/planner/items?start_date=${startDate}&per_page=100`
+	for (let page = 0; page < PLANNER_MAX_PAGES && url; page++) {
+		let response
+		let data
+		try {
+			response = await fetch(url, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+			})
+			data = await response.json()
+		} catch (e) {
+			return null
+		}
+		if (!response.ok || !Array.isArray(data)) return null
+		// Deep-clone via JSON to unwrap Firefox Xray objects so nested props
+		// are mutable (same as getData).
+		try {
+			allItems.push(...JSON.parse(JSON.stringify(data)))
+		} catch (_) {
+			allItems.push(...data)
+		}
+		url = getNextPageUrl(response.headers.get('Link'))
+	}
+	return allItems
 }
 
 // Merges a fresh window fetch into the cached list. Cached items whose due
 // date falls inside the fetched window are replaced wholesale (catches new,
 // changed, and removed items); older cached items are kept as-is.
 function mergePlannerItems(cached, fetched, windowStartMs) {
-    const byKey = new Map();
-    for (const item of cached) {
-        const due = new Date(item.plannable_date).getTime();
-        if (due >= windowStartMs) continue; // superseded by the fresh fetch
-        byKey.set(plannerItemKey(item), item);
-    }
-    for (const item of fetched) byKey.set(plannerItemKey(item), item);
-    return sortAndTrimPlannerItems([...byKey.values()]);
+	const byKey = new Map()
+	for (const item of cached) {
+		const due = new Date(item.plannable_date).getTime()
+		if (due >= windowStartMs) continue // superseded by the fresh fetch
+		byKey.set(plannerItemKey(item), item)
+	}
+	for (const item of fetched) byKey.set(plannerItemKey(item), item)
+	return sortAndTrimPlannerItems([...byKey.values()])
 }
 
 // Drops items older than the lookback window, dedupes them by planner item
@@ -6558,28 +7758,31 @@ function mergePlannerItems(cached, fetched, windowStartMs) {
 // persisted verbatim and render the same assignment twice on cards and in
 // the todo list until the next successful window merge happened to clean it.
 function sortAndTrimPlannerItems(items) {
-    const cutoff = Date.now() - PLANNER_LOOKBACK_DAYS * 86400000;
-    // Map insertion keeps the LAST occurrence per key: Canvas returns items
-    // oldest-first, so within a single (possibly self-overlapping) fetch the
-    // later copy is the newer data. (mergePlannerItems additionally layers the
-    // fresh fetch over the cache, so fetched data still wins there.)
-    const byKey = new Map();
-    for (const item of items) {
-        if (new Date(item.plannable_date).getTime() < cutoff) continue;
-        byKey.set(plannerItemKey(item), item);
-    }
-    const trimmed = [...byKey.values()];
-    trimmed.sort((a, b) => new Date(a.plannable_date) - new Date(b.plannable_date));
-    return trimmed;
+	const cutoff = Date.now() - PLANNER_LOOKBACK_DAYS * 86400000
+	// Map insertion keeps the LAST occurrence per key: Canvas returns items
+	// oldest-first, so within a single (possibly self-overlapping) fetch the
+	// later copy is the newer data. (mergePlannerItems additionally layers the
+	// fresh fetch over the cache, so fetched data still wins there.)
+	const byKey = new Map()
+	for (const item of items) {
+		if (new Date(item.plannable_date).getTime() < cutoff) continue
+		byKey.set(plannerItemKey(item), item)
+	}
+	const trimmed = [...byKey.values()]
+	trimmed.sort((a, b) => new Date(a.plannable_date) - new Date(b.plannable_date))
+	return trimmed
 }
 
 // Cheap change signature so consumers only re-render when something they
 // display actually moved: due date, submitted/graded/complete state, or an
 // announcement's read state.
 function plannerFingerprint(items) {
-    return items.map(item =>
-        `${plannerItemKey(item)}:${item.plannable_date}:${item.submissions?.submitted ? 1 : 0}:${item.submissions?.graded ? 1 : 0}:${item.planner_override?.marked_complete ? 1 : 0}:${item.plannable?.read_state ?? ""}`
-    ).join("|");
+	return items
+		.map(
+			(item) =>
+				`${plannerItemKey(item)}:${item.plannable_date}:${item.submissions?.submitted ? 1 : 0}:${item.submissions?.graded ? 1 : 0}:${item.planner_override?.marked_complete ? 1 : 0}:${item.plannable?.read_state ?? ''}`,
+		)
+		.join('|')
 }
 
 // Entry point for the planner data. Resolves instantly from cache when
@@ -6587,27 +7790,28 @@ function plannerFingerprint(items) {
 // the to-do list isn't empty on first run, then caches the result. In both
 // cases items are limited to the student's currently-active courses.
 async function loadPlannerItems() {
-    const cache = await readPlannerCache();
-    if (cache) {
-        schedulePlannerRefresh(cache);
-        // Serve instantly, filtered with the last known enrollment list;
-        // the background refresh below brings that list up to date.
-        return filterPlannerItemsByActiveCourses(cache.items, cache.activeCourseIds);
-    }
-    // First run (no cache yet): fetch the bounded lookback and the active
-    // enrollment list in parallel, then cache the filtered result. A failed
-    // fetch (e.g. expired session) must NOT be cached: cache nothing so the
-    // next load retries the full fetch instead of serving an empty list.
-    const [items, courseIds] = await Promise.all([
-        fetchPlannerItemsSince(plannerDateDaysAgo(PLANNER_LOOKBACK_DAYS)),
-        fetchActiveCourseIds(),
-    ]);
-    if (items === null) return [];
-    const filtered = filterPlannerItemsByActiveCourses(
-        sortAndTrimPlannerItems(items), courseIds
-    );
-    writePlannerCache(filtered, Date.now(), courseIds ? [...courseIds] : null);
-    return filtered;
+	const cache = await readPlannerCache()
+	if (cache) {
+		schedulePlannerRefresh(cache)
+		// Serve instantly, filtered with the last known enrollment list;
+		// the background refresh below brings that list up to date.
+		return filterPlannerItemsByActiveCourses(cache.items, cache.activeCourseIds)
+	}
+	// First run (no cache yet): fetch the bounded lookback and the active
+	// enrollment list in parallel, then cache the filtered result. A failed
+	// fetch (e.g. expired session) must NOT be cached: cache nothing so the
+	// next load retries the full fetch instead of serving an empty list.
+	const [items, courseIds] = await Promise.all([
+		fetchPlannerItemsSince(plannerDateDaysAgo(PLANNER_LOOKBACK_DAYS)),
+		fetchActiveCourseIds(),
+	])
+	if (items === null) return []
+	const filtered = filterPlannerItemsByActiveCourses(
+		sortAndTrimPlannerItems(items),
+		courseIds,
+	)
+	writePlannerCache(filtered, Date.now(), courseIds ? [...courseIds] : null)
+	return filtered
 }
 
 // Background cache refresh: a small recent window on every load (catches new
@@ -6618,101 +7822,109 @@ async function loadPlannerItems() {
 // than waiting for the weekly walk. Runs while the tab is idle so it never
 // competes with page load.
 function schedulePlannerRefresh(cache) {
-    const fullRefreshDue = !cache.lastFullRefresh ||
-        (Date.now() - cache.lastFullRefresh > PLANNER_FULL_REFRESH_DAYS * 86400000);
-    // Only one refresh may run at a time. loadPlannerItems schedules a refresh
-    // on every cache hit (including Add-Task's re-fetch), and every open Canvas
-    // tab runs its own; concurrent runs could interleave so a slow stale run
-    // overwrites a newer incremental write in storage.
-    if (plannerRefreshRunning) return;
-    const run = async () => {
-        if (plannerRefreshRunning) return;
-        plannerRefreshRunning = true;
-        try {
-            const before = plannerFingerprint(
-                filterPlannerItemsByActiveCourses(cache.items, cache.activeCourseIds)
-            );
-            const courseIds = await fetchActiveCourseIds();
-            // On enrollment-fetch failure, fall back to the cached list.
-            const active = courseIds ?? (cache.activeCourseIds ?? null);
-            const idsToStore = courseIds ? [...courseIds] : (cache.activeCourseIds ?? null);
-            let merged;
-            if (fullRefreshDue) {
-                const fetched = await fetchPlannerItemsSince(plannerDateDaysAgo(PLANNER_LOOKBACK_DAYS));
-                // Fetch failed (e.g. expired session): keep the existing cache
-                // untouched and retry on the next load. Writing the empty
-                // result used to wipe the cache AND stamp lastFullRefresh,
-                // locking in the data loss for a week.
-                if (fetched === null) return;
-                merged = filterPlannerItemsByActiveCourses(
-                    sortAndTrimPlannerItems(fetched),
-                    active
-                );
-                writePlannerCache(merged, Date.now(), idsToStore, cache.refreshedAt || 0);
-            } else {
-                const windowStart = plannerDateDaysAgo(PLANNER_WINDOW_DAYS);
-                const fetched = await fetchPlannerItemsSince(windowStart);
-                // Fetch failed: skip the merge entirely. mergePlannerItems
-                // drops cached items inside the window before adding the fresh
-                // ones, so merging an empty/failed fetch would silently delete
-                // the most recent two weeks from the persisted cache.
-                if (fetched === null) return;
-                merged = filterPlannerItemsByActiveCourses(
-                    // Drop threshold = the window start's LOCAL midnight, not
-                    // UTC midnight. The window start is a date-only string
-                    // (Date.parse → UTC midnight) while Canvas evaluates
-                    // start_date in the user's timezone: for a user west of
-                    // UTC, an item due between UTC midnight and local midnight
-                    // counts as "inside the window" by UTC but is NOT returned
-                    // by a fetch filtered from local midnight — dropping it at
-                    // the UTC threshold silently deleted it until the weekly
-                    // full walk. Thresholding at local midnight keeps exactly
-                    // the items the fetch may not return; any harmless overlap
-                    // is removed by mergePlannerItems' key dedupe (fresh wins).
-                    mergePlannerItems(cache.items, fetched, Date.parse(windowStart + "T00:00:00")),
-                    active
-                );
-                writePlannerCache(merged, cache.lastFullRefresh, idsToStore, cache.refreshedAt || 0);
-            }
-            if (plannerFingerprint(merged) !== before) refreshPlannerConsumers(merged);
-        } catch (e) {
-            console.warn("planner refresh failed", e);
-        } finally {
-            plannerRefreshRunning = false;
-        }
-    };
-    if (typeof requestIdleCallback === "function") {
-        requestIdleCallback(() => run(), { timeout: 20000 });
-    } else {
-        setTimeout(run, 5000);
-    }
+	const fullRefreshDue =
+		!cache.lastFullRefresh ||
+		Date.now() - cache.lastFullRefresh > PLANNER_FULL_REFRESH_DAYS * 86400000
+	// Only one refresh may run at a time. loadPlannerItems schedules a refresh
+	// on every cache hit (including Add-Task's re-fetch), and every open Canvas
+	// tab runs its own; concurrent runs could interleave so a slow stale run
+	// overwrites a newer incremental write in storage.
+	if (plannerRefreshRunning) return
+	const run = async () => {
+		if (plannerRefreshRunning) return
+		plannerRefreshRunning = true
+		try {
+			const before = plannerFingerprint(
+				filterPlannerItemsByActiveCourses(cache.items, cache.activeCourseIds),
+			)
+			const courseIds = await fetchActiveCourseIds()
+			// On enrollment-fetch failure, fall back to the cached list.
+			const active = courseIds ?? cache.activeCourseIds ?? null
+			const idsToStore = courseIds ? [...courseIds] : (cache.activeCourseIds ?? null)
+			let merged
+			if (fullRefreshDue) {
+				const fetched = await fetchPlannerItemsSince(
+					plannerDateDaysAgo(PLANNER_LOOKBACK_DAYS),
+				)
+				// Fetch failed (e.g. expired session): keep the existing cache
+				// untouched and retry on the next load. Writing the empty
+				// result used to wipe the cache AND stamp lastFullRefresh,
+				// locking in the data loss for a week.
+				if (fetched === null) return
+				merged = filterPlannerItemsByActiveCourses(
+					sortAndTrimPlannerItems(fetched),
+					active,
+				)
+				writePlannerCache(merged, Date.now(), idsToStore, cache.refreshedAt || 0)
+			} else {
+				const windowStart = plannerDateDaysAgo(PLANNER_WINDOW_DAYS)
+				const fetched = await fetchPlannerItemsSince(windowStart)
+				// Fetch failed: skip the merge entirely. mergePlannerItems
+				// drops cached items inside the window before adding the fresh
+				// ones, so merging an empty/failed fetch would silently delete
+				// the most recent two weeks from the persisted cache.
+				if (fetched === null) return
+				merged = filterPlannerItemsByActiveCourses(
+					// Drop threshold = the window start's LOCAL midnight, not
+					// UTC midnight. The window start is a date-only string
+					// (Date.parse → UTC midnight) while Canvas evaluates
+					// start_date in the user's timezone: for a user west of
+					// UTC, an item due between UTC midnight and local midnight
+					// counts as "inside the window" by UTC but is NOT returned
+					// by a fetch filtered from local midnight — dropping it at
+					// the UTC threshold silently deleted it until the weekly
+					// full walk. Thresholding at local midnight keeps exactly
+					// the items the fetch may not return; any harmless overlap
+					// is removed by mergePlannerItems' key dedupe (fresh wins).
+					mergePlannerItems(cache.items, fetched, Date.parse(windowStart + 'T00:00:00')),
+					active,
+				)
+				writePlannerCache(
+					merged,
+					cache.lastFullRefresh,
+					idsToStore,
+					cache.refreshedAt || 0,
+				)
+			}
+			if (plannerFingerprint(merged) !== before) refreshPlannerConsumers(merged)
+		} catch (e) {
+			console.warn('planner refresh failed', e)
+		} finally {
+			plannerRefreshRunning = false
+		}
+	}
+	if (typeof requestIdleCallback === 'function') {
+		requestIdleCallback(() => run(), { timeout: 20000 })
+	} else {
+		setTimeout(run, 5000)
+	}
 }
 
 // Re-renders everything that displays planner items after the background
 // refresh produced new data. Mirrors the option-change handlers so all the
 // existing consumers re-attach to the updated promise.
 function refreshPlannerConsumers(items) {
-    assignments = Promise.resolve(items);
-    updateReminders();
-    if (options.assignments_due === true || options.better_todo === true) {
-        cardAssignments = preloadAssignmentEls();
-        loadCardAssignments();
-    }
-    if (options.better_todo && document.getElementById("better-todo-main")) {
-        moreAnnouncementCount = 0;
-        moreAssignmentCount = 0;
-        moreCompletedCount = 0;
-        clearTodoList();
-        createTodoSections(document.querySelector("#canvasrefined-todo-list"));
-    }
+	assignments = Promise.resolve(items)
+	updateReminders()
+	if (options.assignments_due === true || options.better_todo === true) {
+		cardAssignments = preloadAssignmentEls()
+		loadCardAssignments()
+	}
+	if (options.better_todo && document.getElementById('better-todo-main')) {
+		moreAnnouncementCount = 0
+		moreAssignmentCount = 0
+		moreCompletedCount = 0
+		clearTodoList()
+		createTodoSections(document.querySelector('#canvasrefined-todo-list'))
+	}
 }
 
 // Extracts the rel="next" URL from a Canvas pagination Link header, or
 // returns null when on the last page.
 function getNextPageUrl(linkHeader) {
-    if (!linkHeader) return null;
-    const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
-    return match ? match[1] : null;
+	if (!linkHeader) return null
+	const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/)
+	return match ? match[1] : null
 }
 
 // ===================== Grade Analytics =====================
@@ -6724,102 +7936,121 @@ function getNextPageUrl(linkHeader) {
 // extension needs no CDN/library and no chart library dependency.
 
 const GA_BUCKETS = [
-    { label: "90+",   min: 90, max: Infinity, color: "#16a34a" },
-    { label: "80-89", min: 80, max: 90,       color: "#4ade80" },
-    { label: "70-79", min: 70, max: 80,       color: "#facc15" },
-    { label: "60-69", min: 60, max: 70,       color: "#fb923c" },
-    { label: "50-59", min: 50, max: 60,       color: "#f87171" },
-    { label: "40-49", min: 40, max: 50,       color: "#ef4444" },
-    { label: "30-39", min: 30, max: 40,       color: "#dc2626" },
-    { label: "20-29", min: 20, max: 30,       color: "#b91c1c" },
-    { label: "10-19", min: 10, max: 20,       color: "#991b1b" },
-    { label: "0-9",   min: 0,  max: 10,       color: "#7f1d1d" },
-];
-const GA_UNGRADED_COLOR = "#6b7280";
+	{ label: '90+', min: 90, max: Infinity, color: '#16a34a' },
+	{ label: '80-89', min: 80, max: 90, color: '#4ade80' },
+	{ label: '70-79', min: 70, max: 80, color: '#facc15' },
+	{ label: '60-69', min: 60, max: 70, color: '#fb923c' },
+	{ label: '50-59', min: 50, max: 60, color: '#f87171' },
+	{ label: '40-49', min: 40, max: 50, color: '#ef4444' },
+	{ label: '30-39', min: 30, max: 40, color: '#dc2626' },
+	{ label: '20-29', min: 20, max: 30, color: '#b91c1c' },
+	{ label: '10-19', min: 10, max: 20, color: '#991b1b' },
+	{ label: '0-9', min: 0, max: 10, color: '#7f1d1d' },
+]
+const GA_UNGRADED_COLOR = '#6b7280'
 const GA_GRADE_COLORS = {
-    "A+": "#93c5fd", A: "#3b82f6", "A-": "#1e40af",
-    "B+": "#86efac", B: "#22c55e", "B-": "#166534",
-    "C+": "#facc15", C: "#facc15", "C-": "#facc15",
-    "D+": "#ef4444", D: "#ef4444", "D-": "#ef4444",
-    F: "#9ca3af",
-};
+	'A+': '#93c5fd',
+	A: '#3b82f6',
+	'A-': '#1e40af',
+	'B+': '#86efac',
+	B: '#22c55e',
+	'B-': '#166534',
+	'C+': '#facc15',
+	C: '#facc15',
+	'C-': '#facc15',
+	'D+': '#ef4444',
+	D: '#ef4444',
+	'D-': '#ef4444',
+	F: '#9ca3af',
+}
 
 // Solid letter-grade bands, clipped to the current Y range. Use the same
 // sorted thresholds and tie handling as percentToLetterGrade, including
 // per-course overrides. The highest grade continues above 100%.
 function gaGradeZones(courseId, yMin, yMax) {
-    const thresholds = getGradeThresholds(courseId);
-    const edges = [...new Set([yMin, yMax, ...thresholds.map(grade => grade.cutoff)
-        .filter(cutoff => cutoff > yMin && cutoff < yMax)])].sort((a, b) => a - b);
-    return edges.slice(0, -1).map((bottom, i) => {
-        const letter = thresholds.find(grade => bottom >= grade.cutoff)?.letter;
-        return { bottom, top: edges[i + 1], color: GA_GRADE_COLORS[letter] || GA_GRADE_COLORS.F };
-    });
+	const thresholds = getGradeThresholds(courseId)
+	const edges = [
+		...new Set([
+			yMin,
+			yMax,
+			...thresholds
+				.map((grade) => grade.cutoff)
+				.filter((cutoff) => cutoff > yMin && cutoff < yMax),
+		]),
+	].sort((a, b) => a - b)
+	return edges.slice(0, -1).map((bottom, i) => {
+		const letter = thresholds.find((grade) => bottom >= grade.cutoff)?.letter
+		return {
+			bottom,
+			top: edges[i + 1],
+			color: GA_GRADE_COLORS[letter] || GA_GRADE_COLORS.F,
+		}
+	})
 }
 
-const GA_OPEN_KEY = "grade_analytics_open";
+const GA_OPEN_KEY = 'grade_analytics_open'
 
 async function getGradeAnalyticsOpenState() {
-    const result = await chrome.storage.local.get(GA_OPEN_KEY);
-    return result[GA_OPEN_KEY] ?? true;
+	const result = await chrome.storage.local.get(GA_OPEN_KEY)
+	return result[GA_OPEN_KEY] ?? true
 }
 
 function setGradeAnalyticsOpenState(open) {
-    chrome.storage.local.set({ [GA_OPEN_KEY]: open });
+	chrome.storage.local.set({ [GA_OPEN_KEY]: open })
 }
 
-const GA_FIT_Y_KEY = "grade_analytics_fit_y";
+const GA_FIT_Y_KEY = 'grade_analytics_fit_y'
 
 async function getGradeAnalyticsFitY() {
-    const result = await chrome.storage.local.get(GA_FIT_Y_KEY);
-    return result[GA_FIT_Y_KEY] ?? false;
+	const result = await chrome.storage.local.get(GA_FIT_Y_KEY)
+	return result[GA_FIT_Y_KEY] ?? false
 }
 
 function setGradeAnalyticsFitY(fit) {
-    chrome.storage.local.set({ [GA_FIT_Y_KEY]: fit });
+	chrome.storage.local.set({ [GA_FIT_Y_KEY]: fit })
 }
 
 // Final-grade calculator settings, stored per course so each course's final
 // weight and goal survive reloads: { weight, target, show }. The needed
 // score itself is never stored — it's always recomputed against the live
 // current grade.
-const GA_CALC_PREFIX = "grade_analytics_final_";
+const GA_CALC_PREFIX = 'grade_analytics_final_'
 
 function gaCalcStorageKey(courseId) {
-    return GA_CALC_PREFIX + courseId;
+	return GA_CALC_PREFIX + courseId
 }
 
 async function getGaCalcSettings(courseId) {
-    const empty = { weight: null, target: null, show: false };
-    if (courseId == null) return empty;
-    const key = gaCalcStorageKey(courseId);
-    const result = await chrome.storage.local.get(key);
-    const v = result[key];
-    return v && typeof v === "object" ? v : empty;
+	const empty = { weight: null, target: null, show: false }
+	if (courseId == null) return empty
+	const key = gaCalcStorageKey(courseId)
+	const result = await chrome.storage.local.get(key)
+	const v = result[key]
+	return v && typeof v === 'object' ? v : empty
 }
 
 function saveGaCalcSettings() {
-    const courseId = getCurrentCourseId();
-    if (courseId == null || !gaCalc) return;
-    chrome.storage.local.set({ [gaCalcStorageKey(courseId)]: gaCalc });
+	const courseId = getCurrentCourseId()
+	if (courseId == null || !gaCalc) return
+	chrome.storage.local.set({ [gaCalcStorageKey(courseId)]: gaCalc })
 }
 
-let gaObserver = null;
-let gaOpen = false;          // panel open on this page view
-let gaFitY = false;         // scale the line chart Y axis to fit the data
-let gaImagineIf = false;    // "What-If mode" enabled on this page view (never persisted — always off on load)
-let gaScenario = null;      // What-If working copy of groups + assignments
-let gaIfCounter = 0;         // unique ids for user-added groups/assignments
-let gaOriginalFinalHtml = null; // Total row's original grade span innerHTML, for restore
-let gaTab = "overview";     // active panel tab: "overview" | "calc"
-let gaCalc = null;           // final-grade calculator settings for this course
-let gaCourseId = null;       // course whose data is cached
-let gaData = null;           // computed data for the current course
-let gaLoading = false;
-let gaChartObserver = null;  // ResizeObserver: redraws charts once their boxes gain a real size
+let gaObserver = null
+let gaOpen = false // panel open on this page view
+let gaFitY = false // scale the line chart Y axis to fit the data
+let gaImagineIf = false // "What-If mode" enabled on this page view (never persisted — always off on load)
+let gaScenario = null // What-If working copy of groups + assignments
+let gaIfCounter = 0 // unique ids for user-added groups/assignments
+let gaOriginalFinalHtml = null // Total row's original grade span innerHTML, for restore
+let gaTab = 'overview' // active panel tab: "overview" | "calc"
+let gaCalc = null // final-grade calculator settings for this course
+let gaCourseId = null // course whose data is cached
+let gaData = null // computed data for the current course
+let gaLoading = false
+let gaChartObserver = null // ResizeObserver: redraws charts once their boxes gain a real size
 
 function gradeAnalyticsActive() {
-    return isGradesPage() && !quizSafeModeActive();
+	return isGradesPage() && !quizSafeModeActive()
 }
 
 // Grades data is read straight from the #grades_summary table the page
@@ -6828,103 +8059,118 @@ function gradeAnalyticsActive() {
 // sees (grading periods, unposted grades, etc.). Waits briefly for the table
 // to appear on SPA navigations.
 function gaWaitForGradesTable(timeoutMs = 15000) {
-    return new Promise((resolve, reject) => {
-        const ready = () => {
-            const table = document.querySelector("#grades_summary");
-            return table && table.querySelector("tr.student_assignment") ? table : null;
-        };
-        const found = ready();
-        if (found) { resolve(found); return; }
-        const started = Date.now();
-        const timer = setInterval(() => {
-            const table = ready();
-            if (table) { clearInterval(timer); resolve(table); }
-            else if (Date.now() - started > timeoutMs) {
-                clearInterval(timer);
-                reject(new Error("grades table not found on this page"));
-            }
-        }, 250);
-    });
+	return new Promise((resolve, reject) => {
+		const ready = () => {
+			const table = document.querySelector('#grades_summary')
+			return table && table.querySelector('tr.student_assignment') ? table : null
+		}
+		const found = ready()
+		if (found) {
+			resolve(found)
+			return
+		}
+		const started = Date.now()
+		const timer = setInterval(() => {
+			const table = ready()
+			if (table) {
+				clearInterval(timer)
+				resolve(table)
+			} else if (Date.now() - started > timeoutMs) {
+				clearInterval(timer)
+				reject(new Error('grades table not found on this page'))
+			}
+		}, 250)
+	})
 }
 
 // Entry point: always runs on Grades pages at init and on SPA navigation.
 function watchGradeAnalytics() {
-    if (!gradeAnalyticsActive()) {
-        removeGradeAnalyticsPanel();
-        if (gaObserver) { gaObserver.disconnect(); gaObserver = null; }
-        return;
-    }
-    // SPA navigation between courses: drop cached data so the panel never
-    // shows the previous course's charts.
-    const courseId = getCurrentCourseId();
-    if (gaCourseId !== null && gaCourseId !== courseId) {
-        gaData = null;
-        gaCourseId = null;
-        gaCalc = null; // per-course final-calculator settings
-        removeGradeAnalyticsPanel();
-    }
-    if (!gaObserver) {
-        // Canvas re-renders the left nav and content area during SPA
-        // navigation; the observer keeps the panel placed.
-        gaObserver = new MutationObserver(() => scheduleGradeAnalyticsSync());
-        gaObserver.observe(document.documentElement, { childList: true, subtree: true });
-    }
-    scheduleGradeAnalyticsSync();
-    // Restore the open/closed state and Y-axis preference the user last
-    // chose, then inject the panel below the Print Grades header.
-    Promise.all([getGradeAnalyticsOpenState(), getGradeAnalyticsFitY(), getGaCalcSettings(courseId)]).then(([open, fit, calc]) => {
-        gaOpen = open;
-        gaFitY = fit;
-        gaCalc = calc;
-        const panel = ensureGradeAnalyticsPanel();
-        if (panel) applyGaCalcState(panel);
-        if (gaOpen && gaData) renderGradeAnalytics();
-    });
-    if (!gaData && !gaLoading) loadGradeAnalytics();
+	if (!gradeAnalyticsActive()) {
+		removeGradeAnalyticsPanel()
+		if (gaObserver) {
+			gaObserver.disconnect()
+			gaObserver = null
+		}
+		return
+	}
+	// SPA navigation between courses: drop cached data so the panel never
+	// shows the previous course's charts.
+	const courseId = getCurrentCourseId()
+	if (gaCourseId !== null && gaCourseId !== courseId) {
+		gaData = null
+		gaCourseId = null
+		gaCalc = null // per-course final-calculator settings
+		removeGradeAnalyticsPanel()
+	}
+	if (!gaObserver) {
+		// Canvas re-renders the left nav and content area during SPA
+		// navigation; the observer keeps the panel placed.
+		gaObserver = new MutationObserver(() => scheduleGradeAnalyticsSync())
+		gaObserver.observe(document.documentElement, { childList: true, subtree: true })
+	}
+	scheduleGradeAnalyticsSync()
+	// Restore the open/closed state and Y-axis preference the user last
+	// chose, then inject the panel below the Print Grades header.
+	Promise.all([
+		getGradeAnalyticsOpenState(),
+		getGradeAnalyticsFitY(),
+		getGaCalcSettings(courseId),
+	]).then(([open, fit, calc]) => {
+		gaOpen = open
+		gaFitY = fit
+		gaCalc = calc
+		const panel = ensureGradeAnalyticsPanel()
+		if (panel) applyGaCalcState(panel)
+		if (gaOpen && gaData) renderGradeAnalytics()
+	})
+	if (!gaData && !gaLoading) loadGradeAnalytics()
 }
 
-let gaSyncRaf = null;
+let gaSyncRaf = null
 function scheduleGradeAnalyticsSync() {
-    if (gaSyncRaf) return;
-    gaSyncRaf = requestAnimationFrame(() => {
-        gaSyncRaf = null;
-        syncGradeAnalyticsUI();
-    });
+	if (gaSyncRaf) return
+	gaSyncRaf = requestAnimationFrame(() => {
+		gaSyncRaf = null
+		syncGradeAnalyticsUI()
+	})
 }
 
 function syncGradeAnalyticsUI() {
-    if (!gradeAnalyticsActive()) return;
-    const panel = ensureGradeAnalyticsPanel();
-    if (!panel) return;
-    // What-If: Canvas re-renders can wipe the overwritten Total block or
-    // swap in a new grades table (grading-period switch) — reapply, and
-    // rebuild the scenario when the table's rows changed.
-    if (gaImagineIf) {
-        gaRenderImagineIf();
-        gaApplyImagineTotal();
-    }
-    // Self-heal: the one-shot render after data loads can be a no-op when the
-    // panel was created before Canvas finished laying out the page (zero-size
-    // canvases) or while the body was still hidden. gaSetupCanvas leaves the
-    // canvas backing store at width 0 in that case, so a 0-width canvas means
-    // "never drawn" — redraw now that layout is real.
-    if (gaOpen && gaData) {
-        const pie = panel.querySelector("#canvasrefined-ga-pie");
-        const line = panel.querySelector("#canvasrefined-ga-line");
-        if ((pie && pie.width === 0) || (line && line.width === 0)) {
-            renderGradeAnalytics();
-        }
-    }
+	if (!gradeAnalyticsActive()) return
+	const panel = ensureGradeAnalyticsPanel()
+	if (!panel) return
+	// What-If: Canvas re-renders can wipe the overwritten Total block or
+	// swap in a new grades table (grading-period switch) — reapply, and
+	// rebuild the scenario when the table's rows changed.
+	if (gaImagineIf) {
+		gaRenderImagineIf()
+		gaApplyImagineTotal()
+	}
+	// Self-heal: the one-shot render after data loads can be a no-op when the
+	// panel was created before Canvas finished laying out the page (zero-size
+	// canvases) or while the body was still hidden. gaSetupCanvas leaves the
+	// canvas backing store at width 0 in that case, so a 0-width canvas means
+	// "never drawn" — redraw now that layout is real.
+	if (gaOpen && gaData) {
+		const pie = panel.querySelector('#canvasrefined-ga-pie')
+		const line = panel.querySelector('#canvasrefined-ga-line')
+		if ((pie && pie.width === 0) || (line && line.width === 0)) {
+			renderGradeAnalytics()
+		}
+	}
 }
 
 function removeGradeAnalyticsPanel() {
-    gaOpen = false;
-    if (gaChartObserver) { gaChartObserver.disconnect(); gaChartObserver = null; }
-    // Never leave a hypothetical Total or inline editors behind when the
-    // panel goes away.
-    gaClearImagineUI();
-    gaRestoreImagineTotal();
-    document.getElementById("canvasrefined-grade-analytics")?.remove();
+	gaOpen = false
+	if (gaChartObserver) {
+		gaChartObserver.disconnect()
+		gaChartObserver = null
+	}
+	// Never leave a hypothetical Total or inline editors behind when the
+	// panel goes away.
+	gaClearImagineUI()
+	gaRestoreImagineTotal()
+	document.getElementById('canvasrefined-grade-analytics')?.remove()
 }
 
 // Applies the in-memory open/closed state (restored from storage) to the panel
@@ -6932,57 +8178,57 @@ function removeGradeAnalyticsPanel() {
 // is reused, so a stored preference is never lost to a creation race (the DOM
 // observer can build the panel before the storage read resolves).
 function applyGradeAnalyticsOpenState(panel) {
-    const body = panel.querySelector("#canvasrefined-ga-body");
-    const btn = panel.querySelector("#canvasrefined-ga-toggle");
-    if (!body || !btn) return;
-    body.style.display = gaOpen ? "" : "none";
-    const svg = btn.querySelector("svg");
-    if (svg) svg.style.transform = gaOpen ? "rotate(180deg)" : "rotate(0deg)";
-    btn.setAttribute("aria-expanded", String(gaOpen));
+	const body = panel.querySelector('#canvasrefined-ga-body')
+	const btn = panel.querySelector('#canvasrefined-ga-toggle')
+	if (!body || !btn) return
+	body.style.display = gaOpen ? '' : 'none'
+	const svg = btn.querySelector('svg')
+	if (svg) svg.style.transform = gaOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+	btn.setAttribute('aria-expanded', String(gaOpen))
 }
 
 // Syncs the "What-If mode" button's DOM to the in-memory state.
 // Called at panel creation and whenever an already-attached panel is
 // reused, mirroring applyGradeAnalyticsOpenState.
 function applyGradeAnalyticsImagineState(panel) {
-    const btn = panel.querySelector("#canvasrefined-ga-imagine");
-    if (!btn) return;
-    btn.setAttribute("aria-pressed", String(gaImagineIf));
-    btn.style.borderColor = gaImagineIf ? "#2563eb" : "var(--bcborders)";
-    btn.style.color = gaImagineIf ? "#2563eb" : "var(--bctext-0)";
-    btn.style.fontWeight = gaImagineIf ? "600" : "";
+	const btn = panel.querySelector('#canvasrefined-ga-imagine')
+	if (!btn) return
+	btn.setAttribute('aria-pressed', String(gaImagineIf))
+	btn.style.borderColor = gaImagineIf ? '#2563eb' : 'var(--bcborders)'
+	btn.style.color = gaImagineIf ? '#2563eb' : 'var(--bctext-0)'
+	btn.style.fontWeight = gaImagineIf ? '600' : ''
 }
 
 // Panel is injected directly below the "Print Grades" action header on the
 // grades page. Returns null (and retries via the DOM observer) if the anchor
 // hasn't rendered yet.
 function ensureGradeAnalyticsPanel() {
-    let panel = document.getElementById("canvasrefined-grade-analytics");
-    const anchor = document.getElementById("print-grades-container");
-    if (panel && panel.isConnected) {
-        // Canvas re-renders can shift the anchor or our position; keep the
-        // panel directly after #print-grades-container at all times.
-        if (anchor && panel.previousElementSibling !== anchor) {
-            anchor.insertAdjacentElement("afterend", panel);
-        }
-        // Re-apply the open/closed state in case it was restored from storage
-        // after this panel was first created.
-        applyGradeAnalyticsOpenState(panel);
-        applyGradeAnalyticsImagineState(panel);
-        return panel;
-    }
-    const container = anchor || findContentContainer();
-    if (!container) return null;
-    panel = document.createElement("div");
-    panel.id = "canvasrefined-grade-analytics";
-    if (anchor) {
-        anchor.insertAdjacentElement("afterend", panel);
-    } else {
-        // Fallback: top of the content container until the anchor renders.
-        container.insertBefore(panel, container.firstChild);
-    }
-    panel.style.cssText = `margin:18px 0;padding:16px;border:1px solid color-mix(in srgb, var(--bcborders) 75%, transparent);border-radius:10px;background-color:var(--bcbackground-0);color:var(--bctext-0);font-family:"Lato","Helvetica Neue",Helvetica,Arial,sans-serif;box-sizing:border-box;`;
-    panel.innerHTML = `
+	let panel = document.getElementById('canvasrefined-grade-analytics')
+	const anchor = document.getElementById('print-grades-container')
+	if (panel && panel.isConnected) {
+		// Canvas re-renders can shift the anchor or our position; keep the
+		// panel directly after #print-grades-container at all times.
+		if (anchor && panel.previousElementSibling !== anchor) {
+			anchor.insertAdjacentElement('afterend', panel)
+		}
+		// Re-apply the open/closed state in case it was restored from storage
+		// after this panel was first created.
+		applyGradeAnalyticsOpenState(panel)
+		applyGradeAnalyticsImagineState(panel)
+		return panel
+	}
+	const container = anchor || findContentContainer()
+	if (!container) return null
+	panel = document.createElement('div')
+	panel.id = 'canvasrefined-grade-analytics'
+	if (anchor) {
+		anchor.insertAdjacentElement('afterend', panel)
+	} else {
+		// Fallback: top of the content container until the anchor renders.
+		container.insertBefore(panel, container.firstChild)
+	}
+	panel.style.cssText = `margin:18px 0;padding:16px;border:1px solid color-mix(in srgb, var(--bcborders) 75%, transparent);border-radius:10px;background-color:var(--bcbackground-0);color:var(--bctext-0);font-family:"Lato","Helvetica Neue",Helvetica,Arial,sans-serif;box-sizing:border-box;`
+	panel.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;">
             <h2 style="margin:0;font-size:18px;color:var(--bctext-0);">Grade Analytics</h2>
             <button id="canvasrefined-ga-imagine" type="button" aria-pressed="false" title="Toggle What-If mode" style="margin-left:auto;background:var(--bcbackground-1);color:var(--bctext-0);border:1px solid var(--bcborders);border-radius:8px;padding:4px 12px;font-size:14px;line-height:1.4;cursor:pointer;">What-If mode</button>
@@ -7026,107 +8272,112 @@ function ensureGradeAnalyticsPanel() {
             </div>
         </div>
         </div>
-    `;
-    const toggleBtn = panel.querySelector("#canvasrefined-ga-toggle");
-    const imagineBtn = panel.querySelector("#canvasrefined-ga-imagine");
-    const fitYCheckbox = panel.querySelector("#canvasrefined-ga-fity");
-    const applyOpenState = () => applyGradeAnalyticsOpenState(panel);
-    toggleBtn.addEventListener("click", () => {
-        gaOpen = !gaOpen;
-        setGradeAnalyticsOpenState(gaOpen);
-        applyOpenState();
-        if (gaOpen && gaData) renderGradeAnalytics();
-    });
-    // "What-If mode" button on the right side of the panel header. The
-    // toggle is per-page-view only (always off on load); the active style
-    // highlights the button while the mode is on.
-    imagineBtn.addEventListener("click", () => {
-        gaImagineIf = !gaImagineIf;
-        applyGradeAnalyticsImagineState(panel);
-        if (gaImagineIf) gaEnterImagineIf();
-        else gaExitImagineIf();
-    });
-    // "Fit Y axis" scales the line chart's Y axis to the data instead of a
-    // fixed 0-100; the choice is remembered across pages via chrome.storage.
-    fitYCheckbox.checked = gaFitY;
-    fitYCheckbox.addEventListener("change", () => {
-        gaFitY = fitYCheckbox.checked;
-        setGradeAnalyticsFitY(gaFitY);
-        if (gaData) {
-            gaDrawLine(panel.querySelector("#canvasrefined-ga-line"), panel.querySelector("#canvasrefined-ga-line-tip"));
-        }
-    });
-    // Tab switching between the charts overview and the final calculator.
-    panel.querySelectorAll("[data-ga-tab]").forEach(btn => {
-        btn.addEventListener("click", () => gaSetTab(btn.dataset.gaTab));
-    });
-    // Final-grade calculator inputs persist per course; every change re-saves
-    // and recomputes the result against the live current grade.
-    const calcWeight = panel.querySelector("#canvasrefined-ga-calc-weight");
-    const calcTarget = panel.querySelector("#canvasrefined-ga-calc-target");
-    const calcShow = panel.querySelector("#canvasrefined-ga-calc-show");
-    const onCalcInput = () => {
-        gaCalc = gaCalc || { weight: null, target: null, show: false };
-        const w = parseFloat(calcWeight.value);
-        const t = parseFloat(calcTarget.value);
-        gaCalc.weight = isFinite(w) ? Math.min(100, Math.max(0, w)) : null;
-        gaCalc.target = isFinite(t) ? Math.max(0, t) : null;
-        gaCalc.show = calcShow.checked;
-        saveGaCalcSettings();
-        renderGaCalculator();
-        renderGaStats();
-    };
-    calcWeight.addEventListener("input", onCalcInput);
-    calcTarget.addEventListener("input", onCalcInput);
-    calcShow.addEventListener("change", onCalcInput);
-    applyGaCalcState(panel);
-    applyGradeAnalyticsImagineState(panel);
-    applyOpenState();
-    // If the data finished loading before this panel was created (or before
-    // the stored open state was restored), the earlier render call found no
-    // panel — draw the charts now that it exists.
-    if (gaOpen && gaData) renderGradeAnalytics();
-    // A chart skipped because its box had no size (page still laying out,
-    // tab/panel hidden) is left at width 0; this observer redraws the moment
-    // the boxes get real dimensions, even when no DOM mutation or window
-    // resize follows.
-    if (gaChartObserver) gaChartObserver.disconnect();
-    gaChartObserver = new ResizeObserver(() => {
-        if (!gaOpen || !gaData) return;
-        const pie = panel.querySelector("#canvasrefined-ga-pie");
-        const line = panel.querySelector("#canvasrefined-ga-line");
-        if ((pie && pie.width === 0) || (line && line.width === 0)) renderGradeAnalytics();
-    });
-    gaChartObserver.observe(panel.querySelector("#canvasrefined-ga-pie").parentNode);
-    gaChartObserver.observe(panel.querySelector("#canvasrefined-ga-line").parentNode);
-    return panel;
+    `
+	const toggleBtn = panel.querySelector('#canvasrefined-ga-toggle')
+	const imagineBtn = panel.querySelector('#canvasrefined-ga-imagine')
+	const fitYCheckbox = panel.querySelector('#canvasrefined-ga-fity')
+	const applyOpenState = () => applyGradeAnalyticsOpenState(panel)
+	toggleBtn.addEventListener('click', () => {
+		gaOpen = !gaOpen
+		setGradeAnalyticsOpenState(gaOpen)
+		applyOpenState()
+		if (gaOpen && gaData) renderGradeAnalytics()
+	})
+	// "What-If mode" button on the right side of the panel header. The
+	// toggle is per-page-view only (always off on load); the active style
+	// highlights the button while the mode is on.
+	imagineBtn.addEventListener('click', () => {
+		gaImagineIf = !gaImagineIf
+		applyGradeAnalyticsImagineState(panel)
+		if (gaImagineIf) gaEnterImagineIf()
+		else gaExitImagineIf()
+	})
+	// "Fit Y axis" scales the line chart's Y axis to the data instead of a
+	// fixed 0-100; the choice is remembered across pages via chrome.storage.
+	fitYCheckbox.checked = gaFitY
+	fitYCheckbox.addEventListener('change', () => {
+		gaFitY = fitYCheckbox.checked
+		setGradeAnalyticsFitY(gaFitY)
+		if (gaData) {
+			gaDrawLine(
+				panel.querySelector('#canvasrefined-ga-line'),
+				panel.querySelector('#canvasrefined-ga-line-tip'),
+			)
+		}
+	})
+	// Tab switching between the charts overview and the final calculator.
+	panel.querySelectorAll('[data-ga-tab]').forEach((btn) => {
+		btn.addEventListener('click', () => gaSetTab(btn.dataset.gaTab))
+	})
+	// Final-grade calculator inputs persist per course; every change re-saves
+	// and recomputes the result against the live current grade.
+	const calcWeight = panel.querySelector('#canvasrefined-ga-calc-weight')
+	const calcTarget = panel.querySelector('#canvasrefined-ga-calc-target')
+	const calcShow = panel.querySelector('#canvasrefined-ga-calc-show')
+	const onCalcInput = () => {
+		gaCalc = gaCalc || { weight: null, target: null, show: false }
+		const w = parseFloat(calcWeight.value)
+		const t = parseFloat(calcTarget.value)
+		gaCalc.weight = isFinite(w) ? Math.min(100, Math.max(0, w)) : null
+		gaCalc.target = isFinite(t) ? Math.max(0, t) : null
+		gaCalc.show = calcShow.checked
+		saveGaCalcSettings()
+		renderGaCalculator()
+		renderGaStats()
+	}
+	calcWeight.addEventListener('input', onCalcInput)
+	calcTarget.addEventListener('input', onCalcInput)
+	calcShow.addEventListener('change', onCalcInput)
+	applyGaCalcState(panel)
+	applyGradeAnalyticsImagineState(panel)
+	applyOpenState()
+	// If the data finished loading before this panel was created (or before
+	// the stored open state was restored), the earlier render call found no
+	// panel — draw the charts now that it exists.
+	if (gaOpen && gaData) renderGradeAnalytics()
+	// A chart skipped because its box had no size (page still laying out,
+	// tab/panel hidden) is left at width 0; this observer redraws the moment
+	// the boxes get real dimensions, even when no DOM mutation or window
+	// resize follows.
+	if (gaChartObserver) gaChartObserver.disconnect()
+	gaChartObserver = new ResizeObserver(() => {
+		if (!gaOpen || !gaData) return
+		const pie = panel.querySelector('#canvasrefined-ga-pie')
+		const line = panel.querySelector('#canvasrefined-ga-line')
+		if ((pie && pie.width === 0) || (line && line.width === 0)) renderGradeAnalytics()
+	})
+	gaChartObserver.observe(panel.querySelector('#canvasrefined-ga-pie').parentNode)
+	gaChartObserver.observe(panel.querySelector('#canvasrefined-ga-line').parentNode)
+	return panel
 }
 
 async function loadGradeAnalytics() {
-    const courseId = getCurrentCourseId();
-    if (courseId == null) return;
-    gaLoading = true;
-    const status = document.getElementById("canvasrefined-ga-status");
-    if (status) status.textContent = "Reading grade data…";
-    try {
-        // Parse the grades table the page already rendered instead of hitting
-        // the paginated API — instant even for courses with hundreds of
-        // assignments, and always in sync with what the page shows.
-        const table = await gaWaitForGradesTable();
-        gaCourseId = courseId;
-        gaData = computeGradeAnalyticsFromPage(table);
-        gaLoading = false;
-        // renderGradeAnalytics self-guards on panel existence and canvas
-        // size; if the panel isn't ready yet, the retry in
-        // ensureGradeAnalyticsPanel / syncGradeAnalyticsUI draws once it is.
-        renderGradeAnalytics();
-    } catch (err) {
-        logError(err);
-        const s = document.getElementById("canvasrefined-ga-status");
-        if (s) s.textContent = "Grade Analytics failed to load: " + (err && err.message ? err.message : err);
-    } finally {
-        gaLoading = false;
-    }
+	const courseId = getCurrentCourseId()
+	if (courseId == null) return
+	gaLoading = true
+	const status = document.getElementById('canvasrefined-ga-status')
+	if (status) status.textContent = 'Reading grade data…'
+	try {
+		// Parse the grades table the page already rendered instead of hitting
+		// the paginated API — instant even for courses with hundreds of
+		// assignments, and always in sync with what the page shows.
+		const table = await gaWaitForGradesTable()
+		gaCourseId = courseId
+		gaData = computeGradeAnalyticsFromPage(table)
+		gaLoading = false
+		// renderGradeAnalytics self-guards on panel existence and canvas
+		// size; if the panel isn't ready yet, the retry in
+		// ensureGradeAnalyticsPanel / syncGradeAnalyticsUI draws once it is.
+		renderGradeAnalytics()
+	} catch (err) {
+		logError(err)
+		const s = document.getElementById('canvasrefined-ga-status')
+		if (s)
+			s.textContent =
+				'Grade Analytics failed to load: ' + (err && err.message ? err.message : err)
+	} finally {
+		gaLoading = false
+	}
 }
 
 // Parses one assignment row of #grades_summary into a plain record. The row
@@ -7134,273 +8385,363 @@ async function loadGradeAnalytics() {
 // "original_points" span holds points EARNED, not possible), while points
 // possible is only in the "/ 15" span displayed after the grade.
 // Month abbreviations for parsing the grades table's due-date strings.
-const GA_MONTH_NAMES = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+const GA_MONTH_NAMES = [
+	'jan',
+	'feb',
+	'mar',
+	'apr',
+	'may',
+	'jun',
+	'jul',
+	'aug',
+	'sep',
+	'oct',
+	'nov',
+	'dec',
+]
 
 // Parse a due-date string from the grades table into sortable parts.
 // Handles "Sep 12", "Sep 12 at 11:59pm", "Sep 12 by 23:59" and
 // "Sep 12, 2024 at 11:59pm". Returns { mon, day, minutes } or null.
 function gaParseDueDate(due) {
-    const m = String(due || "").toLowerCase().match(/([a-z]{3})[a-z]*\.?\s+(\d{1,2})(?:[^\d]+\d{4})?(?:[^\d]{0,8}?(\d{1,2}):(\d{2})\s*(am|pm)?)?/);
-    if (!m) return null;
-    const mon = GA_MONTH_NAMES.indexOf(m[1]);
-    if (mon < 0) return null;
-    const day = parseInt(m[2], 10);
-    if (!isFinite(day) || day < 1 || day > 31) return null;
-    let minutes = 0;
-    if (m[3] !== undefined) {
-        let h = parseInt(m[3], 10);
-        minutes = h * 60 + parseInt(m[4], 10);
-        if (m[5] === "pm" && h < 12) minutes += 720;
-        if (m[5] === "am" && h === 12) minutes = parseInt(m[4], 10);
-    }
-    return { mon, day, minutes };
+	const m = String(due || '')
+		.toLowerCase()
+		.match(
+			/([a-z]{3})[a-z]*\.?\s+(\d{1,2})(?:[^\d]+\d{4})?(?:[^\d]{0,8}?(\d{1,2}):(\d{2})\s*(am|pm)?)?/,
+		)
+	if (!m) return null
+	const mon = GA_MONTH_NAMES.indexOf(m[1])
+	if (mon < 0) return null
+	const day = parseInt(m[2], 10)
+	if (!isFinite(day) || day < 1 || day > 31) return null
+	let minutes = 0
+	if (m[3] !== undefined) {
+		let h = parseInt(m[3], 10)
+		minutes = h * 60 + parseInt(m[4], 10)
+		if (m[5] === 'pm' && h < 12) minutes += 720
+		if (m[5] === 'am' && h === 12) minutes = parseInt(m[4], 10)
+	}
+	return { mon, day, minutes }
 }
 
 function gaParseNum(t) {
-    if (!t) return null;
-    let s = String(t).replace(/\s+/g, "");
-    if (s === "" || !/\d/.test(s)) return null;
-    // Normalize "1,234.5" (thousands grouping) and "9,5" (comma decimal).
-    if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) s = s.replace(/,/g, "");
-    else if (/^-?\d+,\d+$/.test(s)) s = s.replace(",", ".");
-    const v = parseFloat(s);
-    return isFinite(v) ? v : null;
+	if (!t) return null
+	let s = String(t).replace(/\s+/g, '')
+	if (s === '' || !/\d/.test(s)) return null
+	// Normalize "1,234.5" (thousands grouping) and "9,5" (comma decimal).
+	if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) s = s.replace(/,/g, '')
+	else if (/^-?\d+,\d+$/.test(s)) s = s.replace(',', '.')
+	const v = parseFloat(s)
+	return isFinite(v) ? v : null
 }
 
 function gaParseAssignmentRow(tr) {
-    const q = (sel) => tr.querySelector(sel);
-    const titleLink = q(".title a");
-    const possibleText = q(".tooltip .grade + span")?.textContent || "";
-    return {
-        title: (titleLink ? titleLink.textContent : (q("th.title")?.textContent || "")).trim(),
-        score: gaParseNum(q(".original_score")?.textContent),
-        points: gaParseNum(possibleText.replace(/^.*\//, "")),
-        // Rows the page lists as unsubmitted/unposted carry no score; only
-        // "graded" rows have one.
-        status: (q(".submission_status")?.textContent || "").trim(),
-        gid: (q(".assignment_group_id")?.textContent || "").trim(),
-        due: (q("td.due")?.textContent || "").replace(/\s+/g, " ").trim(),
-        // Full hover tooltip date when present — a better parse source than
-        // the abbreviated cell text.
-        dueTitle: q("td.due [title]")?.getAttribute("title") || q("td.due")?.getAttribute("title") || "",
-    };
+	const q = (sel) => tr.querySelector(sel)
+	const titleLink = q('.title a')
+	const possibleText = q('.tooltip .grade + span')?.textContent || ''
+	return {
+		title: (titleLink ? titleLink.textContent : q('th.title')?.textContent || '').trim(),
+		score: gaParseNum(q('.original_score')?.textContent),
+		points: gaParseNum(possibleText.replace(/^.*\//, '')),
+		// Rows the page lists as unsubmitted/unposted carry no score; only
+		// "graded" rows have one.
+		status: (q('.submission_status')?.textContent || '').trim(),
+		gid: (q('.assignment_group_id')?.textContent || '').trim(),
+		due: (q('td.due')?.textContent || '').replace(/\s+/g, ' ').trim(),
+		// Full hover tooltip date when present — a better parse source than
+		// the abbreviated cell text.
+		dueTitle:
+			q('td.due [title]')?.getAttribute('title') ||
+			q('td.due')?.getAttribute('title') ||
+			'',
+	}
 }
 
 function computeGradeAnalyticsFromPage(table) {
-    // Assignment group weights come from the "group total" summary rows
-    // (e.g. "Summative Assessment — 86.67%, weight 85").
-    const groupWeight = {};
-    for (const tr of table.querySelectorAll("tr.group_total")) {
-        const gid = tr.querySelector(".assignment_group_id")?.textContent.trim();
-        const w = parseFloat((tr.querySelector(".group_weight")?.textContent || "").trim());
-        if (gid) groupWeight[gid] = isFinite(w) ? w : 0;
-    }
-    const totalWeight = Object.values(groupWeight).reduce((s, w) => s + w, 0);
+	// Assignment group weights come from the "group total" summary rows
+	// (e.g. "Summative Assessment — 86.67%, weight 85").
+	const groupWeight = {}
+	for (const tr of table.querySelectorAll('tr.group_total')) {
+		const gid = tr.querySelector('.assignment_group_id')?.textContent.trim()
+		const w = parseFloat((tr.querySelector('.group_weight')?.textContent || '').trim())
+		if (gid) groupWeight[gid] = isFinite(w) ? w : 0
+	}
+	const totalWeight = Object.values(groupWeight).reduce((s, w) => s + w, 0)
 
-    // The page's own computed Total (e.g. "91.1%") — use it directly so the
-    // "Overall grade" stat always matches the page.
-    let pageTotal = null;
-    const totalText = table.querySelector("tr.final_grade .grade")?.textContent || "";
-    const totalMatch = totalText.match(/-?\d+(?:\.\d+)?/);
-    if (totalMatch) pageTotal = parseFloat(totalMatch[0]);
+	// The page's own computed Total (e.g. "91.1%") — use it directly so the
+	// "Overall grade" stat always matches the page.
+	let pageTotal = null
+	const totalText = table.querySelector('tr.final_grade .grade')?.textContent || ''
+	const totalMatch = totalText.match(/-?\d+(?:\.\d+)?/)
+	if (totalMatch) pageTotal = parseFloat(totalMatch[0])
 
-    // Rows are already listed in due-date order; skip the summary rows (they
-    // carry the student_assignment class too).
-    const rows = [...table.querySelectorAll("tr.student_assignment")]
-        .filter(tr => !tr.classList.contains("group_total") && !tr.classList.contains("final_grade"))
-        .map(gaParseAssignmentRow);
+	// Rows are already listed in due-date order; skip the summary rows (they
+	// carry the student_assignment class too).
+	const rows = [...table.querySelectorAll('tr.student_assignment')]
+		.filter(
+			(tr) =>
+				!tr.classList.contains('group_total') && !tr.classList.contains('final_grade'),
+		)
+		.map(gaParseAssignmentRow)
 
-    const counts = GA_BUCKETS.map(() => 0);
-    let ungraded = 0;
-    const graded = [];
-    for (const a of rows) {
-        if (a.points == null || a.points <= 0) continue; // no points possible
-        if (a.score == null) { ungraded++; continue; }    // unposted / unsubmitted
-        graded.push(a);
-        const pct = (a.score / a.points) * 100;
-        const idx = GA_BUCKETS.findIndex(b => pct >= b.min && pct < b.max);
-        counts[idx >= 0 ? idx : GA_BUCKETS.length - 1]++;
-    }
+	const counts = GA_BUCKETS.map(() => 0)
+	let ungraded = 0
+	const graded = []
+	for (const a of rows) {
+		if (a.points == null || a.points <= 0) continue // no points possible
+		if (a.score == null) {
+			ungraded++
+			continue
+		} // unposted / unsubmitted
+		graded.push(a)
+		const pct = (a.score / a.points) * 100
+		const idx = GA_BUCKETS.findIndex((b) => pct >= b.min && pct < b.max)
+		counts[idx >= 0 ? idx : GA_BUCKETS.length - 1]++
+	}
 
-    // Sort graded work chronologically by due date before building the
-    // running-grade timeline. The chart and trend assume row order is
-    // chronological, but the grades table isn't guaranteed to be (it follows
-    // the course's assignment ordering, and users can re-sort it), which left
-    // the grade-history line jumping back and forth in time.
-    //
-    // Due strings have no year, so months are cyclic: a school-year course
-    // (Sep → May) and a calendar-year course (Jan → Dec) both count upward,
-    // just from different "year starts". Each candidate rotation r (month
-    // the year window starts at) maps a due month to (mon - r) mod 12; the
-    // rotation whose keys produce the least total backward drift in the
-    // table's row order wins, with ties going to the first dated row's
-    // month (which reproduces the chart's walking-month behavior on
-    // already-ordered data). This stays correct whether rows come in
-    // due-date order, a different sort order, or shuffled. Day-of-month and
-    // time break ties within a month; undated rows inherit their nearest
-    // dated neighbour's key (forward, then backward fill); equal keys keep
-    // their original relative order (stable sort).
-    const parsed = graded.map(a => gaParseDueDate(a.dueTitle || a.due));
-    // Cost of a rotation = total backward drift it forces on the row order
-    // (sum of positive key drops between consecutive dated rows). Magnitude
-    // beats counting steps: a shuffle costs real months, a year-wrap costs
-    // ~11/12 of a cycle only if it's the wrong rotation.
-    const rotationCost = (r) => {
-        let cost = 0, prev = null;
-        for (const d of parsed) {
-            if (!d) continue;
-            const k = (d.mon - r + 12) % 12;
-            if (prev != null && k < prev) cost += prev - k;
-            prev = k;
-        }
-        return cost;
-    };
-    let bestRotation = 0, bestCost = Infinity;
-    for (let r = 0; r < 12; r++) {
-        const cost = rotationCost(r);
-        if (cost < bestCost) { bestCost = cost; bestRotation = r; }
-    }
-    const firstDated = parsed.find(d => d);
-    if (firstDated) {
-        const pref = firstDated.mon;
-        // Re-scan for the preferred rotation on a cost tie.
-        for (let r = 0; r < 12; r++) {
-            if (rotationCost(r) === bestCost && r === pref) { bestRotation = r; break; }
-        }
-    }
-    const keys = parsed.map(d => d ? [(d.mon - bestRotation + 12) % 12, d.day, d.minutes] : null);
-    let lastKey = null;
-    for (let i = 0; i < keys.length; i++) { if (keys[i] == null) keys[i] = lastKey; else lastKey = keys[i]; }
-    let nextKey = null;
-    for (let i = keys.length - 1; i >= 0; i--) { if (keys[i] == null) keys[i] = nextKey; else nextKey = keys[i]; }
-    const order = graded.map((_, i) => i).sort((x, y) => {
-        const kx = keys[x], ky = keys[y];
-        if (!kx || !ky) return x - y;
-        for (let j = 0; j < 3; j++) if (kx[j] !== ky[j]) return kx[j] - ky[j];
-        return x - y;
-    });
-    const sortedGraded = order.map(i => graded[i]);
-    graded.length = 0;
-    graded.push(...sortedGraded);
+	// Sort graded work chronologically by due date before building the
+	// running-grade timeline. The chart and trend assume row order is
+	// chronological, but the grades table isn't guaranteed to be (it follows
+	// the course's assignment ordering, and users can re-sort it), which left
+	// the grade-history line jumping back and forth in time.
+	//
+	// Due strings have no year, so months are cyclic: a school-year course
+	// (Sep → May) and a calendar-year course (Jan → Dec) both count upward,
+	// just from different "year starts". Each candidate rotation r (month
+	// the year window starts at) maps a due month to (mon - r) mod 12; the
+	// rotation whose keys produce the least total backward drift in the
+	// table's row order wins, with ties going to the first dated row's
+	// month (which reproduces the chart's walking-month behavior on
+	// already-ordered data). This stays correct whether rows come in
+	// due-date order, a different sort order, or shuffled. Day-of-month and
+	// time break ties within a month; undated rows inherit their nearest
+	// dated neighbour's key (forward, then backward fill); equal keys keep
+	// their original relative order (stable sort).
+	const parsed = graded.map((a) => gaParseDueDate(a.dueTitle || a.due))
+	// Cost of a rotation = total backward drift it forces on the row order
+	// (sum of positive key drops between consecutive dated rows). Magnitude
+	// beats counting steps: a shuffle costs real months, a year-wrap costs
+	// ~11/12 of a cycle only if it's the wrong rotation.
+	const rotationCost = (r) => {
+		let cost = 0,
+			prev = null
+		for (const d of parsed) {
+			if (!d) continue
+			const k = (d.mon - r + 12) % 12
+			if (prev != null && k < prev) cost += prev - k
+			prev = k
+		}
+		return cost
+	}
+	let bestRotation = 0,
+		bestCost = Infinity
+	for (let r = 0; r < 12; r++) {
+		const cost = rotationCost(r)
+		if (cost < bestCost) {
+			bestCost = cost
+			bestRotation = r
+		}
+	}
+	const firstDated = parsed.find((d) => d)
+	if (firstDated) {
+		const pref = firstDated.mon
+		// Re-scan for the preferred rotation on a cost tie.
+		for (let r = 0; r < 12; r++) {
+			if (rotationCost(r) === bestCost && r === pref) {
+				bestRotation = r
+				break
+			}
+		}
+	}
+	const keys = parsed.map((d) =>
+		d ? [(d.mon - bestRotation + 12) % 12, d.day, d.minutes] : null,
+	)
+	let lastKey = null
+	for (let i = 0; i < keys.length; i++) {
+		if (keys[i] == null) keys[i] = lastKey
+		else lastKey = keys[i]
+	}
+	let nextKey = null
+	for (let i = keys.length - 1; i >= 0; i--) {
+		if (keys[i] == null) keys[i] = nextKey
+		else nextKey = keys[i]
+	}
+	const order = graded
+		.map((_, i) => i)
+		.sort((x, y) => {
+			const kx = keys[x],
+				ky = keys[y]
+			if (!kx || !ky) return x - y
+			for (let j = 0; j < 3; j++) if (kx[j] !== ky[j]) return kx[j] - ky[j]
+			return x - y
+		})
+	const sortedGraded = order.map((i) => graded[i])
+	graded.length = 0
+	graded.push(...sortedGraded)
 
-    // Running overall grade, in the page's row order, using Canvas's own
-    // weighting algorithm (GradeCalculator): sum each group's pct × weight
-    // over groups that have graded work, then scale up to 100% only when
-    // those weights total less than 100 (weights over 100 are used raw and
-    // can push the grade past 100). Verified to reproduce the Total shown
-    // on the page. Point-based courses (no group weights) use points
-    // earned / points possible.
-    const running = {};
-    const pointsGrade = () => {
-        let s = 0, p = 0;
-        for (const g of Object.values(running)) { s += g.score; p += g.pts; }
-        return p > 0 ? (s / p) * 100 : null;
-    };
-    const points = graded.map(a => {
-        const r = (running[a.gid] ||= { score: 0, pts: 0 });
-        r.score += a.score;
-        r.pts += a.points;
-        let grade = null;
-        if (totalWeight > 0) {
-            let weighted = 0, fullWeight = 0;
-            for (const gid of Object.keys(running)) {
-                const g = running[gid];
-                if (g.pts <= 0) continue;
-                const w = groupWeight[gid] || 0;
-                weighted += (g.score / g.pts) * w;
-                fullWeight += w;
-            }
-            // Only zero-weighted groups have graded work — fall back to
-            // points so the chart still has a line.
-            grade = fullWeight > 0 ? (fullWeight < 100 ? (weighted / fullWeight) * 100 : weighted) : pointsGrade();
-        } else {
-            grade = pointsGrade();
-        }
-        return {
-            title: a.title,
-            score: a.score,
-            points: a.points,
-            pct: (a.score / a.points) * 100,
-            grade,
-            due: a.due,
-        };
-    });
+	// Running overall grade, in the page's row order, using Canvas's own
+	// weighting algorithm (GradeCalculator): sum each group's pct × weight
+	// over groups that have graded work, then scale up to 100% only when
+	// those weights total less than 100 (weights over 100 are used raw and
+	// can push the grade past 100). Verified to reproduce the Total shown
+	// on the page. Point-based courses (no group weights) use points
+	// earned / points possible.
+	const running = {}
+	const pointsGrade = () => {
+		let s = 0,
+			p = 0
+		for (const g of Object.values(running)) {
+			s += g.score
+			p += g.pts
+		}
+		return p > 0 ? (s / p) * 100 : null
+	}
+	const points = graded.map((a) => {
+		const r = (running[a.gid] ||= { score: 0, pts: 0 })
+		r.score += a.score
+		r.pts += a.points
+		let grade = null
+		if (totalWeight > 0) {
+			let weighted = 0,
+				fullWeight = 0
+			for (const gid of Object.keys(running)) {
+				const g = running[gid]
+				if (g.pts <= 0) continue
+				const w = groupWeight[gid] || 0
+				weighted += (g.score / g.pts) * w
+				fullWeight += w
+			}
+			// Only zero-weighted groups have graded work — fall back to
+			// points so the chart still has a line.
+			grade =
+				fullWeight > 0
+					? fullWeight < 100
+						? (weighted / fullWeight) * 100
+						: weighted
+					: pointsGrade()
+		} else {
+			grade = pointsGrade()
+		}
+		return {
+			title: a.title,
+			score: a.score,
+			points: a.points,
+			pct: (a.score / a.points) * 100,
+			grade,
+			due: a.due,
+		}
+	})
 
-    const pcts = graded.map(a => (a.score / a.points) * 100);
-    // Trend: change in the running overall grade over the last 5 graded
-    // assignments (or since the first, if fewer). Positive = climbing.
-    let trend = null;
-    if (points.length >= 2) {
-        const from = points[Math.max(0, points.length - 1 - 5)].grade;
-        const to = points[points.length - 1].grade;
-        if (from != null && to != null) trend = to - from;
-    }
-    return {
-        counts,
-        ungraded,
-        graded: graded.length,
-        avg: pcts.length ? pcts.reduce((s, p) => s + p, 0) / pcts.length : null,
-        current: pageTotal != null ? pageTotal : (points.length ? points[points.length - 1].grade : null),
-        trend,
-        points,
-    };
+	const pcts = graded.map((a) => (a.score / a.points) * 100)
+	// Trend: change in the running overall grade over the last 5 graded
+	// assignments (or since the first, if fewer). Positive = climbing.
+	let trend = null
+	if (points.length >= 2) {
+		const from = points[Math.max(0, points.length - 1 - 5)].grade
+		const to = points[points.length - 1].grade
+		if (from != null && to != null) trend = to - from
+	}
+	return {
+		counts,
+		ungraded,
+		graded: graded.length,
+		avg: pcts.length ? pcts.reduce((s, p) => s + p, 0) / pcts.length : null,
+		current:
+			pageTotal != null
+				? pageTotal
+				: points.length
+					? points[points.length - 1].grade
+					: null,
+		trend,
+		points,
+	}
 }
 
 // Stat cards row on the Overview tab. The optional "Grade goal" card appears
 // when the final calculator's "show" checkbox is on; it recomputes against
 // the live current grade so it stays accurate as new grades come in.
 function renderGaStats() {
-    const panel = document.getElementById("canvasrefined-grade-analytics");
-    if (!panel || !gaData) return;
-    const stats = panel.querySelector("#canvasrefined-ga-stats");
-    if (!stats) return;
-    stats.style.display = "flex";
-    const stat = (cap, val, color) =>
-        `<div style="padding:8px 14px;border-radius:8px;background:var(--bcbackground-1);"><div style="font-size:18px;font-weight:700;color:${color || "var(--bctext-0)"};">${val}</div><div style="font-size:11px;text-transform:uppercase;color:var(--bctext-1);">${cap}</div></div>`;
-    // Trend card: arrow + colored delta of the overall grade over the last 5
-    // graded assignments (green climbing, red falling, grey steady).
-    let trendVal = "-", trendColor = "var(--bctext-0)";
-    if (gaData.trend != null) {
-        if (gaData.trend > 0.05) { trendVal = "\u25B2 +" + gaData.trend.toFixed(2) + "%"; trendColor = "#16a34a"; }
-        else if (gaData.trend < -0.05) { trendVal = "\u25BC " + gaData.trend.toFixed(2) + "%"; trendColor = "#dc2626"; }
-        else { trendVal = "\u25BA " + gaData.trend.toFixed(2) + "%"; trendColor = "var(--bctext-1)"; }
-    }
-    // Grade goal card from the Final Calculator tab: the score needed on the
-    // final to hit the stored target grade.
-    let goalStat = "";
-    if (gaCalc && gaCalc.show && gaCalc.weight > 0 && gaCalc.target != null && gaData.current != null) {
-        const w = gaCalc.weight / 100;
-        const needed = (gaCalc.target - gaData.current * (1 - w)) / w;
-        let val, color;
-        if (needed <= 0) { val = "\u2713 Secured"; color = "#16a34a"; }
-        else if (needed > 100) { val = "Out of reach"; color = "#dc2626"; }
-        else { val = "\u2265 " + needed.toFixed(2) + "%"; color = gaNeededColor(needed); }
-        goalStat = stat("Final Exam", val, color);
-    }
-    stats.innerHTML =
-        stat("Overall grade", gaData.current == null ? "-" : gaData.current.toFixed(2) + "%") +
-        stat("Grade trend (last 5)", trendVal, trendColor) +
-        stat("Graded", gaData.graded) +
-        stat("Ungraded", gaData.ungraded) +
-        goalStat;
+	const panel = document.getElementById('canvasrefined-grade-analytics')
+	if (!panel || !gaData) return
+	const stats = panel.querySelector('#canvasrefined-ga-stats')
+	if (!stats) return
+	stats.style.display = 'flex'
+	const stat = (cap, val, color) =>
+		`<div style="padding:8px 14px;border-radius:8px;background:var(--bcbackground-1);"><div style="font-size:18px;font-weight:700;color:${color || 'var(--bctext-0)'};">${val}</div><div style="font-size:11px;text-transform:uppercase;color:var(--bctext-1);">${cap}</div></div>`
+	// Trend card: arrow + colored delta of the overall grade over the last 5
+	// graded assignments (green climbing, red falling, grey steady).
+	let trendVal = '-',
+		trendColor = 'var(--bctext-0)'
+	if (gaData.trend != null) {
+		if (gaData.trend > 0.05) {
+			trendVal = '\u25B2 +' + gaData.trend.toFixed(2) + '%'
+			trendColor = '#16a34a'
+		} else if (gaData.trend < -0.05) {
+			trendVal = '\u25BC ' + gaData.trend.toFixed(2) + '%'
+			trendColor = '#dc2626'
+		} else {
+			trendVal = '\u25BA ' + gaData.trend.toFixed(2) + '%'
+			trendColor = 'var(--bctext-1)'
+		}
+	}
+	// Grade goal card from the Final Calculator tab: the score needed on the
+	// final to hit the stored target grade.
+	let goalStat = ''
+	if (
+		gaCalc &&
+		gaCalc.show &&
+		gaCalc.weight > 0 &&
+		gaCalc.target != null &&
+		gaData.current != null
+	) {
+		const w = gaCalc.weight / 100
+		const needed = (gaCalc.target - gaData.current * (1 - w)) / w
+		let val, color
+		if (needed <= 0) {
+			val = '\u2713 Secured'
+			color = '#16a34a'
+		} else if (needed > 100) {
+			val = 'Out of reach'
+			color = '#dc2626'
+		} else {
+			val = '\u2265 ' + needed.toFixed(2) + '%'
+			color = gaNeededColor(needed)
+		}
+		goalStat = stat('Final Exam', val, color)
+	}
+	stats.innerHTML =
+		stat(
+			'Overall grade',
+			gaData.current == null ? '-' : gaData.current.toFixed(2) + '%',
+		) +
+		stat('Grade trend (last 5)', trendVal, trendColor) +
+		stat('Graded', gaData.graded) +
+		stat('Ungraded', gaData.ungraded) +
+		goalStat
 }
 
 function renderGradeAnalytics() {
-    const panel = document.getElementById("canvasrefined-grade-analytics");
-    if (!panel || !gaData) return;
-    const status = panel.querySelector("#canvasrefined-ga-status");
-    if (status) status.style.display = "none";
+	const panel = document.getElementById('canvasrefined-grade-analytics')
+	if (!panel || !gaData) return
+	const status = panel.querySelector('#canvasrefined-ga-status')
+	if (status) status.style.display = 'none'
 
-    renderGaStats();
+	renderGaStats()
 
-    const charts = panel.querySelector("#canvasrefined-ga-charts");
-    charts.style.display = "flex";
-    const fitYBox = panel.querySelector("#canvasrefined-ga-fity");
-    if (fitYBox) fitYBox.checked = gaFitY;
+	const charts = panel.querySelector('#canvasrefined-ga-charts')
+	charts.style.display = 'flex'
+	const fitYBox = panel.querySelector('#canvasrefined-ga-fity')
+	if (fitYBox) fitYBox.checked = gaFitY
 
-    gaDrawPie(panel.querySelector("#canvasrefined-ga-pie"), panel.querySelector("#canvasrefined-ga-pie-tip"));
-    gaDrawLine(panel.querySelector("#canvasrefined-ga-line"), panel.querySelector("#canvasrefined-ga-line-tip"));
-    renderGaCalculator();
+	gaDrawPie(
+		panel.querySelector('#canvasrefined-ga-pie'),
+		panel.querySelector('#canvasrefined-ga-pie-tip'),
+	)
+	gaDrawLine(
+		panel.querySelector('#canvasrefined-ga-line'),
+		panel.querySelector('#canvasrefined-ga-line-tip'),
+	)
+	renderGaCalculator()
 }
 
 // --- Final Calculator tab --------------------------------------------------
@@ -7408,37 +8749,37 @@ function renderGradeAnalytics() {
 // Inline style for one panel tab button; the active tab gets the accent
 // underline, matching how the rest of the panel is styled inline.
 function gaTabStyle(active) {
-    return `background:transparent;border:none;padding:6px 14px;font-size:14px;font-weight:600;cursor:pointer;color:${active ? "var(--bctext-0)" : "var(--bctext-1)"};border-bottom:2px solid ${active ? "#2563eb" : "transparent"};`;
+	return `background:transparent;border:none;padding:6px 14px;font-size:14px;font-weight:600;cursor:pointer;color:${active ? 'var(--bctext-0)' : 'var(--bctext-1)'};border-bottom:2px solid ${active ? '#2563eb' : 'transparent'};`
 }
 
 function gaSetTab(tab) {
-    gaTab = tab;
-    const panel = document.getElementById("canvasrefined-grade-analytics");
-    if (!panel) return;
-    for (const name of ["overview", "calc"]) {
-        const el = panel.querySelector(`#canvasrefined-ga-tab-${name}`);
-        if (el) el.style.display = name === tab ? "" : "none";
-    }
-    panel.querySelectorAll("[data-ga-tab]").forEach(btn => {
-        const active = btn.dataset.gaTab === tab;
-        btn.style.color = active ? "var(--bctext-0)" : "var(--bctext-1)";
-        btn.style.borderBottomColor = active ? "#2563eb" : "transparent";
-    });
-    if (tab === "overview") {
-        // The canvases were zero-size while the tab was hidden; redraw now
-        // that it's visible again.
-        if (gaOpen && gaData) renderGradeAnalytics();
-    } else {
-        renderGaCalculator();
-    }
+	gaTab = tab
+	const panel = document.getElementById('canvasrefined-grade-analytics')
+	if (!panel) return
+	for (const name of ['overview', 'calc']) {
+		const el = panel.querySelector(`#canvasrefined-ga-tab-${name}`)
+		if (el) el.style.display = name === tab ? '' : 'none'
+	}
+	panel.querySelectorAll('[data-ga-tab]').forEach((btn) => {
+		const active = btn.dataset.gaTab === tab
+		btn.style.color = active ? 'var(--bctext-0)' : 'var(--bctext-1)'
+		btn.style.borderBottomColor = active ? '#2563eb' : 'transparent'
+	})
+	if (tab === 'overview') {
+		// The canvases were zero-size while the tab was hidden; redraw now
+		// that it's visible again.
+		if (gaOpen && gaData) renderGradeAnalytics()
+	} else {
+		renderGaCalculator()
+	}
 }
 
 // Severity color for an arbitrary score percentage, using the doughnut's
 // palette: a 70 renders yellow, an 85 green, etc.
 function gaSeverityColor(pct) {
-    if (pct == null || !isFinite(pct)) return "var(--bctext-0)";
-    const b = GA_BUCKETS.find(b => pct >= b.min && pct < b.max);
-    return (b || GA_BUCKETS[GA_BUCKETS.length - 1]).color;
+	if (pct == null || !isFinite(pct)) return 'var(--bctext-0)'
+	const b = GA_BUCKETS.find((b) => pct >= b.min && pct < b.max)
+	return (b || GA_BUCKETS[GA_BUCKETS.length - 1]).color
 }
 
 // Inverted severity for the final calculator: a LOW required score is good
@@ -7446,358 +8787,452 @@ function gaSeverityColor(pct) {
 // Own scale, independent of the grade chart palette: needing ≥95% on the
 // final is red, 75–94% yellow, and ≤74% green.
 const GA_NEEDED_COLORS = [
-    { min: 95, color: "#dc2626" },
-    { min: 75, color: "#facc15" },
-    { min: 0,  color: "#16a34a" },
-];
+	{ min: 95, color: '#dc2626' },
+	{ min: 75, color: '#facc15' },
+	{ min: 0, color: '#16a34a' },
+]
 
 function gaNeededColor(needed) {
-    if (needed == null || !isFinite(needed)) return "var(--bctext-0)";
-    const b = GA_NEEDED_COLORS.find(b => needed >= b.min);
-    return (b || GA_NEEDED_COLORS[GA_NEEDED_COLORS.length - 1]).color;
+	if (needed == null || !isFinite(needed)) return 'var(--bctext-0)'
+	const b = GA_NEEDED_COLORS.find((b) => needed >= b.min)
+	return (b || GA_NEEDED_COLORS[GA_NEEDED_COLORS.length - 1]).color
 }
 
 // Pushes the stored calculator settings into the tab's inputs without
 // clobbering a field the user is actively typing in.
 function applyGaCalcState(panel) {
-    const w = panel.querySelector("#canvasrefined-ga-calc-weight");
-    const t = panel.querySelector("#canvasrefined-ga-calc-target");
-    const s = panel.querySelector("#canvasrefined-ga-calc-show");
-    if (!w || !t || !s) return;
-    if (document.activeElement !== w) w.value = gaCalc && gaCalc.weight != null ? gaCalc.weight : "";
-    if (document.activeElement !== t) t.value = gaCalc && gaCalc.target != null ? gaCalc.target : "";
-    s.checked = !!(gaCalc && gaCalc.show);
-    renderGaCalculator();
+	const w = panel.querySelector('#canvasrefined-ga-calc-weight')
+	const t = panel.querySelector('#canvasrefined-ga-calc-target')
+	const s = panel.querySelector('#canvasrefined-ga-calc-show')
+	if (!w || !t || !s) return
+	if (document.activeElement !== w)
+		w.value = gaCalc && gaCalc.weight != null ? gaCalc.weight : ''
+	if (document.activeElement !== t)
+		t.value = gaCalc && gaCalc.target != null ? gaCalc.target : ''
+	s.checked = !!(gaCalc && gaCalc.show)
+	renderGaCalculator()
 }
 
 // Renders the calculator result: needed = (target − current·(1−w)) / w, where
 // w is the final's weight. Always recomputed from the live current grade so
 // stored goals stay accurate after reloads and as new grades post.
 function renderGaCalculator() {
-    const panel = document.getElementById("canvasrefined-grade-analytics");
-    if (!panel) return;
-    const box = panel.querySelector("#canvasrefined-ga-calc-result");
-    if (!box) return;
-    if (!gaCalc || gaCalc.weight == null || !(gaCalc.weight > 0) || gaCalc.target == null) {
-        box.innerHTML = `<span style="color:var(--bctext-1);">Enter your final's weight and your target grade to see what you need on the final.</span>`;
-        return;
-    }
-    const w = gaCalc.weight / 100;
-    const target = gaCalc.target;
-    const current = gaData ? gaData.current : null;
-    if (current == null) {
-        box.innerHTML = `<span style="color:var(--bctext-1);">Waiting for grade data…</span>`;
-        return;
-    }
-    const needed = (target - current * (1 - w)) / w;
-    const withZero = current * (1 - w);
-    const withPerfect = withZero + 100 * w;
-    let head, sub;
-    if (needed <= 0) {
-        head = `<span style="font-size:20px;font-weight:700;color:#16a34a;">You're already there!</span>`;
-        sub = `Even a 0 on the final leaves you at <b>${withZero.toFixed(2)}%</b>, which is above your <b>${target}%</b> goal.`;
-    } else if (needed > 100) {
-        head = `<span style="font-size:20px;font-weight:700;color:#dc2626;">Out of reach</span>`;
-        sub = `Even a perfect final only gets you to <b>${withPerfect.toFixed(2)}%</b>, which is below your <b>${target}%</b> goal.`;
-    } else {
-        head = `<span style="font-size:20px;font-weight:700;color:${gaNeededColor(needed)};">You need ≥ ${needed.toFixed(2)}% on the final</span>`;
-        sub = `You got this!`;
-    }
-    box.innerHTML = head + `<div style="margin-top:6px;color:var(--bctext-1);font-size:13px;">${sub}</div>`;
+	const panel = document.getElementById('canvasrefined-grade-analytics')
+	if (!panel) return
+	const box = panel.querySelector('#canvasrefined-ga-calc-result')
+	if (!box) return
+	if (!gaCalc || gaCalc.weight == null || !(gaCalc.weight > 0) || gaCalc.target == null) {
+		box.innerHTML = `<span style="color:var(--bctext-1);">Enter your final's weight and your target grade to see what you need on the final.</span>`
+		return
+	}
+	const w = gaCalc.weight / 100
+	const target = gaCalc.target
+	const current = gaData ? gaData.current : null
+	if (current == null) {
+		box.innerHTML = `<span style="color:var(--bctext-1);">Waiting for grade data…</span>`
+		return
+	}
+	const needed = (target - current * (1 - w)) / w
+	const withZero = current * (1 - w)
+	const withPerfect = withZero + 100 * w
+	let head, sub
+	if (needed <= 0) {
+		head = `<span style="font-size:20px;font-weight:700;color:#16a34a;">You're already there!</span>`
+		sub = `Even a 0 on the final leaves you at <b>${withZero.toFixed(2)}%</b>, which is above your <b>${target}%</b> goal.`
+	} else if (needed > 100) {
+		head = `<span style="font-size:20px;font-weight:700;color:#dc2626;">Out of reach</span>`
+		sub = `Even a perfect final only gets you to <b>${withPerfect.toFixed(2)}%</b>, which is below your <b>${target}%</b> goal.`
+	} else {
+		head = `<span style="font-size:20px;font-weight:700;color:${gaNeededColor(needed)};">You need ≥ ${needed.toFixed(2)}% on the final</span>`
+		sub = `You got this!`
+	}
+	box.innerHTML =
+		head +
+		`<div style="margin-top:6px;color:var(--bctext-1);font-size:13px;">${sub}</div>`
 }
 
 // Minimal HTML escaping for assignment titles and group names.
 function gaEscHtml(s) {
-    return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+	return String(s ?? '').replace(
+		/[&<>"']/g,
+		(c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+	)
 }
 
 // --- Canvas-drawn charts --------------------------------------------------
 
 function gaSetupCanvas(canvas) {
-    const dpr = window.devicePixelRatio || 1;
-    const w = canvas.parentNode.clientWidth, h = canvas.parentNode.clientHeight;
-    // Zero size means the panel isn't visible/attached yet, so skip drawing —
-    // but mark the canvas "never drawn" (width 0) so the self-heal paths
-    // (syncGradeAnalyticsUI and the chart ResizeObserver) know to retry once
-    // it has real dimensions. A canvas that was never drawn defaults to
-    // width 300, so without this the zero-width "never drawn" check never
-    // matches and charts stay blank until a tab switch or panel toggle.
-    if (w <= 0 || h <= 0) {
-        canvas.width = 0;
-        canvas.height = 0;
-        return null;
-    }
-    canvas.width = Math.max(1, Math.round(w * dpr));
-    canvas.height = Math.max(1, Math.round(h * dpr));
-    canvas.style.width = w + "px";
-    canvas.style.height = h + "px";
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    return { ctx, w, h };
+	const dpr = window.devicePixelRatio || 1
+	const w = canvas.parentNode.clientWidth,
+		h = canvas.parentNode.clientHeight
+	// Zero size means the panel isn't visible/attached yet, so skip drawing —
+	// but mark the canvas "never drawn" (width 0) so the self-heal paths
+	// (syncGradeAnalyticsUI and the chart ResizeObserver) know to retry once
+	// it has real dimensions. A canvas that was never drawn defaults to
+	// width 300, so without this the zero-width "never drawn" check never
+	// matches and charts stay blank until a tab switch or panel toggle.
+	if (w <= 0 || h <= 0) {
+		canvas.width = 0
+		canvas.height = 0
+		return null
+	}
+	canvas.width = Math.max(1, Math.round(w * dpr))
+	canvas.height = Math.max(1, Math.round(h * dpr))
+	canvas.style.width = w + 'px'
+	canvas.style.height = h + 'px'
+	const ctx = canvas.getContext('2d')
+	ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+	ctx.clearRect(0, 0, w, h)
+	return { ctx, w, h }
 }
 
 function gaShowTooltip(el, x, y, html) {
-    el.innerHTML = html;
-    el.style.display = "block";
-    const parent = el.parentNode;
-    const tw = el.offsetWidth, th = el.offsetHeight;
-    // Place the tooltip beside the cursor/point so it never covers the chart
-    // underneath; flip to the left side when the right edge is tight.
-    let left = x + 14;
-    if (left + tw > parent.clientWidth) left = Math.max(0, x - tw - 14);
-    let top = y - th / 2;
-    top = Math.min(Math.max(0, top), Math.max(0, parent.clientHeight - th));
-    el.style.left = left + "px";
-    el.style.top = top + "px";
+	el.innerHTML = html
+	el.style.display = 'block'
+	const parent = el.parentNode
+	const tw = el.offsetWidth,
+		th = el.offsetHeight
+	// Place the tooltip beside the cursor/point so it never covers the chart
+	// underneath; flip to the left side when the right edge is tight.
+	let left = x + 14
+	if (left + tw > parent.clientWidth) left = Math.max(0, x - tw - 14)
+	let top = y - th / 2
+	top = Math.min(Math.max(0, top), Math.max(0, parent.clientHeight - th))
+	el.style.left = left + 'px'
+	el.style.top = top + 'px'
 }
 
 function gaDrawPie(canvas, tooltip) {
-    const size = gaSetupCanvas(canvas);
-    if (!size || !gaData) return;
-    const { ctx, w, h } = size;
-    const cx = w / 2, cy = h / 2;
-    const r = Math.max(10, Math.min(w, h) / 2 - 10);
-    const slices = GA_BUCKETS.map((b, i) => ({ label: b.label, value: gaData.counts[i], color: b.color }))
-        .concat([{ label: "Ungraded", value: gaData.ungraded, color: GA_UNGRADED_COLOR }]);
-    const total = slices.reduce((s, x) => s + x.value, 0);
-    const arcs = [];
-    if (total === 0) {
-        ctx.strokeStyle = "#888";
-        ctx.lineWidth = r - r * 0.55;
-        ctx.globalAlpha = 0.3;
-        ctx.beginPath(); ctx.arc(cx, cy, (r + r * 0.55) / 2, 0, Math.PI * 2); ctx.stroke();
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "#888"; ctx.textAlign = "center";
-        ctx.font = "13px Lato, sans-serif";
-        ctx.fillText("No graded assignments yet", cx, cy);
-    }
-    let start = -Math.PI / 2;
-    for (const s of slices) {
-        if (!s.value) continue;
-        const ang = (s.value / total) * Math.PI * 2;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, start, start + ang);
-        ctx.arc(cx, cy, r * 0.55, start + ang, start, true);
-        ctx.closePath();
-        ctx.fillStyle = s.color;
-        ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.9)";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        arcs.push({ ...s, start, end: start + ang });
-        start += ang;
-    }
-    canvas._gaArcs = arcs;
-    canvas._gaCenter = { cx, cy, r };
-    if (canvas._gaHover) { canvas.removeEventListener("mousemove", canvas._gaHover); canvas.removeEventListener("mouseleave", canvas._gaLeave); }
-    canvas._gaHover = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left - canvas._gaCenter.cx;
-        const y = e.clientY - rect.top - canvas._gaCenter.cy;
-        const dist = Math.hypot(x, y);
-        const hit = canvas._gaArcs.find(a => {
-            let d = Math.atan2(y, x);
-            if (d < a.start) d += Math.PI * 2;
-            return dist <= canvas._gaCenter.r && dist >= canvas._gaCenter.r * 0.55 && d >= a.start && d <= a.end;
-        });
-        if (hit) gaShowTooltip(tooltip, e.clientX - rect.left, e.clientY - rect.top, `<b>${hit.label}</b>: ${hit.value} assignment${hit.value === 1 ? "" : "s"}`);
-        else tooltip.style.display = "none";
-    };
-    canvas._gaLeave = () => { tooltip.style.display = "none"; };
-    canvas.addEventListener("mousemove", canvas._gaHover);
-    canvas.addEventListener("mouseleave", canvas._gaLeave);
+	const size = gaSetupCanvas(canvas)
+	if (!size || !gaData) return
+	const { ctx, w, h } = size
+	const cx = w / 2,
+		cy = h / 2
+	const r = Math.max(10, Math.min(w, h) / 2 - 10)
+	const slices = GA_BUCKETS.map((b, i) => ({
+		label: b.label,
+		value: gaData.counts[i],
+		color: b.color,
+	})).concat([{ label: 'Ungraded', value: gaData.ungraded, color: GA_UNGRADED_COLOR }])
+	const total = slices.reduce((s, x) => s + x.value, 0)
+	const arcs = []
+	if (total === 0) {
+		ctx.strokeStyle = '#888'
+		ctx.lineWidth = r - r * 0.55
+		ctx.globalAlpha = 0.3
+		ctx.beginPath()
+		ctx.arc(cx, cy, (r + r * 0.55) / 2, 0, Math.PI * 2)
+		ctx.stroke()
+		ctx.globalAlpha = 1
+		ctx.fillStyle = '#888'
+		ctx.textAlign = 'center'
+		ctx.font = '13px Lato, sans-serif'
+		ctx.fillText('No graded assignments yet', cx, cy)
+	}
+	let start = -Math.PI / 2
+	for (const s of slices) {
+		if (!s.value) continue
+		const ang = (s.value / total) * Math.PI * 2
+		ctx.beginPath()
+		ctx.arc(cx, cy, r, start, start + ang)
+		ctx.arc(cx, cy, r * 0.55, start + ang, start, true)
+		ctx.closePath()
+		ctx.fillStyle = s.color
+		ctx.fill()
+		ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+		ctx.lineWidth = 2
+		ctx.stroke()
+		arcs.push({ ...s, start, end: start + ang })
+		start += ang
+	}
+	canvas._gaArcs = arcs
+	canvas._gaCenter = { cx, cy, r }
+	if (canvas._gaHover) {
+		canvas.removeEventListener('mousemove', canvas._gaHover)
+		canvas.removeEventListener('mouseleave', canvas._gaLeave)
+	}
+	canvas._gaHover = (e) => {
+		const rect = canvas.getBoundingClientRect()
+		const x = e.clientX - rect.left - canvas._gaCenter.cx
+		const y = e.clientY - rect.top - canvas._gaCenter.cy
+		const dist = Math.hypot(x, y)
+		const hit = canvas._gaArcs.find((a) => {
+			let d = Math.atan2(y, x)
+			if (d < a.start) d += Math.PI * 2
+			return (
+				dist <= canvas._gaCenter.r &&
+				dist >= canvas._gaCenter.r * 0.55 &&
+				d >= a.start &&
+				d <= a.end
+			)
+		})
+		if (hit)
+			gaShowTooltip(
+				tooltip,
+				e.clientX - rect.left,
+				e.clientY - rect.top,
+				`<b>${hit.label}</b>: ${hit.value} assignment${hit.value === 1 ? '' : 's'}`,
+			)
+		else tooltip.style.display = 'none'
+	}
+	canvas._gaLeave = () => {
+		tooltip.style.display = 'none'
+	}
+	canvas.addEventListener('mousemove', canvas._gaHover)
+	canvas.addEventListener('mouseleave', canvas._gaLeave)
 }
 
 function gaDrawLine(canvas, tooltip) {
-    const size = gaSetupCanvas(canvas);
-    if (!size || !gaData) return;
-    const pts = gaData.points;
-    const { ctx, w, h } = size;
-    const pad = { l: 38, r: 12, t: 12, b: 26 };
-    const text = getComputedStyle(document.body).color || "#666";
-    ctx.font = "11px Lato, sans-serif";
-    // Y axis: fixed 0-100 by default, or scaled to fit the data when the user
-    // toggled "Fit Y axis" (persisted in chrome.storage.local).
-    let yMin = 0, yMax = 100;
-    if (gaFitY) {
-        const vals = pts.map(p => p.grade).filter(v => v != null);
-        if (vals.length) {
-            const lo = Math.min(...vals), hi = Math.max(...vals);
-            if (hi - lo < 1e-9) {
-                yMin = Math.max(0, lo - 5);
-                yMax = hi + 5;
-            } else {
-                const margin = (hi - lo) * 0.1;
-                yMin = Math.max(0, lo - margin);
-                yMax = hi + margin;
-            }
-            if (yMax - yMin < 1) yMax = yMin + 1;
-        }
-    }
-    // Y grid: 5 evenly spaced lines across the current range.
-    ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    const decimals = (yMax - yMin) <= 1 ? 2 : (yMax - yMin) <= 10 ? 1 : 0;
-    for (let i = 0; i <= 5; i++) {
-        const v = yMin + (yMax - yMin) * (i / 5);
-        const y = pad.t + (1 - (v - yMin) / (yMax - yMin)) * (h - pad.t - pad.b);
-        ctx.strokeStyle = "rgba(128,128,128,0.25)";
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
-        ctx.fillStyle = text;
-        ctx.fillText(v.toFixed(decimals) + "%", pad.l - 6, y);
-    }
-    if (pts.length === 0) {
-        ctx.fillStyle = text; ctx.textAlign = "center";
-        ctx.fillText("No graded assignments yet", w / 2, h / 2);
-        return;
-    }
-    const X = (i) => pad.l + (pts.length === 1 ? (w - pad.l - pad.r) / 2 : (i / (pts.length - 1)) * (w - pad.l - pad.r));
-    const Y = (v) => pad.t + (1 - (Math.max(yMin, Math.min(yMax, v)) - yMin) / (yMax - yMin)) * (h - pad.t - pad.b);
-    const zones = gaGradeZones(getCurrentCourseId(), yMin, yMax);
-    // Full chart draw, parameterized by the hovered point index so mousemove
-    // can cheaply redraw with a highlight on the active dot.
-    const draw = (hover) => {
-        ctx.clearRect(0, 0, w, h);
-        // Always show solid grade zones behind the plot.
-        ctx.globalAlpha = 0.3;
-        zones.forEach(({ bottom, top, color }) => {
-            ctx.fillStyle = color;
-            ctx.fillRect(pad.l, Y(top), w - pad.l - pad.r, Y(bottom) - Y(top));
-        });
-        ctx.globalAlpha = 1;
-        // Y grid: 5 evenly spaced lines across the current range.
-        ctx.font = "11px Lato, sans-serif";
-        ctx.textAlign = "right"; ctx.textBaseline = "middle";
-        for (let i = 0; i <= 5; i++) {
-            const v = yMin + (yMax - yMin) * (i / 5);
-            const y = pad.t + (1 - (v - yMin) / (yMax - yMin)) * (h - pad.t - pad.b);
-            ctx.strokeStyle = "rgba(128,128,128,0.25)";
-            ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
-            ctx.fillStyle = text;
-            ctx.fillText(v.toFixed(decimals) + "%", pad.l - 6, y);
-        }
-        // Line + area fill.
-        ctx.beginPath();
-        pts.forEach((p, i) => { const x = X(i), y = Y(p.grade); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
-        ctx.strokeStyle = "#2563eb"; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.stroke();
-        ctx.lineTo(X(pts.length - 1), h - pad.b); ctx.lineTo(X(0), h - pad.b); ctx.closePath();
-        ctx.fillStyle = "rgba(37,99,235,0.12)"; ctx.fill();
-        // Points.
-        pts.forEach((p, i) => {
-            ctx.beginPath(); ctx.arc(X(i), Y(p.grade), 3, 0, Math.PI * 2);
-            ctx.fillStyle = "#2563eb"; ctx.fill();
-            ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
-        });
-        // X axis: tick marks plus one label per calendar month. Points are
-        // already in chronological order, so a walking month counter (wrapping
-        // across Dec -> Jan) maps each point to an absolute month; the first
-        // point of each month gets the tick + label.
-        ctx.textAlign = "center"; ctx.textBaseline = "top";
-        ctx.strokeStyle = "rgba(128,128,128,0.55)";
-        ctx.lineWidth = 1;
-        const tick = (x) => {
-            ctx.beginPath(); ctx.moveTo(x, h - pad.b); ctx.lineTo(x, h - pad.b + 4); ctx.stroke();
-        };
-        // Subtle tick under every data point on sparse charts.
-        if (pts.length <= 25) pts.forEach((_, i) => tick(X(i)));
-        // Month boundaries: the first point of each calendar month. Points are
-        // already in chronological order, so a walking month counter (wrapping
-        // across Dec → Jan) maps each point to an absolute month.
-        const boundaries = [];
-        let prevM = null, absM = null;
-        pts.forEach((p, i) => {
-            const m = months.indexOf((p.due || "").trim().slice(0, 3));
-            if (m < 0) return; // no due date on this point
-            if (absM == null) absM = m;
-            else if (m >= prevM) absM += m - prevM;
-            else absM += 12 - prevM + m; // wrapped to a new year
-            prevM = m;
-            const last = boundaries[boundaries.length - 1];
-            if (!last || last.absM !== absM) {
-                boundaries.push({ i, absM, label: (p.due || "").trim().slice(0, 3) });
-            }
-        });
-        boundaries.forEach(b => tick(X(b.i)));
-        // Collision-aware labels: greedily keep a month label only if it fits
-        // after the previous kept one (labels are centered, so compare against
-        // half-widths plus a 6px gap). The first boundary always gets a label;
-        // so does the last — if it doesn't fit, earlier labels are dropped to
-        // make room, so the axis ends on a real month instead of mid-run.
-        const GAP = 6;
-        const kept = [];
-        boundaries.forEach((b, idx) => {
-            const x = X(b.i);
-            const w = ctx.measureText(b.label).width;
-            if (idx === 0 || x - w / 2 > kept[kept.length - 1].right + GAP) {
-                kept.push({ ...b, x, right: x + w / 2 });
-            }
-        });
-        const lastB = boundaries[boundaries.length - 1];
-        if (lastB && kept[kept.length - 1].i !== lastB.i) {
-            const x = X(lastB.i);
-            const w = ctx.measureText(lastB.label).width;
-            while (kept.length && kept[kept.length - 1].right + GAP > x - w / 2) kept.pop();
-            kept.push({ ...lastB, x, right: x + w / 2 });
-        }
-        kept.forEach((b, k) => {
-            // Anchor the edge labels inward so they don't clip.
-            ctx.textAlign = k === 0 ? "left" : (b.i === pts.length - 1 ? "right" : "center");
-            ctx.fillStyle = text;
-            ctx.fillText(b.label, b.x, h - pad.b + 6);
-        });
-        // Hover indicator: dashed vertical guide plus a halo ring around the
-        // hovered dot so it's obvious which point the tooltip describes.
-        if (hover != null && pts[hover]) {
-            const hx = X(hover), hy = Y(pts[hover].grade);
-            ctx.save();
-            ctx.strokeStyle = "rgba(37,99,235,0.55)";
-            ctx.lineWidth = 1;
-            ctx.setLineDash([4, 3]);
-            ctx.beginPath(); ctx.moveTo(hx, pad.t); ctx.lineTo(hx, h - pad.b); ctx.stroke();
-            ctx.restore();
-            ctx.beginPath(); ctx.arc(hx, hy, 7, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(37,99,235,0.25)"; ctx.fill();
-            ctx.beginPath(); ctx.arc(hx, hy, 4.5, 0, Math.PI * 2);
-            ctx.fillStyle = "#2563eb"; ctx.fill();
-            ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
-        }
-    };
-    draw(null);
-    canvas._gaHoverIdx = null; // stale hover index from a previous draw
-    canvas._gaPts = pts;
-    canvas._gaX = X; canvas._gaY = Y; canvas._gaPad = pad;
-    if (canvas._gaHover) { canvas.removeEventListener("mousemove", canvas._gaHover); canvas.removeEventListener("mouseleave", canvas._gaLeave); }
-    canvas._gaHover = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        let best = 0, bestD = Infinity;
-        pts.forEach((_, i) => { const d = Math.abs(X(i) - mx); if (d < bestD) { bestD = d; best = i; } });
-        if (best !== canvas._gaHoverIdx) {
-            canvas._gaHoverIdx = best;
-            draw(best);
-        }
-        const p = pts[best];
-        gaShowTooltip(tooltip, X(best), Y(p.grade),
-            `<b>${p.title}</b><br>Overall: ${p.grade == null ? "-" : p.grade.toFixed(2) + "%"}<br>This: ${p.score}/${p.points} (${p.pct.toFixed(2)}%)${p.due ? `<br>Due: ${p.due}` : ""}`);
-    };
-    canvas._gaLeave = () => {
-        tooltip.style.display = "none";
-        if (canvas._gaHoverIdx != null) {
-            canvas._gaHoverIdx = null;
-            draw(null);
-        }
-    };
-    canvas.addEventListener("mousemove", canvas._gaHover);
-    canvas.addEventListener("mouseleave", canvas._gaLeave);
+	const size = gaSetupCanvas(canvas)
+	if (!size || !gaData) return
+	const pts = gaData.points
+	const { ctx, w, h } = size
+	const pad = { l: 38, r: 12, t: 12, b: 26 }
+	const text = getComputedStyle(document.body).color || '#666'
+	ctx.font = '11px Lato, sans-serif'
+	// Y axis: fixed 0-100 by default, or scaled to fit the data when the user
+	// toggled "Fit Y axis" (persisted in chrome.storage.local).
+	let yMin = 0,
+		yMax = 100
+	if (gaFitY) {
+		const vals = pts.map((p) => p.grade).filter((v) => v != null)
+		if (vals.length) {
+			const lo = Math.min(...vals),
+				hi = Math.max(...vals)
+			if (hi - lo < 1e-9) {
+				yMin = Math.max(0, lo - 5)
+				yMax = hi + 5
+			} else {
+				const margin = (hi - lo) * 0.1
+				yMin = Math.max(0, lo - margin)
+				yMax = hi + margin
+			}
+			if (yMax - yMin < 1) yMax = yMin + 1
+		}
+	}
+	// Y grid: 5 evenly spaced lines across the current range.
+	ctx.textAlign = 'right'
+	ctx.textBaseline = 'middle'
+	const decimals = yMax - yMin <= 1 ? 2 : yMax - yMin <= 10 ? 1 : 0
+	for (let i = 0; i <= 5; i++) {
+		const v = yMin + (yMax - yMin) * (i / 5)
+		const y = pad.t + (1 - (v - yMin) / (yMax - yMin)) * (h - pad.t - pad.b)
+		ctx.strokeStyle = 'rgba(128,128,128,0.25)'
+		ctx.lineWidth = 1
+		ctx.beginPath()
+		ctx.moveTo(pad.l, y)
+		ctx.lineTo(w - pad.r, y)
+		ctx.stroke()
+		ctx.fillStyle = text
+		ctx.fillText(v.toFixed(decimals) + '%', pad.l - 6, y)
+	}
+	if (pts.length === 0) {
+		ctx.fillStyle = text
+		ctx.textAlign = 'center'
+		ctx.fillText('No graded assignments yet', w / 2, h / 2)
+		return
+	}
+	const X = (i) =>
+		pad.l +
+		(pts.length === 1
+			? (w - pad.l - pad.r) / 2
+			: (i / (pts.length - 1)) * (w - pad.l - pad.r))
+	const Y = (v) =>
+		pad.t +
+		(1 - (Math.max(yMin, Math.min(yMax, v)) - yMin) / (yMax - yMin)) * (h - pad.t - pad.b)
+	const zones = gaGradeZones(getCurrentCourseId(), yMin, yMax)
+	// Full chart draw, parameterized by the hovered point index so mousemove
+	// can cheaply redraw with a highlight on the active dot.
+	const draw = (hover) => {
+		ctx.clearRect(0, 0, w, h)
+		// Always show solid grade zones behind the plot.
+		ctx.globalAlpha = 0.3
+		zones.forEach(({ bottom, top, color }) => {
+			ctx.fillStyle = color
+			ctx.fillRect(pad.l, Y(top), w - pad.l - pad.r, Y(bottom) - Y(top))
+		})
+		ctx.globalAlpha = 1
+		// Y grid: 5 evenly spaced lines across the current range.
+		ctx.font = '11px Lato, sans-serif'
+		ctx.textAlign = 'right'
+		ctx.textBaseline = 'middle'
+		for (let i = 0; i <= 5; i++) {
+			const v = yMin + (yMax - yMin) * (i / 5)
+			const y = pad.t + (1 - (v - yMin) / (yMax - yMin)) * (h - pad.t - pad.b)
+			ctx.strokeStyle = 'rgba(128,128,128,0.25)'
+			ctx.lineWidth = 1
+			ctx.beginPath()
+			ctx.moveTo(pad.l, y)
+			ctx.lineTo(w - pad.r, y)
+			ctx.stroke()
+			ctx.fillStyle = text
+			ctx.fillText(v.toFixed(decimals) + '%', pad.l - 6, y)
+		}
+		// Line + area fill.
+		ctx.beginPath()
+		pts.forEach((p, i) => {
+			const x = X(i),
+				y = Y(p.grade)
+			i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+		})
+		ctx.strokeStyle = '#2563eb'
+		ctx.lineWidth = 2
+		ctx.lineJoin = 'round'
+		ctx.stroke()
+		ctx.lineTo(X(pts.length - 1), h - pad.b)
+		ctx.lineTo(X(0), h - pad.b)
+		ctx.closePath()
+		ctx.fillStyle = 'rgba(37,99,235,0.12)'
+		ctx.fill()
+		// Points.
+		pts.forEach((p, i) => {
+			ctx.beginPath()
+			ctx.arc(X(i), Y(p.grade), 3, 0, Math.PI * 2)
+			ctx.fillStyle = '#2563eb'
+			ctx.fill()
+			ctx.strokeStyle = '#fff'
+			ctx.lineWidth = 1
+			ctx.stroke()
+		})
+		// X axis: tick marks plus one label per calendar month. Points are
+		// already in chronological order, so a walking month counter (wrapping
+		// across Dec -> Jan) maps each point to an absolute month; the first
+		// point of each month gets the tick + label.
+		ctx.textAlign = 'center'
+		ctx.textBaseline = 'top'
+		ctx.strokeStyle = 'rgba(128,128,128,0.55)'
+		ctx.lineWidth = 1
+		const tick = (x) => {
+			ctx.beginPath()
+			ctx.moveTo(x, h - pad.b)
+			ctx.lineTo(x, h - pad.b + 4)
+			ctx.stroke()
+		}
+		// Subtle tick under every data point on sparse charts.
+		if (pts.length <= 25) pts.forEach((_, i) => tick(X(i)))
+		// Month boundaries: the first point of each calendar month. Points are
+		// already in chronological order, so a walking month counter (wrapping
+		// across Dec → Jan) maps each point to an absolute month.
+		const boundaries = []
+		let prevM = null,
+			absM = null
+		pts.forEach((p, i) => {
+			const m = months.indexOf((p.due || '').trim().slice(0, 3))
+			if (m < 0) return // no due date on this point
+			if (absM == null) absM = m
+			else if (m >= prevM) absM += m - prevM
+			else absM += 12 - prevM + m // wrapped to a new year
+			prevM = m
+			const last = boundaries[boundaries.length - 1]
+			if (!last || last.absM !== absM) {
+				boundaries.push({ i, absM, label: (p.due || '').trim().slice(0, 3) })
+			}
+		})
+		boundaries.forEach((b) => tick(X(b.i)))
+		// Collision-aware labels: greedily keep a month label only if it fits
+		// after the previous kept one (labels are centered, so compare against
+		// half-widths plus a 6px gap). The first boundary always gets a label;
+		// so does the last — if it doesn't fit, earlier labels are dropped to
+		// make room, so the axis ends on a real month instead of mid-run.
+		const GAP = 6
+		const kept = []
+		boundaries.forEach((b, idx) => {
+			const x = X(b.i)
+			const w = ctx.measureText(b.label).width
+			if (idx === 0 || x - w / 2 > kept[kept.length - 1].right + GAP) {
+				kept.push({ ...b, x, right: x + w / 2 })
+			}
+		})
+		const lastB = boundaries[boundaries.length - 1]
+		if (lastB && kept[kept.length - 1].i !== lastB.i) {
+			const x = X(lastB.i)
+			const w = ctx.measureText(lastB.label).width
+			while (kept.length && kept[kept.length - 1].right + GAP > x - w / 2) kept.pop()
+			kept.push({ ...lastB, x, right: x + w / 2 })
+		}
+		kept.forEach((b, k) => {
+			// Anchor the edge labels inward so they don't clip.
+			ctx.textAlign = k === 0 ? 'left' : b.i === pts.length - 1 ? 'right' : 'center'
+			ctx.fillStyle = text
+			ctx.fillText(b.label, b.x, h - pad.b + 6)
+		})
+		// Hover indicator: dashed vertical guide plus a halo ring around the
+		// hovered dot so it's obvious which point the tooltip describes.
+		if (hover != null && pts[hover]) {
+			const hx = X(hover),
+				hy = Y(pts[hover].grade)
+			ctx.save()
+			ctx.strokeStyle = 'rgba(37,99,235,0.55)'
+			ctx.lineWidth = 1
+			ctx.setLineDash([4, 3])
+			ctx.beginPath()
+			ctx.moveTo(hx, pad.t)
+			ctx.lineTo(hx, h - pad.b)
+			ctx.stroke()
+			ctx.restore()
+			ctx.beginPath()
+			ctx.arc(hx, hy, 7, 0, Math.PI * 2)
+			ctx.fillStyle = 'rgba(37,99,235,0.25)'
+			ctx.fill()
+			ctx.beginPath()
+			ctx.arc(hx, hy, 4.5, 0, Math.PI * 2)
+			ctx.fillStyle = '#2563eb'
+			ctx.fill()
+			ctx.strokeStyle = '#fff'
+			ctx.lineWidth = 1.5
+			ctx.stroke()
+		}
+	}
+	draw(null)
+	canvas._gaHoverIdx = null // stale hover index from a previous draw
+	canvas._gaPts = pts
+	canvas._gaX = X
+	canvas._gaY = Y
+	canvas._gaPad = pad
+	if (canvas._gaHover) {
+		canvas.removeEventListener('mousemove', canvas._gaHover)
+		canvas.removeEventListener('mouseleave', canvas._gaLeave)
+	}
+	canvas._gaHover = (e) => {
+		const rect = canvas.getBoundingClientRect()
+		const mx = e.clientX - rect.left
+		let best = 0,
+			bestD = Infinity
+		pts.forEach((_, i) => {
+			const d = Math.abs(X(i) - mx)
+			if (d < bestD) {
+				bestD = d
+				best = i
+			}
+		})
+		if (best !== canvas._gaHoverIdx) {
+			canvas._gaHoverIdx = best
+			draw(best)
+		}
+		const p = pts[best]
+		gaShowTooltip(
+			tooltip,
+			X(best),
+			Y(p.grade),
+			`<b>${p.title}</b><br>Overall: ${p.grade == null ? '-' : p.grade.toFixed(2) + '%'}<br>This: ${p.score}/${p.points} (${p.pct.toFixed(2)}%)${p.due ? `<br>Due: ${p.due}` : ''}`,
+		)
+	}
+	canvas._gaLeave = () => {
+		tooltip.style.display = 'none'
+		if (canvas._gaHoverIdx != null) {
+			canvas._gaHoverIdx = null
+			draw(null)
+		}
+	}
+	canvas.addEventListener('mousemove', canvas._gaHover)
+	canvas.addEventListener('mouseleave', canvas._gaLeave)
 }
 
 // Redraw open charts when the window is resized.
-window.addEventListener("resize", () => {
-    const panel = document.getElementById("canvasrefined-grade-analytics");
-    if (panel && gaOpen && gaData) renderGradeAnalytics();
-});
+window.addEventListener('resize', () => {
+	const panel = document.getElementById('canvasrefined-grade-analytics')
+	if (panel && gaOpen && gaData) renderGradeAnalytics()
+})
 
 // --- What-If mode ---------------------------------------------------------
 //
@@ -7818,33 +9253,44 @@ window.addEventListener("resize", () => {
 // actual scheme isn't exposed on this page). 80.5% → B− matches Canvas's
 // default cutoffs.
 const GA_LETTER_SCALE = [
-    ["A", 93], ["A−", 90], ["B+", 87], ["B", 83], ["B−", 80],
-    ["C+", 77], ["C", 73], ["C−", 70], ["D+", 67], ["D", 63], ["D−", 60],
-];
+	['A', 93],
+	['A−', 90],
+	['B+', 87],
+	['B', 83],
+	['B−', 80],
+	['C+', 77],
+	['C', 73],
+	['C−', 70],
+	['D+', 67],
+	['D', 63],
+	['D−', 60],
+]
 
 function gaLetterFor(pct) {
-    if (pct == null || !isFinite(pct)) return null;
-    for (const [letter, min] of GA_LETTER_SCALE) if (pct >= min) return letter;
-    return "F";
+	if (pct == null || !isFinite(pct)) return null
+	for (const [letter, min] of GA_LETTER_SCALE) if (pct >= min) return letter
+	return 'F'
 }
 
 // The table's Total row (tr.final_grade) — the recalculated grade
 // overwrites its percentage span while What-If mode is on.
 function gaFindTotalGradeSpan() {
-    const row = document.querySelector("#grades_summary tr.final_grade");
-    return row ? row.querySelector("td.assignment_score .tooltip .grade") : null;
+	const row = document.querySelector('#grades_summary tr.final_grade')
+	return row ? row.querySelector('td.assignment_score .tooltip .grade') : null
 }
 
 function gaFindTotalTitleCell() {
-    const row = document.querySelector("#grades_summary tr.final_grade");
-    return row ? row.querySelector("th.title") : null;
+	const row = document.querySelector('#grades_summary tr.final_grade')
+	return row ? row.querySelector('th.title') : null
 }
 
 // Signature of the page's grades table (row ids). When it changes (grading
 // period switch, SPA navigation) the scenario is rebuilt from the new table.
 function gaImagineTableSig() {
-    const table = document.querySelector("#grades_summary");
-    return table ? [...table.querySelectorAll("tr.student_assignment")].map(tr => tr.id).join(",") : "";
+	const table = document.querySelector('#grades_summary')
+	return table
+		? [...table.querySelectorAll('tr.student_assignment')].map((tr) => tr.id).join(',')
+		: ''
 }
 
 // Snapshot of the page's groups and assignments the scenario starts from.
@@ -7852,29 +9298,31 @@ function gaImagineTableSig() {
 // What-If edits); ungraded rows keep score: null so they only count once the
 // user types a score for them.
 function gaBuildImagineScenario() {
-    const table = document.querySelector("#grades_summary");
-    if (!table) return null;
-    const groups = [];
-    for (const tr of table.querySelectorAll("tr.group_total")) {
-        const gid = (tr.querySelector(".assignment_group_id")?.textContent || "").trim();
-        if (!gid) continue;
-        const name = (tr.querySelector("th.title")?.textContent || "").trim() || ("Group " + gid);
-        const w = parseFloat((tr.querySelector(".group_weight")?.textContent || "").trim());
-        groups.push({ gid, name, weight: isFinite(w) ? w : 0 });
-    }
-    const assignments = [];
-    for (const tr of table.querySelectorAll("tr.student_assignment")) {
-        if (tr.classList.contains("group_total") || tr.classList.contains("final_grade")) continue;
-        const a = gaParseAssignmentRow(tr);
-        assignments.push({
-            key: tr.id || ("row-" + assignments.length),
-            title: (a.title || "Assignment").trim() || "Assignment",
-            score: a.score,
-            points: a.points,
-            gid: (a.gid || "").trim(),
-        });
-    }
-    return { groups, assignments };
+	const table = document.querySelector('#grades_summary')
+	if (!table) return null
+	const groups = []
+	for (const tr of table.querySelectorAll('tr.group_total')) {
+		const gid = (tr.querySelector('.assignment_group_id')?.textContent || '').trim()
+		if (!gid) continue
+		const name =
+			(tr.querySelector('th.title')?.textContent || '').trim() || 'Group ' + gid
+		const w = parseFloat((tr.querySelector('.group_weight')?.textContent || '').trim())
+		groups.push({ gid, name, weight: isFinite(w) ? w : 0 })
+	}
+	const assignments = []
+	for (const tr of table.querySelectorAll('tr.student_assignment')) {
+		if (tr.classList.contains('group_total') || tr.classList.contains('final_grade'))
+			continue
+		const a = gaParseAssignmentRow(tr)
+		assignments.push({
+			key: tr.id || 'row-' + assignments.length,
+			title: (a.title || 'Assignment').trim() || 'Assignment',
+			score: a.score,
+			points: a.points,
+			gid: (a.gid || '').trim(),
+		})
+	}
+	return { groups, assignments }
 }
 
 // Hypothetical total for the scenario, computed from scratch (never read
@@ -7884,42 +9332,47 @@ function gaBuildImagineScenario() {
 // with counted work, scale up to 100% when the used weights total < 100,
 // use raw when ≥ 100), otherwise points earned / points possible.
 function gaComputeImagineTotal() {
-    if (!gaScenario) return null;
-    const groups = new Map();
-    let totalWeightAll = 0;
-    for (const g of gaScenario.groups) {
-        if (g.deleted) continue;
-        const w = isFinite(g.weight) ? g.weight : 0;
-        groups.set(String(g.gid), w);
-        totalWeightAll += w;
-    }
-    // With every group removed the total falls back to plain points, so all
-    // assignments count regardless of their (dangling) group id.
-    const noGroups = groups.size === 0;
-    const stats = new Map(); // gid -> {score, pts}
-    for (const a of gaScenario.assignments) {
-        if (a.deleted || a.score == null || !(a.points > 0)) continue;
-        const gid = String(a.gid ?? "");
-        if (!noGroups && !groups.has(gid)) continue; // group deleted / unassigned
-        const s = stats.get(gid) || { score: 0, pts: 0 };
-        s.score += a.score;
-        s.pts += a.points;
-        stats.set(gid, s);
-    }
-    if (!stats.size) return null;
-    if (totalWeightAll > 0) {
-        let weighted = 0, used = 0;
-        for (const [gid, s] of stats) {
-            const w = groups.get(gid) || 0;
-            weighted += (s.score / s.pts) * w;
-            used += w;
-        }
-        if (used > 0) return used < 100 ? (weighted / used) * 100 : weighted;
-        // Only zero-weighted groups have counted work — fall back to points.
-    }
-    let score = 0, pts = 0;
-    for (const s of stats.values()) { score += s.score; pts += s.pts; }
-    return pts > 0 ? (score / pts) * 100 : null;
+	if (!gaScenario) return null
+	const groups = new Map()
+	let totalWeightAll = 0
+	for (const g of gaScenario.groups) {
+		if (g.deleted) continue
+		const w = isFinite(g.weight) ? g.weight : 0
+		groups.set(String(g.gid), w)
+		totalWeightAll += w
+	}
+	// With every group removed the total falls back to plain points, so all
+	// assignments count regardless of their (dangling) group id.
+	const noGroups = groups.size === 0
+	const stats = new Map() // gid -> {score, pts}
+	for (const a of gaScenario.assignments) {
+		if (a.deleted || a.score == null || !(a.points > 0)) continue
+		const gid = String(a.gid ?? '')
+		if (!noGroups && !groups.has(gid)) continue // group deleted / unassigned
+		const s = stats.get(gid) || { score: 0, pts: 0 }
+		s.score += a.score
+		s.pts += a.points
+		stats.set(gid, s)
+	}
+	if (!stats.size) return null
+	if (totalWeightAll > 0) {
+		let weighted = 0,
+			used = 0
+		for (const [gid, s] of stats) {
+			const w = groups.get(gid) || 0
+			weighted += (s.score / s.pts) * w
+			used += w
+		}
+		if (used > 0) return used < 100 ? (weighted / used) * 100 : weighted
+		// Only zero-weighted groups have counted work — fall back to points.
+	}
+	let score = 0,
+		pts = 0
+	for (const s of stats.values()) {
+		score += s.score
+		pts += s.pts
+	}
+	return pts > 0 ? (score / pts) * 100 : null
 }
 
 // Total-row content for the hypothetical grade — clearly not the real
@@ -7927,104 +9380,125 @@ function gaComputeImagineTotal() {
 // replace the percentage span, and an italic note under the "Total" label
 // restates the real grade.
 function gaImagineTotalHtml(pct) {
-    const letter = gaLetterFor(pct);
-    const pctText = pct == null || !isFinite(pct) ? "—" : pct.toFixed(2) + "%";
-    // The wrapper is an inline-flex row with align-items:center so the
-    // badge pill sits vertically centered with the grade text. No
-    // flex-wrap: the narrow score cell would stack the items instead.
-    return `<span style="display:inline-flex;align-items:center;gap:6px;">`
-        + `<span style="background:#7c3aed;color:#fff;font-size:10px;font-weight:700;letter-spacing:0.5px;padding:1px 6px;border-radius:999px;text-transform:uppercase;white-space:nowrap;">What-If</span>`
-        + `<span style="font-weight:700;color:#7c3aed;">${pctText}</span>`
-        + (letter ? `<span style="color:#7c3aed;">(${letter})</span>` : "")
-        + `</span>`;
+	const letter = gaLetterFor(pct)
+	const pctText = pct == null || !isFinite(pct) ? '—' : pct.toFixed(2) + '%'
+	// The wrapper is an inline-flex row with align-items:center so the
+	// badge pill sits vertically centered with the grade text. No
+	// flex-wrap: the narrow score cell would stack the items instead.
+	return (
+		`<span style="display:inline-flex;align-items:center;gap:6px;">` +
+		`<span style="background:#7c3aed;color:#fff;font-size:10px;font-weight:700;letter-spacing:0.5px;padding:1px 6px;border-radius:999px;text-transform:uppercase;white-space:nowrap;">What-If</span>` +
+		`<span style="font-weight:700;color:#7c3aed;">${pctText}</span>` +
+		(letter ? `<span style="color:#7c3aed;">(${letter})</span>` : '') +
+		`</span>`
+	)
 }
-
 
 // Overwrites (or restores) the table's Total row. Writes are guarded so the
 // GA DOM observer never loops: the last written HTML is cached on the
 // element and identical writes are skipped.
 function gaApplyImagineTotal() {
-    if (!gaImagineIf) { gaRestoreImagineTotal(); return; }
-    gaIfUpdateGroupPcts();
-    const span = gaFindTotalGradeSpan();
-    if (!span) return;
-    const html = gaImagineTotalHtml(gaComputeImagineTotal());
-    if (!(span.dataset.gaImagine && span._gaImagineHtml === html)) {
-        if (!span.dataset.gaImagine) gaOriginalFinalHtml = span.innerHTML;
-        span.dataset.gaImagine = "1";
-        span._gaImagineHtml = html;
-        span.innerHTML = html;
-    }
-    // Italic note under the "Total" label restating the real grade.
-    const th = gaFindTotalTitleCell();
-    if (th) {
-        let note = th.querySelector(".canvasrefined-ga-if-note");
-        if (!note) {
-            note = document.createElement("div");
-            note.className = "canvasrefined-ga-if-note";
-            note.style.cssText = "font-size:11px;font-style:italic;color:var(--bctext-1);margin-top:2px;";
-            th.appendChild(note);
-        }
-        if (note.dataset.gaIfHtml !== "What-If scenario; not your actual grade.") {
-            note.dataset.gaIfHtml = "What-If scenario; not your actual grade.";
-            note.textContent = "What-If scenario; not your actual grade.";
-        }
-    }
+	if (!gaImagineIf) {
+		gaRestoreImagineTotal()
+		return
+	}
+	gaIfUpdateGroupPcts()
+	const span = gaFindTotalGradeSpan()
+	if (!span) return
+	const html = gaImagineTotalHtml(gaComputeImagineTotal())
+	if (!(span.dataset.gaImagine && span._gaImagineHtml === html)) {
+		if (!span.dataset.gaImagine) gaOriginalFinalHtml = span.innerHTML
+		span.dataset.gaImagine = '1'
+		span._gaImagineHtml = html
+		span.innerHTML = html
+	}
+	// Italic note under the "Total" label restating the real grade.
+	const th = gaFindTotalTitleCell()
+	if (th) {
+		let note = th.querySelector('.canvasrefined-ga-if-note')
+		if (!note) {
+			note = document.createElement('div')
+			note.className = 'canvasrefined-ga-if-note'
+			note.style.cssText =
+				'font-size:11px;font-style:italic;color:var(--bctext-1);margin-top:2px;'
+			th.appendChild(note)
+		}
+		if (note.dataset.gaIfHtml !== 'What-If scenario; not your actual grade.') {
+			note.dataset.gaIfHtml = 'What-If scenario; not your actual grade.'
+			note.textContent = 'What-If scenario; not your actual grade.'
+		}
+	}
 }
 
 function gaRestoreImagineTotal() {
-    const span = gaFindTotalGradeSpan();
-    if (span && span.dataset.gaImagine) {
-        delete span.dataset.gaImagine;
-        delete span._gaImagineHtml;
-        if (gaOriginalFinalHtml != null) span.innerHTML = gaOriginalFinalHtml;
-    }
-    document.querySelectorAll("#grades_summary tr.final_grade .canvasrefined-ga-if-note").forEach(n => n.remove());
+	const span = gaFindTotalGradeSpan()
+	if (span && span.dataset.gaImagine) {
+		delete span.dataset.gaImagine
+		delete span._gaImagineHtml
+		if (gaOriginalFinalHtml != null) span.innerHTML = gaOriginalFinalHtml
+	}
+	document
+		.querySelectorAll('#grades_summary tr.final_grade .canvasrefined-ga-if-note')
+		.forEach((n) => n.remove())
 }
 
 // Compact inline styles for controls injected into the grades table.
 // Canvas's table CSS gives selects/inputs an 11px bottom margin and a tall
 // native select box, which made our rows taller than the page's own —
 // margin:0 and a fixed select height keep the rows even.
-const GA_IF_TD_INPUT = "box-sizing:border-box;padding:3px 6px;border-radius:5px;border:1px solid var(--bcborders);background:var(--bcbackground-1);color:var(--bctext-0);font-size:12px;margin:0;";
-const GA_IF_TD_NUM = GA_IF_TD_INPUT + "width:58px;";
-const GA_IF_TD_SEL = GA_IF_TD_INPUT + "max-width:170px;height:26px;padding:2px 4px;";
-const GA_IF_TD_BTN = GA_IF_TD_INPUT + "cursor:pointer;white-space:nowrap;";
+const GA_IF_TD_INPUT =
+	'box-sizing:border-box;padding:3px 6px;border-radius:5px;border:1px solid var(--bcborders);background:var(--bcbackground-1);color:var(--bctext-0);font-size:12px;margin:0;'
+const GA_IF_TD_NUM = GA_IF_TD_INPUT + 'width:58px;'
+const GA_IF_TD_SEL = GA_IF_TD_INPUT + 'max-width:170px;height:26px;padding:2px 4px;'
+const GA_IF_TD_BTN = GA_IF_TD_INPUT + 'cursor:pointer;white-space:nowrap;'
 
 // <select> of the scenario's live groups for one assignment row. A group
 // that was removed leaves its assignments on "— not counted —" until the
 // user reassigns them.
 function gaIfSelectHtml(gid) {
-    const groups = gaScenario ? gaScenario.groups.filter(g => !g.deleted) : [];
-    return `<select data-ga-if-groupsel title="What-If assignment group" style="${GA_IF_TD_SEL}">`
-        + `<option value="">— not counted —</option>`
-        + groups.map(g => `<option value="${gaEscHtml(g.gid)}"${String(gid) === String(g.gid) ? " selected" : ""}>${gaEscHtml(g.name)}</option>`).join("")
-        + `</select>`;
+	const groups = gaScenario ? gaScenario.groups.filter((g) => !g.deleted) : []
+	return (
+		`<select data-ga-if-groupsel title="What-If assignment group" style="${GA_IF_TD_SEL}">` +
+		`<option value="">— not counted —</option>` +
+		groups
+			.map(
+				(g) =>
+					`<option value="${gaEscHtml(g.gid)}"${String(gid) === String(g.gid) ? ' selected' : ''}>${gaEscHtml(g.name)}</option>`,
+			)
+			.join('') +
+		`</select>`
+	)
 }
 
 // Re-renders every group <select>'s options (e.g. after a group was added or
 // removed), preserving the current selection when it still exists. Skips the
 // select the user is interacting with.
 function gaIfRefreshSelects(table) {
-    for (const sel of table.querySelectorAll("select[data-ga-if-groupsel]")) {
-        if (document.activeElement === sel) continue;
-        const cur = sel.value;
-        const groups = gaScenario ? gaScenario.groups.filter(g => !g.deleted) : [];
-        sel.innerHTML = `<option value="">— not counted —</option>`
-            + groups.map(g => `<option value="${gaEscHtml(g.gid)}"${String(cur) === String(g.gid) ? " selected" : ""}>${gaEscHtml(g.name)}</option>`).join("");
-        sel.value = groups.some(g => String(g.gid) === cur) ? cur : "";
-    }
+	for (const sel of table.querySelectorAll('select[data-ga-if-groupsel]')) {
+		if (document.activeElement === sel) continue
+		const cur = sel.value
+		const groups = gaScenario ? gaScenario.groups.filter((g) => !g.deleted) : []
+		sel.innerHTML =
+			`<option value="">— not counted —</option>` +
+			groups
+				.map(
+					(g) =>
+						`<option value="${gaEscHtml(g.gid)}"${String(cur) === String(g.gid) ? ' selected' : ''}>${gaEscHtml(g.name)}</option>`,
+				)
+				.join('')
+		sel.value = groups.some((g) => String(g.gid) === cur) ? cur : ''
+	}
 }
 
 // Icon-only remove button (✕) for a row's last cell.
 function gaIfDelButton(attr, title) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.setAttribute(attr, "");
-    btn.title = title;
-    btn.textContent = "✕";
-    btn.style.cssText = GA_IF_TD_BTN + "padding:3px 8px;";
-    return btn;
+	const btn = document.createElement('button')
+	btn.type = 'button'
+	btn.setAttribute(attr, '')
+	btn.title = title
+	btn.textContent = '✕'
+	btn.style.cssText = GA_IF_TD_BTN + 'padding:3px 8px;'
+	return btn
 }
 
 // Injects the scenario controls into one assignment row: score (numerator)
@@ -8033,31 +9507,41 @@ function gaIfDelButton(attr, title) {
 // context line under the title, and an icon-only remove button goes in the
 // row's last cell.
 function gaIfBuildAssignmentControls(tr, a) {
-    if (tr.querySelector(".canvasrefined-ga-if-edit")) return;
-    const scoreTd = tr.querySelector("td.assignment_score");
-    if (!scoreTd) return;
-    const tooltip = scoreTd.querySelector("span.tooltip");
-    if (tooltip) { tooltip.style.display = "none"; tooltip.dataset.gaIfHidden = "1"; }
-    const edit = document.createElement("span");
-    edit.className = "canvasrefined-ga-if-edit";
-    edit.style.cssText = "display:inline-flex;align-items:center;gap:4px;";
-    edit.innerHTML = `<input data-ga-if-score type="number" step="any" placeholder="—" value="${a.score == null ? "" : a.score}" title="What-If score (numerator); blank = not counted" style="${GA_IF_TD_NUM}">`
-        + ` <span style="color:var(--bctext-1);">/</span> `
-        + `<input data-ga-if-pts type="number" step="any" min="0" placeholder="—" value="${a.points == null ? "" : a.points}" title="What-If points possible (denominator)" style="${GA_IF_TD_NUM}">`;
-    (scoreTd.querySelector(".score_holder") || scoreTd).appendChild(edit);
-    const th = tr.querySelector("th.title");
-    const ctx = th?.querySelector("div.context");
-    if (ctx) { ctx.style.display = "none"; ctx.dataset.gaIfHidden = "1"; }
-    const ctl = document.createElement("div");
-    ctl.className = "canvasrefined-ga-if-ctl";
-    ctl.style.cssText = "display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;";
-    ctl.innerHTML = gaIfSelectHtml(a.gid);
-    (th || tr).appendChild(ctl);
-    // Icon-only remove button in the row's last cell.
-    const lastTd = tr.cells[tr.cells.length - 1];
-    if (lastTd && !lastTd.querySelector("[data-ga-if-adel]")) {
-        lastTd.appendChild(gaIfDelButton("data-ga-if-adel", "Remove this assignment from the scenario"));
-    }
+	if (tr.querySelector('.canvasrefined-ga-if-edit')) return
+	const scoreTd = tr.querySelector('td.assignment_score')
+	if (!scoreTd) return
+	const tooltip = scoreTd.querySelector('span.tooltip')
+	if (tooltip) {
+		tooltip.style.display = 'none'
+		tooltip.dataset.gaIfHidden = '1'
+	}
+	const edit = document.createElement('span')
+	edit.className = 'canvasrefined-ga-if-edit'
+	edit.style.cssText = 'display:inline-flex;align-items:center;gap:4px;'
+	edit.innerHTML =
+		`<input data-ga-if-score type="number" step="any" placeholder="—" value="${a.score == null ? '' : a.score}" title="What-If score (numerator); blank = not counted" style="${GA_IF_TD_NUM}">` +
+		` <span style="color:var(--bctext-1);">/</span> ` +
+		`<input data-ga-if-pts type="number" step="any" min="0" placeholder="—" value="${a.points == null ? '' : a.points}" title="What-If points possible (denominator)" style="${GA_IF_TD_NUM}">`
+	;(scoreTd.querySelector('.score_holder') || scoreTd).appendChild(edit)
+	const th = tr.querySelector('th.title')
+	const ctx = th?.querySelector('div.context')
+	if (ctx) {
+		ctx.style.display = 'none'
+		ctx.dataset.gaIfHidden = '1'
+	}
+	const ctl = document.createElement('div')
+	ctl.className = 'canvasrefined-ga-if-ctl'
+	ctl.style.cssText =
+		'display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;'
+	ctl.innerHTML = gaIfSelectHtml(a.gid)
+	;(th || tr).appendChild(ctl)
+	// Icon-only remove button in the row's last cell.
+	const lastTd = tr.cells[tr.cells.length - 1]
+	if (lastTd && !lastTd.querySelector('[data-ga-if-adel]')) {
+		lastTd.appendChild(
+			gaIfDelButton('data-ga-if-adel', 'Remove this assignment from the scenario'),
+		)
+	}
 }
 
 // Injects the scenario controls into one group-total row: a weight input in
@@ -8065,20 +9549,26 @@ function gaIfBuildAssignmentControls(tr, a) {
 // value — see gaIfUpdateGroupPcts) and an icon-only remove button in the
 // row's last cell.
 function gaIfBuildGroupControls(tr, g) {
-    if (tr.querySelector(".canvasrefined-ga-if-edit")) return;
-    const scoreTd = tr.querySelector("td.assignment_score");
-    if (!scoreTd) return;
-    const edit = document.createElement("span");
-    edit.className = "canvasrefined-ga-if-edit";
-    edit.style.cssText = "display:inline-flex;align-items:center;gap:4px;margin-left:8px;";
-    edit.innerHTML = `<input data-ga-if-gweight type="number" min="0" max="100" step="0.1" value="${g.weight}" title="What-If group weight (% of grade)" style="${GA_IF_TD_NUM}">`
-        + ` <span style="color:var(--bctext-1);">%</span>`;
-    (scoreTd.querySelector(".score_holder") || scoreTd).appendChild(edit);
-    // Icon-only remove button in the row's last cell.
-    const lastTd = tr.cells[tr.cells.length - 1];
-    if (lastTd && !lastTd.querySelector("[data-ga-if-gdel]")) {
-        lastTd.appendChild(gaIfDelButton("data-ga-if-gdel", "Remove this group from the scenario (its assignments stop counting until reassigned)"));
-    }
+	if (tr.querySelector('.canvasrefined-ga-if-edit')) return
+	const scoreTd = tr.querySelector('td.assignment_score')
+	if (!scoreTd) return
+	const edit = document.createElement('span')
+	edit.className = 'canvasrefined-ga-if-edit'
+	edit.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-left:8px;'
+	edit.innerHTML =
+		`<input data-ga-if-gweight type="number" min="0" max="100" step="0.1" value="${g.weight}" title="What-If group weight (% of grade)" style="${GA_IF_TD_NUM}">` +
+		` <span style="color:var(--bctext-1);">%</span>`
+	;(scoreTd.querySelector('.score_holder') || scoreTd).appendChild(edit)
+	// Icon-only remove button in the row's last cell.
+	const lastTd = tr.cells[tr.cells.length - 1]
+	if (lastTd && !lastTd.querySelector('[data-ga-if-gdel]')) {
+		lastTd.appendChild(
+			gaIfDelButton(
+				'data-ga-if-gdel',
+				'Remove this group from the scenario (its assignments stop counting until reassigned)',
+			),
+		)
+	}
 }
 
 // A brand-new assignment row (user-added): same 8-cell shape as the page's
@@ -8086,209 +9576,304 @@ function gaIfBuildGroupControls(tr, g) {
 // "student_assignment", so the table signature and the page parsers ignore
 // our rows.
 function gaIfMakeAssignmentRow(a) {
-    const tr = document.createElement("tr");
-    tr.className = "canvasrefined-ga-if-newrow";
-    tr.innerHTML = `
+	const tr = document.createElement('tr')
+	tr.className = 'canvasrefined-ga-if-newrow'
+	tr.innerHTML = `
         <th class="title" scope="row"><input data-ga-if-title type="text" value="${gaEscHtml(a.title)}" title="Assignment name" style="${GA_IF_TD_INPUT}width:100%;max-width:260px;"></th>
         <td class="due"></td><td class="submitted"></td><td class="status"></td>
         <td class="assignment_score"><div class="score_holder" style="position:relative;"></div></td>
-        <td class="asset_processors_cell"></td><td class="details"></td><td></td>`;
-    // Row separators matching the page's own rows. Two things make this
-    // subtle: the dark-mode CSS paints every .ic-Table td border dark with
-    // !important (which beats a normal inline style), and in the
-    // collapsed-borders model CELL borders beat ROW borders — so the
-    // separator must be set on the cells, with !important (an inline
-    // !important beats the stylesheet's), to win the edge conflicts and
-    // paint the white line the custom background shows on real rows.
-    for (const cell of tr.cells) {
-        cell.style.setProperty("border-top", "1px solid var(--bctext-1,#e2e2e2)", "important");
-        cell.style.setProperty("border-bottom", "1px solid var(--bctext-1,#e2e2e2)", "important");
-    }
-    return tr;
+        <td class="asset_processors_cell"></td><td class="details"></td><td></td>`
+	// Row separators matching the page's own rows. Two things make this
+	// subtle: the dark-mode CSS paints every .ic-Table td border dark with
+	// !important (which beats a normal inline style), and in the
+	// collapsed-borders model CELL borders beat ROW borders — so the
+	// separator must be set on the cells, with !important (an inline
+	// !important beats the stylesheet's), to win the edge conflicts and
+	// paint the white line the custom background shows on real rows.
+	for (const cell of tr.cells) {
+		cell.style.setProperty('border-top', '1px solid var(--bctext-1,#e2e2e2)', 'important')
+		cell.style.setProperty(
+			'border-bottom',
+			'1px solid var(--bctext-1,#e2e2e2)',
+			'important',
+		)
+	}
+	return tr
 }
 
 // A brand-new group-total row (user-added), with an editable name.
 function gaIfMakeGroupRow(g) {
-    const tr = document.createElement("tr");
-    tr.className = "canvasrefined-ga-if-newrow";
-    tr.innerHTML = `
+	const tr = document.createElement('tr')
+	tr.className = 'canvasrefined-ga-if-newrow'
+	tr.innerHTML = `
         <th class="title" scope="row"><input data-ga-if-gname type="text" value="${gaEscHtml(g.name)}" title="Group name" style="${GA_IF_TD_INPUT}width:100%;max-width:260px;"></th>
         <td class="due"></td><td class="submitted"></td><td class="status"></td>
         <td class="assignment_score"><div class="score_holder" style="position:relative;"><span class="tooltip"><span class="grade">—</span></span></div></td>
-        <td class="asset_processors_cell"></td><td class="details"></td><td></td>`;
-    // Same cell-level separators as gaIfMakeAssignmentRow.
-    for (const cell of tr.cells) {
-        cell.style.setProperty("border-top", "1px solid var(--bctext-1,#e2e2e2)", "important");
-        cell.style.setProperty("border-bottom", "1px solid var(--bctext-1,#e2e2e2)", "important");
-    }
-    return tr;
+        <td class="asset_processors_cell"></td><td class="details"></td><td></td>`
+	// Same cell-level separators as gaIfMakeAssignmentRow.
+	for (const cell of tr.cells) {
+		cell.style.setProperty('border-top', '1px solid var(--bctext-1,#e2e2e2)', 'important')
+		cell.style.setProperty(
+			'border-bottom',
+			'1px solid var(--bctext-1,#e2e2e2)',
+			'important',
+		)
+	}
+	return tr
 }
 
 // New assignments go right below the table header, above the first real
 // assignment (stacking in add order).
 function gaIfInsertAssignmentRow(table, tr) {
-    const lastNew = [...table.querySelectorAll("tr.canvasrefined-ga-if-newrow[data-ga-if-key]")].pop();
-    if (lastNew) { lastNew.after(tr); return; }
-    const firstReal = [...table.querySelectorAll("tr.student_assignment")]
-        .find(r => !r.classList.contains("group_total") && !r.classList.contains("final_grade"));
-    if (firstReal) { firstReal.before(tr); return; }
-    (table.querySelector("tr.group_total") || table.querySelector("tr.final_grade") || table.lastElementChild).before(tr);
+	const lastNew = [
+		...table.querySelectorAll('tr.canvasrefined-ga-if-newrow[data-ga-if-key]'),
+	].pop()
+	if (lastNew) {
+		lastNew.after(tr)
+		return
+	}
+	const firstReal = [...table.querySelectorAll('tr.student_assignment')].find(
+		(r) => !r.classList.contains('group_total') && !r.classList.contains('final_grade'),
+	)
+	if (firstReal) {
+		firstReal.before(tr)
+		return
+	}
+	;(
+		table.querySelector('tr.group_total') ||
+		table.querySelector('tr.final_grade') ||
+		table.lastElementChild
+	).before(tr)
 }
 
 function gaIfInsertGroupRow(table, tr) {
-    const lastNew = [...table.querySelectorAll("tr.canvasrefined-ga-if-newrow[data-ga-if-gid]")].pop();
-    const lastReal = [...table.querySelectorAll("tr.group_total")].pop();
-    (lastNew || lastReal || table.querySelector("tr.final_grade") || table.lastElementChild).after(tr);
+	const lastNew = [
+		...table.querySelectorAll('tr.canvasrefined-ga-if-newrow[data-ga-if-gid]'),
+	].pop()
+	const lastReal = [...table.querySelectorAll('tr.group_total')].pop()
+	;(
+		lastNew ||
+		lastReal ||
+		table.querySelector('tr.final_grade') ||
+		table.lastElementChild
+	).after(tr)
 }
 
 // The "+ Add assignment" button sits on its own row at the top of the
 // table — right below the header, above the first (or first user-added)
 // assignment — so new assignments are created right where they appear.
 function gaIfEnsureAddAssignmentRow(table) {
-    if (table.querySelector("#canvasrefined-ga-if-add-asg")) return;
-    const tr = document.createElement("tr");
-    tr.className = "canvasrefined-ga-if-addrow";
-    tr.innerHTML = `<td colspan="8" style="border:none!important;padding:6px 8px;">`
-        + `<button type="button" id="canvasrefined-ga-if-add-asg" style="${GA_IF_TD_BTN}padding:4px 10px;">+ Add assignment</button>`
-        + `</td>`;
-    const firstNew = table.querySelector("tr.canvasrefined-ga-if-newrow[data-ga-if-key]");
-    const firstReal = [...table.querySelectorAll("tr.student_assignment")]
-        .find(r => !r.classList.contains("group_total") && !r.classList.contains("final_grade"));
-    const anchor = firstNew || firstReal;
-    if (anchor) anchor.before(tr);
-    else (table.querySelector("tr.group_total") || table.querySelector("tr.final_grade") || table.lastElementChild).before(tr);
+	if (table.querySelector('#canvasrefined-ga-if-add-asg')) return
+	const tr = document.createElement('tr')
+	tr.className = 'canvasrefined-ga-if-addrow'
+	tr.innerHTML =
+		`<td colspan="8" style="border:none!important;padding:6px 8px;">` +
+		`<button type="button" id="canvasrefined-ga-if-add-asg" style="${GA_IF_TD_BTN}padding:4px 10px;">+ Add assignment</button>` +
+		`</td>`
+	const firstNew = table.querySelector('tr.canvasrefined-ga-if-newrow[data-ga-if-key]')
+	const firstReal = [...table.querySelectorAll('tr.student_assignment')].find(
+		(r) => !r.classList.contains('group_total') && !r.classList.contains('final_grade'),
+	)
+	const anchor = firstNew || firstReal
+	if (anchor) anchor.before(tr)
+	else
+		(
+			table.querySelector('tr.group_total') ||
+			table.querySelector('tr.final_grade') ||
+			table.lastElementChild
+		).before(tr)
 }
 
 // The "+ Add group" button sits on its own row right above the table's
 // Total row, where the group totals live.
 function gaIfEnsureAddGroupRow(table) {
-    if (table.querySelector("#canvasrefined-ga-if-add-group")) return;
-    const tr = document.createElement("tr");
-    tr.className = "canvasrefined-ga-if-addrow";
-    tr.innerHTML = `<td colspan="8" style="border:none!important;padding:10px 8px;">`
-        + `<button type="button" id="canvasrefined-ga-if-add-group" style="${GA_IF_TD_BTN}padding:6px 12px;">+ Add group</button>`
-        + `</td>`;
-    (table.querySelector("tr.final_grade") || table.lastElementChild).before(tr);
+	if (table.querySelector('#canvasrefined-ga-if-add-group')) return
+	const tr = document.createElement('tr')
+	tr.className = 'canvasrefined-ga-if-addrow'
+	tr.innerHTML =
+		`<td colspan="8" style="border:none!important;padding:10px 8px;">` +
+		`<button type="button" id="canvasrefined-ga-if-add-group" style="${GA_IF_TD_BTN}padding:6px 12px;">+ Add group</button>` +
+		`</td>`
+	;(table.querySelector('tr.final_grade') || table.lastElementChild).before(tr)
 }
 
 // Rewrites each group row's percentage to the hypothetical value for the
 // current scenario (original text is stashed for restore). A dash means the
 // group has no counted work.
 function gaIfUpdateGroupPcts() {
-    const table = document.querySelector("#grades_summary");
-    if (!table || !gaScenario) return;
-    const stats = new Map();
-    for (const a of gaScenario.assignments) {
-        if (a.deleted || a.score == null || !(a.points > 0)) continue;
-        if (!gaScenario.groups.some(g => !g.deleted && String(g.gid) === String(a.gid))) continue;
-        const s = stats.get(String(a.gid)) || { score: 0, pts: 0 };
-        s.score += a.score;
-        s.pts += a.points;
-        stats.set(String(a.gid), s);
-    }
-    for (const tr of table.querySelectorAll("tr[data-ga-if-gid]")) {
-        const gradeEl = tr.querySelector("td.assignment_score .tooltip .grade");
-        if (!gradeEl) continue;
-        if (gradeEl.dataset.gaIfOrig == null) gradeEl.dataset.gaIfOrig = gradeEl.textContent;
-        const s = stats.get(String(tr.dataset.gaIfGid));
-        const txt = s && s.pts > 0 ? ((s.score / s.pts) * 100).toFixed(2).replace(/\.?0+$/, "") + "%" : "—";
-        if (gradeEl.textContent !== txt) gradeEl.textContent = txt;
-    }
+	const table = document.querySelector('#grades_summary')
+	if (!table || !gaScenario) return
+	const stats = new Map()
+	for (const a of gaScenario.assignments) {
+		if (a.deleted || a.score == null || !(a.points > 0)) continue
+		if (!gaScenario.groups.some((g) => !g.deleted && String(g.gid) === String(a.gid)))
+			continue
+		const s = stats.get(String(a.gid)) || { score: 0, pts: 0 }
+		s.score += a.score
+		s.pts += a.points
+		stats.set(String(a.gid), s)
+	}
+	for (const tr of table.querySelectorAll('tr[data-ga-if-gid]')) {
+		const gradeEl = tr.querySelector('td.assignment_score .tooltip .grade')
+		if (!gradeEl) continue
+		if (gradeEl.dataset.gaIfOrig == null) gradeEl.dataset.gaIfOrig = gradeEl.textContent
+		const s = stats.get(String(tr.dataset.gaIfGid))
+		const txt =
+			s && s.pts > 0
+				? ((s.score / s.pts) * 100).toFixed(2).replace(/\.?0+$/, '') + '%'
+				: '—'
+		if (gradeEl.textContent !== txt) gradeEl.textContent = txt
+	}
 }
 
 // Removes every trace of the inline UI: injected controls and rows, hidden
 // originals, hidden deleted rows, and the rewritten group percentages.
 function gaClearImagineUI(table) {
-    table = table || document.querySelector("#grades_summary");
-    if (!table) return;
-    delete table.dataset.gaIfUi;
-    delete table.dataset.gaIfBuilt;
-    table.querySelectorAll(".canvasrefined-ga-if-edit, .canvasrefined-ga-if-ctl, tr.canvasrefined-ga-if-newrow, tr.canvasrefined-ga-if-addrow").forEach(el => el.remove());
-    table.querySelectorAll("[data-ga-if-hidden]").forEach(el => { el.style.display = ""; delete el.dataset.gaIfHidden; });
-    table.querySelectorAll(".grade[data-ga-if-orig]").forEach(el => { el.textContent = el.dataset.gaIfOrig; delete el.dataset.gaIfOrig; });
-    table.querySelectorAll("tr[data-ga-if-deleted]").forEach(tr => { tr.style.display = ""; delete tr.dataset.gaIfDeleted; });
-    table.querySelectorAll("tr[data-ga-if-key], tr[data-ga-if-gid]").forEach(tr => { delete tr.dataset.gaIfKey; delete tr.dataset.gaIfGid; });
+	table = table || document.querySelector('#grades_summary')
+	if (!table) return
+	delete table.dataset.gaIfUi
+	delete table.dataset.gaIfBuilt
+	table
+		.querySelectorAll(
+			'.canvasrefined-ga-if-edit, .canvasrefined-ga-if-ctl, tr.canvasrefined-ga-if-newrow, tr.canvasrefined-ga-if-addrow',
+		)
+		.forEach((el) => el.remove())
+	table.querySelectorAll('[data-ga-if-hidden]').forEach((el) => {
+		el.style.display = ''
+		delete el.dataset.gaIfHidden
+	})
+	table.querySelectorAll('.grade[data-ga-if-orig]').forEach((el) => {
+		el.textContent = el.dataset.gaIfOrig
+		delete el.dataset.gaIfOrig
+	})
+	table.querySelectorAll('tr[data-ga-if-deleted]').forEach((tr) => {
+		tr.style.display = ''
+		delete tr.dataset.gaIfDeleted
+	})
+	table.querySelectorAll('tr[data-ga-if-key], tr[data-ga-if-gid]').forEach((tr) => {
+		delete tr.dataset.gaIfKey
+		delete tr.dataset.gaIfGid
+	})
 }
 
 // One delegated listener set on the grades table handles every scenario
 // edit, so rows can be injected/rebuilt freely without detaching handlers.
 function gaIfBindTable(table) {
-    if (table.dataset.gaIfBound) return;
-    table.dataset.gaIfBound = "1";
-    table.addEventListener("input", e => {
-        if (!gaScenario || !gaImagineIf) return;
-        const t = e.target;
-        const tr = t.closest("tr");
-        if (!tr) return;
-        if (t.matches("[data-ga-if-score],[data-ga-if-pts],[data-ga-if-title]")) {
-            const a = gaScenario.assignments.find(x => String(x.key) === String(tr.dataset.gaIfKey));
-            if (!a) return;
-            if (t.matches("[data-ga-if-title]")) a.title = t.value;
-            else if (t.matches("[data-ga-if-score]")) { const v = parseFloat(t.value); a.score = t.value.trim() !== "" && isFinite(v) ? v : null; }
-            else { const v = parseFloat(t.value); a.points = t.value.trim() !== "" && isFinite(v) ? v : null; }
-            gaApplyImagineTotal();
-        } else if (t.matches("[data-ga-if-gname],[data-ga-if-gweight]")) {
-            const g = gaScenario.groups.find(x => String(x.gid) === String(tr.dataset.gaIfGid));
-            if (!g) return;
-            if (t.matches("[data-ga-if-gname]")) g.name = t.value;
-            else { const w = parseFloat(t.value); g.weight = isFinite(w) ? w : 0; }
-            gaApplyImagineTotal();
-        }
-    });
-    table.addEventListener("change", e => {
-        if (!gaScenario || !gaImagineIf) return;
-        const t = e.target;
-        if (!t.matches("select[data-ga-if-groupsel]")) return;
-        const tr = t.closest("tr");
-        const a = gaScenario.assignments.find(x => String(x.key) === String(tr?.dataset.gaIfKey));
-        if (a) { a.gid = t.value; gaApplyImagineTotal(); }
-    });
-    table.addEventListener("click", e => {
-        if (!gaScenario || !gaImagineIf) return;
-        const btn = e.target.closest("button");
-        if (!btn) return;
-        const table = btn.closest("table") || document.querySelector("#grades_summary");
-        if (btn.matches("[data-ga-if-adel]")) {
-            const tr = btn.closest("tr");
-            const a = gaScenario.assignments.find(x => String(x.key) === String(tr.dataset.gaIfKey));
-            if (!a) return;
-            a.deleted = true;
-            if (a._new) tr.remove();
-            else { tr.style.display = "none"; tr.dataset.gaIfDeleted = "1"; }
-            gaApplyImagineTotal();
-        } else if (btn.matches("[data-ga-if-gdel]")) {
-            const tr = btn.closest("tr");
-            const g = gaScenario.groups.find(x => String(x.gid) === String(tr.dataset.gaIfGid));
-            if (!g) return;
-            g.deleted = true;
-            if (g._new) tr.remove();
-            else { tr.style.display = "none"; tr.dataset.gaIfDeleted = "1"; }
-            gaIfRefreshSelects(table);
-            gaApplyImagineTotal();
-        } else if (btn.id === "canvasrefined-ga-if-add-asg") {
-            const groups = gaScenario.groups.filter(g => !g.deleted);
-            const a = { key: "new-asg-" + (++gaIfCounter), title: "New assignment", score: null, points: 100, gid: groups[0] ? String(groups[0].gid) : "", _new: true };
-            gaScenario.assignments.push(a);
-            const tr = gaIfMakeAssignmentRow(a);
-            gaIfInsertAssignmentRow(table, tr);
-            tr.dataset.gaIfKey = a.key;
-            gaIfBuildAssignmentControls(tr, a);
-            tr.scrollIntoView({ block: "nearest" });
-            tr.querySelector("[data-ga-if-title]")?.focus();
-            gaApplyImagineTotal();
-        } else if (btn.id === "canvasrefined-ga-if-add-group") {
-            const g = { gid: "new-group-" + (++gaIfCounter), name: "New group", weight: 0, _new: true };
-            gaScenario.groups.push(g);
-            const tr = gaIfMakeGroupRow(g);
-            gaIfInsertGroupRow(table, tr);
-            tr.dataset.gaIfGid = g.gid;
-            gaIfBuildGroupControls(tr, g);
-            gaIfRefreshSelects(table);
-            tr.scrollIntoView({ block: "nearest" });
-            tr.querySelector("[data-ga-if-gname]")?.focus();
-            gaApplyImagineTotal();
-        }
-    });
+	if (table.dataset.gaIfBound) return
+	table.dataset.gaIfBound = '1'
+	table.addEventListener('input', (e) => {
+		if (!gaScenario || !gaImagineIf) return
+		const t = e.target
+		const tr = t.closest('tr')
+		if (!tr) return
+		if (t.matches('[data-ga-if-score],[data-ga-if-pts],[data-ga-if-title]')) {
+			const a = gaScenario.assignments.find(
+				(x) => String(x.key) === String(tr.dataset.gaIfKey),
+			)
+			if (!a) return
+			if (t.matches('[data-ga-if-title]')) a.title = t.value
+			else if (t.matches('[data-ga-if-score]')) {
+				const v = parseFloat(t.value)
+				a.score = t.value.trim() !== '' && isFinite(v) ? v : null
+			} else {
+				const v = parseFloat(t.value)
+				a.points = t.value.trim() !== '' && isFinite(v) ? v : null
+			}
+			gaApplyImagineTotal()
+		} else if (t.matches('[data-ga-if-gname],[data-ga-if-gweight]')) {
+			const g = gaScenario.groups.find(
+				(x) => String(x.gid) === String(tr.dataset.gaIfGid),
+			)
+			if (!g) return
+			if (t.matches('[data-ga-if-gname]')) g.name = t.value
+			else {
+				const w = parseFloat(t.value)
+				g.weight = isFinite(w) ? w : 0
+			}
+			gaApplyImagineTotal()
+		}
+	})
+	table.addEventListener('change', (e) => {
+		if (!gaScenario || !gaImagineIf) return
+		const t = e.target
+		if (!t.matches('select[data-ga-if-groupsel]')) return
+		const tr = t.closest('tr')
+		const a = gaScenario.assignments.find(
+			(x) => String(x.key) === String(tr?.dataset.gaIfKey),
+		)
+		if (a) {
+			a.gid = t.value
+			gaApplyImagineTotal()
+		}
+	})
+	table.addEventListener('click', (e) => {
+		if (!gaScenario || !gaImagineIf) return
+		const btn = e.target.closest('button')
+		if (!btn) return
+		const table = btn.closest('table') || document.querySelector('#grades_summary')
+		if (btn.matches('[data-ga-if-adel]')) {
+			const tr = btn.closest('tr')
+			const a = gaScenario.assignments.find(
+				(x) => String(x.key) === String(tr.dataset.gaIfKey),
+			)
+			if (!a) return
+			a.deleted = true
+			if (a._new) tr.remove()
+			else {
+				tr.style.display = 'none'
+				tr.dataset.gaIfDeleted = '1'
+			}
+			gaApplyImagineTotal()
+		} else if (btn.matches('[data-ga-if-gdel]')) {
+			const tr = btn.closest('tr')
+			const g = gaScenario.groups.find(
+				(x) => String(x.gid) === String(tr.dataset.gaIfGid),
+			)
+			if (!g) return
+			g.deleted = true
+			if (g._new) tr.remove()
+			else {
+				tr.style.display = 'none'
+				tr.dataset.gaIfDeleted = '1'
+			}
+			gaIfRefreshSelects(table)
+			gaApplyImagineTotal()
+		} else if (btn.id === 'canvasrefined-ga-if-add-asg') {
+			const groups = gaScenario.groups.filter((g) => !g.deleted)
+			const a = {
+				key: 'new-asg-' + ++gaIfCounter,
+				title: 'New assignment',
+				score: null,
+				points: 100,
+				gid: groups[0] ? String(groups[0].gid) : '',
+				_new: true,
+			}
+			gaScenario.assignments.push(a)
+			const tr = gaIfMakeAssignmentRow(a)
+			gaIfInsertAssignmentRow(table, tr)
+			tr.dataset.gaIfKey = a.key
+			gaIfBuildAssignmentControls(tr, a)
+			tr.scrollIntoView({ block: 'nearest' })
+			tr.querySelector('[data-ga-if-title]')?.focus()
+			gaApplyImagineTotal()
+		} else if (btn.id === 'canvasrefined-ga-if-add-group') {
+			const g = {
+				gid: 'new-group-' + ++gaIfCounter,
+				name: 'New group',
+				weight: 0,
+				_new: true,
+			}
+			gaScenario.groups.push(g)
+			const tr = gaIfMakeGroupRow(g)
+			gaIfInsertGroupRow(table, tr)
+			tr.dataset.gaIfGid = g.gid
+			gaIfBuildGroupControls(tr, g)
+			gaIfRefreshSelects(table)
+			tr.scrollIntoView({ block: 'nearest' })
+			tr.querySelector('[data-ga-if-gname]')?.focus()
+			gaApplyImagineTotal()
+		}
+	})
 }
 
 // Builds the inline UI on the grades table itself. The scenario is rebuilt
@@ -8297,232 +9882,290 @@ function gaIfBindTable(table) {
 // never clobbered. If Canvas wiped our controls (row re-render), the built
 // count no longer matches and the UI is rebuilt from the scenario.
 function gaRenderImagineIf(force) {
-    if (!gaImagineIf) return;
-    const table = document.querySelector("#grades_summary");
-    if (!table) return;
-    const sig = gaImagineTableSig();
-    if (!gaScenario || gaScenario.sig !== sig) {
-        const sc = gaBuildImagineScenario();
-        if (!sc) return; // table hasn't rendered yet; the DOM observer retries
-        gaScenario = { sig, groups: sc.groups, assignments: sc.assignments };
-        force = true;
-    }
-    if (!force
-        && table.dataset.gaIfUi === sig
-        && Number(table.dataset.gaIfBuilt || 0) === table.querySelectorAll("tr[data-ga-if-key]").length) return;
-    gaClearImagineUI(table);
-    table.dataset.gaIfUi = sig;
-    gaIfBindTable(table);
+	if (!gaImagineIf) return
+	const table = document.querySelector('#grades_summary')
+	if (!table) return
+	const sig = gaImagineTableSig()
+	if (!gaScenario || gaScenario.sig !== sig) {
+		const sc = gaBuildImagineScenario()
+		if (!sc) return // table hasn't rendered yet; the DOM observer retries
+		gaScenario = { sig, groups: sc.groups, assignments: sc.assignments }
+		force = true
+	}
+	if (
+		!force &&
+		table.dataset.gaIfUi === sig &&
+		Number(table.dataset.gaIfBuilt || 0) ===
+			table.querySelectorAll('tr[data-ga-if-key]').length
+	)
+		return
+	gaClearImagineUI(table)
+	table.dataset.gaIfUi = sig
+	gaIfBindTable(table)
 
-    const rowById = new Map();
-    for (const tr of table.querySelectorAll("tr.student_assignment")) {
-        if (tr.classList.contains("group_total") || tr.classList.contains("final_grade")) continue;
-        if (tr.id) rowById.set(tr.id, tr);
-    }
-    const groupRowByGid = new Map();
-    for (const tr of table.querySelectorAll("tr.group_total")) {
-        const gid = (tr.querySelector(".assignment_group_id")?.textContent || "").trim();
-        if (gid) groupRowByGid.set(gid, tr);
-    }
+	const rowById = new Map()
+	for (const tr of table.querySelectorAll('tr.student_assignment')) {
+		if (tr.classList.contains('group_total') || tr.classList.contains('final_grade'))
+			continue
+		if (tr.id) rowById.set(tr.id, tr)
+	}
+	const groupRowByGid = new Map()
+	for (const tr of table.querySelectorAll('tr.group_total')) {
+		const gid = (tr.querySelector('.assignment_group_id')?.textContent || '').trim()
+		if (gid) groupRowByGid.set(gid, tr)
+	}
 
-    let built = 0;
-    for (const a of gaScenario.assignments) {
-        let tr = a._new ? table.querySelector(`tr[data-ga-if-key="${CSS.escape(a.key)}"]`) : rowById.get(a.key);
-        if (a.deleted) {
-            if (tr) { tr.style.display = "none"; tr.dataset.gaIfDeleted = "1"; }
-            continue;
-        }
-        if (!tr) {
-            if (!a._new) continue; // the page row vanished — nothing to edit
-            tr = gaIfMakeAssignmentRow(a);
-            gaIfInsertAssignmentRow(table, tr);
-        }
-        tr.dataset.gaIfKey = a.key;
-        gaIfBuildAssignmentControls(tr, a);
-        built++;
-    }
-    for (const g of gaScenario.groups) {
-        let tr = g._new ? table.querySelector(`tr[data-ga-if-gid="${CSS.escape(g.gid)}"]`) : groupRowByGid.get(g.gid);
-        if (g.deleted) {
-            if (tr) { tr.style.display = "none"; tr.dataset.gaIfDeleted = "1"; }
-            continue;
-        }
-        if (!tr) {
-            if (!g._new) continue;
-            tr = gaIfMakeGroupRow(g);
-            gaIfInsertGroupRow(table, tr);
-        }
-        tr.dataset.gaIfGid = g.gid;
-        gaIfBuildGroupControls(tr, g);
-    }
-    gaIfEnsureAddAssignmentRow(table);
-    gaIfEnsureAddGroupRow(table);
-    table.dataset.gaIfBuilt = String(built);
-    gaApplyImagineTotal();
+	let built = 0
+	for (const a of gaScenario.assignments) {
+		let tr = a._new
+			? table.querySelector(`tr[data-ga-if-key="${CSS.escape(a.key)}"]`)
+			: rowById.get(a.key)
+		if (a.deleted) {
+			if (tr) {
+				tr.style.display = 'none'
+				tr.dataset.gaIfDeleted = '1'
+			}
+			continue
+		}
+		if (!tr) {
+			if (!a._new) continue // the page row vanished — nothing to edit
+			tr = gaIfMakeAssignmentRow(a)
+			gaIfInsertAssignmentRow(table, tr)
+		}
+		tr.dataset.gaIfKey = a.key
+		gaIfBuildAssignmentControls(tr, a)
+		built++
+	}
+	for (const g of gaScenario.groups) {
+		let tr = g._new
+			? table.querySelector(`tr[data-ga-if-gid="${CSS.escape(g.gid)}"]`)
+			: groupRowByGid.get(g.gid)
+		if (g.deleted) {
+			if (tr) {
+				tr.style.display = 'none'
+				tr.dataset.gaIfDeleted = '1'
+			}
+			continue
+		}
+		if (!tr) {
+			if (!g._new) continue
+			tr = gaIfMakeGroupRow(g)
+			gaIfInsertGroupRow(table, tr)
+		}
+		tr.dataset.gaIfGid = g.gid
+		gaIfBuildGroupControls(tr, g)
+	}
+	gaIfEnsureAddAssignmentRow(table)
+	gaIfEnsureAddGroupRow(table)
+	table.dataset.gaIfBuilt = String(built)
+	gaApplyImagineTotal()
 }
 
 // Enters/leaves the mode: builds/removes the inline table UI and
 // overwrites/restores the sidebar Total block.
 function gaEnterImagineIf() {
-    gaRenderImagineIf();
-    gaApplyImagineTotal();
+	gaRenderImagineIf()
+	gaApplyImagineTotal()
 }
 
 function gaExitImagineIf() {
-    gaClearImagineUI();
-    gaRestoreImagineTotal();
+	gaClearImagineUI()
+	gaRestoreImagineTotal()
 }
-
 
 function getApiData() {
-    if (current_page === "/" || current_page === "" || options.better_todo) {
-        getAssignments();
-        getGrades();
-        getColors();
-    }
+	if (current_page === '/' || current_page === '' || options.better_todo) {
+		getAssignments()
+		getGrades()
+		getColors()
+	}
 }
-
 
 function makeElement(element, location, options, prepend = false) {
-    let creation = document.createElement(element);
-    Object.keys(options).forEach(key => {
-        creation[key] = options[key];
-    });
-    if (prepend) {
-        location.insertBefore(creation, location.firstChild);
-    } else {
-        location.appendChild(creation);
-    }
-    return creation
+	let creation = document.createElement(element)
+	Object.keys(options).forEach((key) => {
+		creation[key] = options[key]
+	})
+	if (prepend) {
+		location.insertBefore(creation, location.firstChild)
+	} else {
+		location.appendChild(creation)
+	}
+	return creation
 }
-
 
 async function getData(url) {
-    let response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
-    });
-    // Fail loudly on HTTP errors (e.g. an expired session returning 401 or a
-    // redirect to the login page). Previously non-OK responses were returned
-    // as-is, so callers received an error object/HTML and crashed later in
-    // confusing ways (or silently rendered wrong data).
-    if (!response.ok) {
-        throw new Error(`Canvas API request failed (${response.status})`);
-    }
-    let data = await response.json();
-    // Deep-clone via JSON to unwrap Firefox Xray objects so nested props are mutable.
-    try {
-        return JSON.parse(JSON.stringify(data));
-    } catch (_) {
-        return data;
-    }
+	let response = await fetch(url, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+	})
+	// Fail loudly on HTTP errors (e.g. an expired session returning 401 or a
+	// redirect to the login page). Previously non-OK responses were returned
+	// as-is, so callers received an error object/HTML and crashed later in
+	// confusing ways (or silently rendered wrong data).
+	if (!response.ok) {
+		throw new Error(`Canvas API request failed (${response.status})`)
+	}
+	let data = await response.json()
+	// Deep-clone via JSON to unwrap Firefox Xray objects so nested props are mutable.
+	try {
+		return JSON.parse(JSON.stringify(data))
+	} catch (_) {
+		return data
+	}
 }
 
-
 function rgbToHex(rgb) {
-    try {
-        let pat = /^rgb\(\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\)$/;
-        let exec = pat.exec(rgb);
-        return "#" + parseInt(exec[1]).toString(16).padStart(2, "0") + parseInt(exec[2]).toString(16).padStart(2, "0") + parseInt(exec[3]).toString(16).padStart(2, "0");
-    } catch (e) {
-        console.warn(e);
-    }
+	try {
+		let pat = /^rgb\(\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\)$/
+		let exec = pat.exec(rgb)
+		return (
+			'#' +
+			parseInt(exec[1]).toString(16).padStart(2, '0') +
+			parseInt(exec[2]).toString(16).padStart(2, '0') +
+			parseInt(exec[3]).toString(16).padStart(2, '0')
+		)
+	} catch (e) {
+		console.warn(e)
+	}
 }
 
 function rgbToHsl(r, g, b) {
-    r /= 255, g /= 255, b /= 255;
-    var max = Math.max(r, g, b),
-        min = Math.min(r, g, b);
-    var h, s, l = (max + min) / 2;
-    if (max == min) {
-        h = s = 0;
-    } else {
-        var d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-            case r:
-                h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g:
-                h = (b - r) / d + 2; break;
-            case b:
-                h = (r - g) / d + 4; break;
-        }
-        h /= 6;
-    }
-    return [h * 360, s * 100, l * 100];
+	;((r /= 255), (g /= 255), (b /= 255))
+	var max = Math.max(r, g, b),
+		min = Math.min(r, g, b)
+	var h,
+		s,
+		l = (max + min) / 2
+	if (max == min) {
+		h = s = 0
+	} else {
+		var d = max - min
+		s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+		switch (max) {
+			case r:
+				h = (g - b) / d + (g < b ? 6 : 0)
+				break
+			case g:
+				h = (b - r) / d + 2
+				break
+			case b:
+				h = (r - g) / d + 4
+				break
+		}
+		h /= 6
+	}
+	return [h * 360, s * 100, l * 100]
 }
 
 function getRelativeDate(date, short = false) {
-    let now = new Date();
-    let timeSince = (now.getTime() - date.getTime()) / 60000;
-    let time = "min";
-    timeSince = Math.abs(timeSince);
-    if (timeSince >= 60) {
-        timeSince /= 60;
-        time = short ? "h" : "hour";
-        if (timeSince >= 24) {
-            timeSince /= 24;
-            time = short ? "d" : "day";
-            if (timeSince >= 7) {
-                timeSince /= 7;
-                time = short ? "w" : "week";
-            }
-        }
-    }
-    timeSince = Math.round(timeSince);
-    let relative = timeSince + (short ? "" : " ") + time + (timeSince > 1 && !short ? "s" : "");
-    return { time: relative, ms: now.getTime() - date.getTime() };
+	let now = new Date()
+	let timeSince = (now.getTime() - date.getTime()) / 60000
+	let time = 'min'
+	timeSince = Math.abs(timeSince)
+	if (timeSince >= 60) {
+		timeSince /= 60
+		time = short ? 'h' : 'hour'
+		if (timeSince >= 24) {
+			timeSince /= 24
+			time = short ? 'd' : 'day'
+			if (timeSince >= 7) {
+				timeSince /= 7
+				time = short ? 'w' : 'week'
+			}
+		}
+	}
+	timeSince = Math.round(timeSince)
+	let relative =
+		timeSince + (short ? '' : ' ') + time + (timeSince > 1 && !short ? 's' : '')
+	return { time: relative, ms: now.getTime() - date.getTime() }
 }
 
-const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const months = [
+	'Jan',
+	'Feb',
+	'Mar',
+	'Apr',
+	'May',
+	'Jun',
+	'Jul',
+	'Aug',
+	'Sep',
+	'Oct',
+	'Nov',
+	'Dec',
+]
 function formatTodoDate(date, submissions, hr24) {
-    let { time, ms } = getRelativeDate(date);
-    let fromNow = ms < 0 ? "in " + time : time + " ago";
-    let dueSoon = false;
-    if (submissions && submissions.submitted === false && ms >= -21600000) {
-        dueSoon = true;
-    }
-    return { "dueSoon": dueSoon, "date": months[date.getMonth()] + " " + date.getDate() + " at " + (date.getHours() - (hr24 ? "" : date.getHours() > 12 ? 12 : 0)) + ":" + (date.getMinutes() < 10 ? "0" : "") + date.getMinutes() + (hr24 ? "" : date.getHours() >= 12 ? "pm" : "am") + " (" + fromNow + ")" };
+	let { time, ms } = getRelativeDate(date)
+	let fromNow = ms < 0 ? 'in ' + time : time + ' ago'
+	let dueSoon = false
+	if (submissions && submissions.submitted === false && ms >= -21600000) {
+		dueSoon = true
+	}
+	return {
+		dueSoon: dueSoon,
+		date:
+			months[date.getMonth()] +
+			' ' +
+			date.getDate() +
+			' at ' +
+			(date.getHours() - (hr24 ? '' : date.getHours() > 12 ? 12 : 0)) +
+			':' +
+			(date.getMinutes() < 10 ? '0' : '') +
+			date.getMinutes() +
+			(hr24 ? '' : date.getHours() >= 12 ? 'pm' : 'am') +
+			' (' +
+			fromNow +
+			')',
+	}
 }
 
 function formatCardDue(date) {
-    let due = new Date(date);
-    if (options.relative_dues === true) {
-        let relative = getRelativeDate(due, true);
-        return relative.ms > 0 ? relative.time + " ago" : "in " + relative.time;
-    }
-    return options.assignment_date_format ? (due.getDate()) + "/" + (due.getMonth() + 1) : (due.getMonth() + 1) + "/" + (due.getDate());
+	let due = new Date(date)
+	if (options.relative_dues === true) {
+		let relative = getRelativeDate(due, true)
+		return relative.ms > 0 ? relative.time + ' ago' : 'in ' + relative.time
+	}
+	return options.assignment_date_format
+		? due.getDate() + '/' + (due.getMonth() + 1)
+		: due.getMonth() + 1 + '/' + due.getDate()
 }
 
 function logError(e) {
-    chrome.storage.local.get("errors", storage => {
-        const errors = Array.isArray(storage.errors) ? storage.errors : [];
-        const message = e?.stack || String(e);
-        chrome.storage.local.set({ "errors": errors.concat(message).slice(-20) });
-        console.log(message);
-    })
-
+	chrome.storage.local.get('errors', (storage) => {
+		const errors = Array.isArray(storage.errors) ? storage.errors : []
+		const message = e?.stack || String(e)
+		chrome.storage.local.set({ errors: errors.concat(message).slice(-20) })
+		console.log(message)
+	})
 }
 
 const CSRFtoken = function () {
-    return decodeURIComponent((document.cookie.match('(^|;) *_csrf_token=([^;]*)') || '')[2])
+	return decodeURIComponent(
+		(document.cookie.match('(^|;) *_csrf_token=([^;]*)') || '')[2],
+	)
 }
 
 // Normalize legacy saved Canvas URLs before comparing exact hostnames.
 function normalizeCanvasDomain(value) {
-    if (typeof value !== "string" || !value.trim()) return null;
-    const input = value.trim();
-    try {
-        const url = new URL(input.includes("://") ? input : `https://${input}`);
-        if (url.protocol !== "https:" || url.username || url.password || url.port) return null;
-        const host = url.hostname.toLowerCase();
-        if (host.length > 253 || !host.split(".").every(label =>
-            /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))) return null;
-        return host;
-    } catch {
-        return null;
-    }
+	if (typeof value !== 'string' || !value.trim()) return null
+	const input = value.trim()
+	try {
+		const url = new URL(input.includes('://') ? input : `https://${input}`)
+		if (url.protocol !== 'https:' || url.username || url.password || url.port) return null
+		const host = url.hostname.toLowerCase()
+		if (
+			host.length > 253 ||
+			!host
+				.split('.')
+				.every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))
+		)
+			return null
+		return host
+	} catch {
+		return null
+	}
 }

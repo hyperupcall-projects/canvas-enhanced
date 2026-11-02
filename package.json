@@ -1,21 +1,30 @@
 {
-  "name": "canvas-enhanced",
-  "version": "0.5.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "12.10.1",
-      "onFail": "download"
-    }
-  },
-  "packageManager": "pnpm@12.10.1",
-  "type": "module"
+	"name": "canvas-enhanced",
+	"version": "0.5.0",
+	"type": "module",
+	"description": "",
+	"license": "ISC",
+	"private": true,
+	"packageManager": "pnpm@12.16.1",
+	"devEngines": {
+		"packageManager": {
+			"name": "pnpm",
+			"version": "12.16.1",
+			"onFail": "download"
+		}
+	},
+	"main": "index.js",
+	"keywords": [],
+	"scripts": {
+		"format": "hyperupcall-scripts-nodejs format",
+		"lint": "hyperupcall-scripts-nodejs lint",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"devDependencies": {
+		"@hyperupcall/scripts-nodejs": "0.13.0"
+	},
+	"markdownlint-cli2": {
+		"extends": "./node_modules/@hyperupcall/markdownlint-config/.markdownlint.json"
+	},
+	"prettier": "@hyperupcall/scripts-nodejs/config-prettier.js"
 }
