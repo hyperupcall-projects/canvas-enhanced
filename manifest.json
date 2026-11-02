@@ -23,7 +23,7 @@
 	"content_scripts": [
 		{
 			"matches": ["https://*.instructure.com/*"],
-			"js": ["css/darkmodecss.js", "js/themes.js", "js/content.js"],
+			"js": ["css/darkmodecss.js", "js/themes.js", "js/nav-colors.js", "js/content.js"],
 			"css": ["css/content.css"],
 			"run_at": "document_start"
 		}

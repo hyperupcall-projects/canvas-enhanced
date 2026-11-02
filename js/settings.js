@@ -189,6 +189,7 @@ const defaultOptions = {
 		custom_cards: {},
 		custom_cards_2: {},
 		custom_cards_3: {},
+		nav_tab_colors: {},
 		custom_assignments: [],
 		custom_assignments_overflow: ['custom_assignments'],
 		grade_hover: false,
@@ -397,6 +398,68 @@ function setupTimeframeSelect(initial) {
 	})
 }
 
+// One color picker per course navigation tab, stored together as
+// `nav_tab_colors` ({ tab: colorName }); tabs set to None are left out.
+function setupNavColorSelects() {
+	const container = document.getElementById('nav-colors')
+	const selects = new Map()
+	const swatch = (name) => NAV_COLORS[name] || 'transparent'
+
+	NAV_TABS.forEach(({ tab, label }) => {
+		const row = document.createElement('div')
+		row.className = 'nav-color-row'
+		const text = document.createElement('label')
+		text.className = 'sub-text'
+		text.htmlFor = `nav_color_${tab}`
+		text.textContent = label
+		const select = document.createElement('select')
+		select.id = `nav_color_${tab}`
+		Object.keys(NAV_COLORS).forEach((name) => {
+			const option = new Option(name, name)
+			// Preview each color inside the dropdown list itself.
+			if (NAV_COLORS[name]) {
+				option.style.backgroundColor = NAV_COLORS[name]
+				option.style.color = '#212529'
+			}
+			select.add(option)
+		})
+		const paint = () => {
+			select.style.backgroundColor = NAV_COLORS[select.value] || ''
+			select.style.color = NAV_COLORS[select.value] ? '#212529' : ''
+		}
+		const dot = document.createElement('span')
+		dot.className = 'nav-color-swatch'
+		dot.setAttribute('aria-hidden', 'true')
+		select.addEventListener('change', () => {
+			dot.style.background = swatch(select.value)
+			paint()
+			chrome.storage.sync.get('nav_tab_colors', (sync) => {
+				const colors = { ...sync.nav_tab_colors }
+				if (select.value === 'None') delete colors[tab]
+				else colors[tab] = select.value
+				chrome.storage.sync.set({ nav_tab_colors: colors })
+			})
+		})
+		row.append(text, select, dot)
+		container.append(row)
+		selects.set(tab, { select, dot, paint })
+	})
+
+	function render(colors) {
+		selects.forEach(({ select, dot, paint }, tab) => {
+			select.value = Object.hasOwn(NAV_COLORS, colors?.[tab]) ? colors[tab] : 'None'
+			dot.style.background = swatch(select.value)
+			paint()
+		})
+	}
+	chrome.storage.sync.get('nav_tab_colors', (sync) => render(sync.nav_tab_colors))
+
+	document.getElementById('reset-nav-colors').addEventListener('click', () => {
+		render({})
+		chrome.storage.sync.set({ nav_tab_colors: {} })
+	})
+}
+
 function setupCardDateFormatSelect() {
 	const select = document.getElementById('card_date_format')
 	// Retain the existing keys so saved preferences and older exports still work.
@@ -560,6 +623,7 @@ function setup() {
 				setup: displayAdvancedCards,
 				tab: '.advanced',
 			},
+			'course-menu-btn': { setup: null, tab: '.course-menu-settings' },
 			'gpa-bounds-btn': {
 				setup: displayGPABounds,
 				tab: '.gpa-bounds-container',
@@ -685,6 +749,7 @@ function setup() {
 	})
 
 	setupCardDateFormatSelect()
+	setupNavColorSelects()
 	setupCourseFontSizeSelects()
 	setupAppearanceMode()
 	setupSavedThemes()

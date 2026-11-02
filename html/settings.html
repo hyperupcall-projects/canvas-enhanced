@@ -80,6 +80,31 @@
 				</button>
 				<button
 					type="button"
+					id="course-menu-btn"
+					class="big-button tab-btn"
+					role="tab"
+					aria-controls="course-menu-panel"
+					aria-selected="false"
+					tabindex="-1"
+				>
+					<svg
+						aria-hidden="true"
+						xmlns="http://www.w3.org/2000/svg"
+						width="15"
+						height="15"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M4 6h16M4 12h16M4 18h16" />
+					</svg>
+					<span>Course Menu</span>
+				</button>
+				<button
+					type="button"
 					id="todo-settings-btn"
 					class="big-button tab-btn"
 					role="tab"
@@ -1228,6 +1253,34 @@
 			</div>
 
 			<div
+				id="course-menu-panel"
+				class="course-menu-settings tab"
+				role="tabpanel"
+				aria-labelledby="course-menu-btn"
+				tabindex="0"
+				hidden
+			>
+				<div class="tab-header">
+					<h2 style="margin-top: 0">Course Menu</h2>
+				</div>
+				<div class="advanced-cards">
+					<h3 class="header-small" id="nav-colors-heading">Tab Background Colors</h3>
+					<p class="sub-text">
+						Give each tab in a course's navigation menu its own background color.
+					</p>
+					<div id="nav-colors"></div>
+					<button
+						type="button"
+						id="reset-nav-colors"
+						class="customization-button"
+						style="margin-top: 12px"
+					>
+						Reset tab colors
+					</button>
+				</div>
+			</div>
+
+			<div
 				id="todo-panel"
 				class="todo-settings-container tab"
 				role="tabpanel"
@@ -1582,6 +1635,7 @@
 		</div>
 
 		<script type="text/javascript" src="../js/themes.js"></script>
+		<script type="text/javascript" src="../js/nav-colors.js"></script>
 		<script type="text/javascript" src="../js/settings.js"></script>
 	</body>
 </html>

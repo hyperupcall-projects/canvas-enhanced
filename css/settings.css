@@ -334,6 +334,23 @@ button:active {
 	gap: 8px;
 	margin-bottom: 10px;
 }
+.nav-color-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 8px;
+}
+.nav-color-row label {
+	flex: 0 0 140px;
+}
+.nav-color-swatch {
+	width: 16px;
+	height: 16px;
+	border-radius: 4px;
+	border: 1px solid var(--settings-text);
+	flex: none;
+}
+.nav-color-row select,
 #card_date_format {
 	font-size: 12px;
 	background: var(--inputbg);

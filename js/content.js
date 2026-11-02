@@ -836,6 +836,7 @@ function startExtension() {
 		getApiData()
 		checkDashboardReady()
 		applyAestheticChanges()
+		applyNavTabColors()
 		watchNewCanvasButton()
 		changeFavicon()
 		updateReminders()
@@ -994,6 +995,9 @@ function applyOptionsChanges(changes) {
 			case 'full_width':
 			case 'center_cards':
 				applyAestheticChanges()
+				break
+			case 'nav_tab_colors':
+				applyNavTabColors()
 				break
 			case 'hide_new_canvas':
 				watchNewCanvasButton()
@@ -6537,6 +6541,27 @@ function debouncedApplyAestheticChanges(delay = 150) {
 		aestheticDebounceTimer = null
 		applyAestheticChanges()
 	}, delay)
+}
+
+// Background colors for the course navigation tabs, configured per tab in the
+// settings' Course Menu section. The text is forced dark so it stays readable
+// on the light tints, including under a dark theme.
+function applyNavTabColors() {
+	let style = document.querySelector('#canvasrefined-nav-colors')
+	if (!style) {
+		style = document.createElement('style')
+		style.id = 'canvasrefined-nav-colors'
+		document.documentElement.append(style)
+	}
+	const colors = options.nav_tab_colors || {}
+	style.textContent = NAV_TABS.map(({ tab }) => {
+		const color = Object.hasOwn(NAV_COLORS, colors[tab]) ? NAV_COLORS[colors[tab]] : null
+		return color
+			? `.ic-app-course-menu #${tab}-link { background-color: ${color} !important; color: #212529 !important; }`
+			: ''
+	})
+		.filter(Boolean)
+		.join('\n')
 }
 
 function applyAestheticChanges() {
