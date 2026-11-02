@@ -755,27 +755,58 @@ function setup() {
 	setupSavedThemes()
 	setupEditThemeDialog()
 
-	// Keep category navigation visible while switching the panel below it.
+	// All panels are shown in one scrollable column, ordered like the nav buttons.
 	const tabButtons = Array.from(
 		document.querySelectorAll('.more-options-container [role="tab"]'),
 	)
-	function selectSettingsTab(button) {
-		if (button.getAttribute('aria-selected') === 'true') return
+	const content = document.getElementById('settings-content')
+	const panelOf = (button) => document.getElementById(button.getAttribute('aria-controls'))
+	tabButtons.forEach((button) => {
+		const panel = panelOf(button)
+		panel.hidden = false
+		content.appendChild(panel)
+		const setup = menu.tabs[button.id].setup
+		if (setup) setup()
+	})
+
+	function markSelected(button) {
 		tabButtons.forEach((tabButton) => {
 			const selected = tabButton === button
 			tabButton.setAttribute('aria-selected', String(selected))
 			tabButton.tabIndex = selected ? 0 : -1
-			document.getElementById(tabButton.getAttribute('aria-controls')).hidden = !selected
 		})
-		const setup = menu.tabs[button.id].setup
-		if (setup) setup()
 	}
+	function selectSettingsTab(button) {
+		markSelected(button)
+		const start = content.scrollTop
+		const delta = panelOf(button).offsetTop - start
+		const duration = 120
+		const startTime = performance.now()
+		const step = (now) => {
+			const t = Math.min((now - startTime) / duration, 1)
+			content.scrollTop = start + delta * (1 - (1 - t) * (1 - t))
+			if (t < 1) requestAnimationFrame(step)
+		}
+		requestAnimationFrame(step)
+	}
+	function updateActiveFromScroll() {
+		const base = content.getBoundingClientRect().top
+		let active = tabButtons[0]
+		tabButtons.forEach((button) => {
+			if (panelOf(button).getBoundingClientRect().top - base <= 40) active = button
+		})
+		if (content.scrollTop + content.clientHeight >= content.scrollHeight - 2) {
+			active = tabButtons[tabButtons.length - 1]
+		}
+		markSelected(active)
+	}
+	content.addEventListener('scroll', updateActiveFromScroll, { passive: true })
 	tabButtons.forEach((button, index) => {
 		button.addEventListener('click', () => selectSettingsTab(button))
 		button.addEventListener('keydown', (event) => {
 			let nextIndex
-			if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabButtons.length
-			else if (event.key === 'ArrowLeft')
+			if (event.key === 'ArrowDown') nextIndex = (index + 1) % tabButtons.length
+			else if (event.key === 'ArrowUp')
 				nextIndex = (index - 1 + tabButtons.length) % tabButtons.length
 			else if (event.key === 'Home') nextIndex = 0
 			else if (event.key === 'End') nextIndex = tabButtons.length - 1
