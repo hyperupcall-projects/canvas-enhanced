@@ -12,7 +12,7 @@ function setupNavigationListener() {
 		if (next === current_page) return
 		current_page = next
 		// Re-run the page-scoped watchers so they evaluate against the new URL.
-		watchSequenceFooter()
+		applyHideSequenceFooter()
 		watchSubmissionPageButton()
 		watchProfileLogoutPageButton()
 		watchGradeAnalytics()
@@ -38,18 +38,6 @@ function getCurrentCourseId() {
 
 function isGradesPage() {
 	return /^\/courses\/\d+\/grades(?:\/|$)/.test(current_page)
-}
-
-function isCoursesIndexPage() {
-	return /^\/courses\/?$/.test(current_page)
-}
-
-function isGroupsIndexPage() {
-	return /^\/groups\/?$/.test(current_page)
-}
-
-function isConversationsPage() {
-	return /^\/conversations(?:\/|$)/.test(current_page)
 }
 
 function isProfilePage() {
@@ -364,10 +352,6 @@ function applyHideSequenceFooter() {
 	}
 }
 
-function watchSequenceFooter() {
-	applyHideSequenceFooter()
-}
-
 // One persistent, rAF-throttled observer that keeps both assignment-page
 // navigation buttons present: the "Back to Assignment" button on submission
 // pages and the "Go to Grades" button on assignment pages. Unlike the old
@@ -457,7 +441,6 @@ let assignmentsDue = []
 let todoRenderGen = 0
 let cardRenderGen = 0
 let options = {}
-let reminderCheck = null
 // Set while a background planner-cache refresh is in flight so overlapping
 // schedules (multiple loads, multiple tabs) can't run concurrently.
 let plannerRefreshRunning = false
@@ -840,7 +823,7 @@ function startExtension() {
 		watchNewCanvasButton()
 		changeFavicon()
 		updateReminders()
-		watchSequenceFooter()
+		applyHideSequenceFooter()
 		watchProfileLogoutPageButton()
 		watchGradeAnalytics()
 		setupPersonalDetailsHiding()
@@ -920,8 +903,6 @@ function applyOptionsChanges(changes) {
 				// Hiding/unhiding a card changes which courses appear in the todo
 				// list and the progress display, so re-render them immediately.
 				if (options.better_todo && document.getElementById('better-todo-main')) {
-					moreAnnouncementCount = 0
-					moreAssignmentCount = 0
 					clearTodoList()
 					createTodoSections(document.querySelector('#canvasrefined-todo-list'))
 				}
@@ -943,8 +924,6 @@ function applyOptionsChanges(changes) {
 			case 'todo_hide_read':
 			case 'todo_show_scores':
 				if (options.better_todo && document.getElementById('better-todo-main')) {
-					moreAnnouncementCount = 0
-					moreAssignmentCount = 0
 					// A new timeframe starts back at the current window.
 					betterTodoTimeframeOffset = 0
 					clearTodoList()
@@ -958,8 +937,6 @@ function applyOptionsChanges(changes) {
 				// Todo item text, card grades and card assignment names are baked
 				// in at render time, so re-render them to swap fake/real data.
 				if (options.better_todo && document.getElementById('better-todo-main')) {
-					moreAnnouncementCount = 0
-					moreAssignmentCount = 0
 					clearTodoList()
 					createTodoSections(document.querySelector('#canvasrefined-todo-list'))
 				}
@@ -1003,7 +980,7 @@ function applyOptionsChanges(changes) {
 				watchNewCanvasButton()
 				break
 			case 'hide_sequence_footer':
-				watchSequenceFooter()
+				applyHideSequenceFooter()
 				break
 			case 'remind':
 				showExampleReminder()
@@ -1050,19 +1027,6 @@ function applyOptionsChanges(changes) {
 				break
 		}
 	})
-}
-
-let insertTimer
-function resetTimer() {
-	clearTimeout(insertTimer)
-	insertTimer = setTimeout(() => {
-		if (document.querySelectorAll('.ic-DashboardCard__link').length > 0) {
-			loadCardAssignments()
-			loadBetterTodo()
-		} else {
-			resetTimer()
-		}
-	}, 1)
 }
 
 function checkDashboardReady() {
@@ -1253,9 +1217,6 @@ function recieveMessage(request, sender, sendResponse) {
 		case 'getcolors':
 			getCardColors().then((colors) => sendResponse(colors))
 			return true // keep the message channel open for async sendResponse
-		case 'inspect':
-			sendResponse(inspectDarkMode(true))
-			break
 		case 'clearPlannerCache':
 			// "Clear planner cache" (Debug tab in the settings page): drop
 			// the cache, re-fetch fresh planner data, and re-render every
@@ -1275,136 +1236,6 @@ function recieveMessage(request, sender, sendResponse) {
 			return true // keep the message channel open for async sendResponse
 		default:
 			return false
-	}
-}
-
-function hexToRgb(hex) {
-	let match = /#(.{2})(.{2})(.{2})/.exec(hex)
-	if (match) {
-		return {
-			r: parseInt(match[1], 16),
-			g: parseInt(match[2], 16),
-			b: parseInt(match[3], 16),
-		}
-	}
-}
-
-function inspectDarkMode(withOutput = false) {
-	const preset = activeThemeValues()
-	let output = ''
-	let bgcount = 0,
-		textcount = 0,
-		time = performance.now()
-	let bg0 = hexToRgb(preset?.['background-0'])
-	let bg1 = hexToRgb(preset?.['background-1'])
-	let txt = hexToRgb(preset?.['text-0'])
-	let bdr = hexToRgb(preset?.['borders'])
-	let lnk = hexToRgb(preset?.['links'])
-	document.querySelectorAll('*').forEach((el) => {
-		let style = getComputedStyle(el)
-		let bgcolor = style
-			.getPropertyValue('background')
-			.match(/rgb\((?<r>\d*)\, ?(?<g>\d*)\, ?(?<b>\d*)\) none/)
-		let selector = 'class=.' + el.className + ',id=#' + el.id
-
-		if (bgcolor) {
-			const r = parseInt(bgcolor.groups['r'])
-			const g = parseInt(bgcolor.groups['g'])
-			const b = parseInt(bgcolor.groups['b'])
-			if (
-				bg0 &&
-				r > 245 &&
-				g > 245 &&
-				b > 245 &&
-				!(r === bg0.r && g === bg0.g && b === bg0.b) &&
-				!(lnk && r === lnk.r && g === lnk.g && b === lnk.b)
-			) {
-				el.style.cssText =
-					';background:' +
-					preset['background-0'] +
-					'!important;color' +
-					preset['text-0'] +
-					'!important;' +
-					el.style.cssText
-				if (withOutput === true)
-					output += selector + '{background: background-0, color: text-0}\n'
-				bgcount++
-			} else if (
-				bg1 &&
-				r > 225 &&
-				r < 245 &&
-				g > 225 &&
-				g < 245 &&
-				b > 225 &&
-				b < 245 &&
-				!(r === bg1.r && g === bg1.g && b === bg1.b) &&
-				!(lnk && r === lnk.r && g === lnk.g && b === lnk.b)
-			) {
-				el.style.cssText =
-					';background:' +
-					preset['background-1'] +
-					'!important;color' +
-					preset['text-0'] +
-					'!important;' +
-					el.style.cssText
-				if (withOutput === true)
-					output += selector + '{background: background-1, color: text-0}'
-				bgcount++
-			}
-		}
-
-		let bordercolor = style
-			.getPropertyValue('border-color')
-			.match(/rgb\((?<r>\d*)\, ?(?<g>\d*)\, ?(?<b>\d*)/)
-		if (bordercolor) {
-			const r = parseInt(bordercolor.groups['r'])
-			const g = parseInt(bordercolor.groups['g'])
-			const b = parseInt(bordercolor.groups['b'])
-			if (
-				bdr &&
-				r > 195 &&
-				g > 195 &&
-				b > 195 &&
-				!(r === bdr.r && g === bdr.g && b === bdr.b) &&
-				!(lnk && r === lnk.r && g === lnk.g && b === lnk.b)
-			) {
-				el.style.cssText =
-					'border-color:' + preset['borders'] + '!important;' + el.style.cssText
-				if (withOutput === true) output += selector + '{border: borders}'
-			}
-		}
-
-		let text = style
-			.getPropertyValue('color')
-			.match(/rgb\((?<r>\d*)\, ?(?<g>\d*)\, ?(?<b>\d*)/)
-		if (text) {
-			const r = parseInt(text.groups['r'])
-			const g = parseInt(text.groups['g'])
-			const b = parseInt(text.groups['b'])
-			if (
-				txt &&
-				r <= 70 &&
-				g <= 70 &&
-				b <= 70 &&
-				!(r === txt.r && g === txt.g && b === txt.b)
-			) {
-				el.style.cssText = 'color:' + preset['text-0'] + '!important;' + el.style.cssText
-				if (withOutput === true) output += selector + '{text: text-0}'
-				textcount++
-			}
-		}
-	})
-	console.log(
-		'done fixing dark mode - time:',
-		performance.now() - time,
-		'total backgrounds changed: ',
-		bgcount,
-		', total colors changed: ',
-		textcount,
-	)
-	return {
-		selectors: output === '' ? 'no gaps determined' : output,
-		time: performance.now() - time,
 	}
 }
 
@@ -3002,9 +2833,6 @@ async function createTodoSections(location) {
 			const nextOffset = Math.max(0, betterTodoTimeframeOffset + delta)
 			if (nextOffset === betterTodoTimeframeOffset) return
 			betterTodoTimeframeOffset = nextOffset
-			moreAnnouncementCount = 0
-			moreAssignmentCount = 0
-			moreCompletedCount = 0
 			clearTodoList()
 			createTodoSections(location)
 		}
@@ -3083,21 +2911,18 @@ async function createTodoSections(location) {
 
 		document.getElementById('better-todo-announcement').addEventListener('click', (e) => {
 			betterTodoFilter = 'announcements'
-			moreAnnouncementCount = 0
 			updateIndicator(e.currentTarget)
 			clearTodoList()
 			createTodoSections(location)
 		})
 		document.getElementById('better-todo-assignments').addEventListener('click', (e) => {
 			betterTodoFilter = 'tasks'
-			moreAssignmentCount = 0
 			updateIndicator(e.currentTarget)
 			clearTodoList()
 			createTodoSections(location)
 		})
 		document.getElementById('better-todo-completed').addEventListener('click', (e) => {
 			betterTodoFilter = 'completed'
-			moreCompletedCount = 0
 			updateIndicator(e.currentTarget)
 			clearTodoList()
 			createTodoSections(location)
@@ -3490,11 +3315,10 @@ function applyTodoAlternateColors() {
 
 // --- Hover preview (Better Todo List: "Previews on hover") ---
 // The todo list is rendered by createTodoSections -> populateAssignments /
-// populateAnnouncements (the old loadBetterTodo renderer is no longer called).
+// populateAnnouncements.
 // A single shared, body-level tooltip is reused across items so it is never
 // clipped by the sidebar's scroll/overflow containers. It reuses the
 // .canvasrefined-hover-preview class so existing light/dark styling applies.
-let todoPreviewDelay = null
 let todoPreviewToken = 0
 const todoPreviewCache = new Map()
 
@@ -3613,11 +3437,9 @@ async function showTodoPreview(anchor, item) {
 function attachTodoHoverPreview(anchor, item) {
 	if (options.hover_preview !== true) return
 	anchor.addEventListener('mouseenter', () => {
-		clearTimeout(todoPreviewDelay)
 		showTodoPreview(anchor, item)
 	})
 	anchor.addEventListener('mouseleave', () => {
-		clearTimeout(todoPreviewDelay)
 		hideTodoPreview()
 	})
 }
@@ -4215,23 +4037,6 @@ function markAs(item, element, makeComplete) {
 		.catch((err) => console.error('error marking as complete', err))
 }
 
-function createTodoViewMore(location, type) {
-	let viewMoreButton = makeElement('button', location, {
-		className: 'canvasrefined-custom-btn canvasrefined-viewmore-btn',
-		textContent: 'View More',
-	})
-	//viewMoreButton.classList.add("canvasrefined-viewmore-btn");
-	const showMoreCount = 3
-	viewMoreButton.addEventListener('click', function (e) {
-		if (type === 'announcement') {
-			moreAnnouncementCount += showMoreCount
-		} else {
-			moreAssignmentCount += showMoreCount
-		}
-		loadBetterTodo()
-	})
-}
-
 // better todo init
 function setupBetterTodo() {
 	// Better Todo list is removed from quizzes (it interferes with the quiz page).
@@ -4264,373 +4069,6 @@ function setupBetterTodo() {
 		createTodoSections(list)
 		// Keep the saved widget below the tab controls and task groups.
 		if (feedback) list.append(feedback)
-	} catch (e) {
-		logError(e)
-	}
-}
-
-let delay
-let moreAssignmentCount = 0
-let moreAnnouncementCount = 0
-let filter = 'todo'
-async function loadBetterTodo() {
-	if (options.better_todo !== true || isGradesPage()) return
-	try {
-		await getColors()
-		const discussion_svg =
-			'<svg class="canvasrefined-todo-svg" name="IconDiscussion" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><path d="M677.647059,16 L677.647059,354.936471 L790.588235,354.936471 L790.588235,129.054118 L1807.05882,129.054118 L1807.05882,919.529412 L1581.06353,919.529412 L1581.06353,1179.29412 L1321.41176,919.529412 L1242.24,919.529412 L1242.24,467.877647 L677.647059,467.877647 L0,467.877647 L0,1484.34824 L338.710588,1484.34824 L338.710588,1903.24706 L756.705882,1484.34824 L1242.24,1484.34824 L1242.24,1032.47059 L1274.99294,1032.47059 L1694.11765,1451.59529 L1694.11765,1032.47059 L1920,1032.47059 L1920,16 L677.647059,16 Z M338.789647,919.563294 L903.495529,919.563294 L903.495529,806.622118 L338.789647,806.622118 L338.789647,919.563294 Z M338.789647,1145.44565 L677.726118,1145.44565 L677.726118,1032.39153 L338.789647,1032.39153 L338.789647,1145.44565 Z M112.941176,580.705882 L1129.41176,580.705882 L1129.41176,1371.40706 L710.4,1371.40706 L451.651765,1631.05882 L451.651765,1371.40706 L112.941176,1371.40706 L112.941176,580.705882 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>'
-		const quiz_svg =
-			'<svg class="canvasrefined-todo-svg" label="Quiz" name="IconQuiz" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"  ><g role="presentation"><g fill-rule="evenodd" stroke="none" stroke-width="1"><path d="M746.255375,1466.76417 L826.739372,1547.47616 L577.99138,1796.11015 L497.507383,1715.51216 L746.255375,1466.76417 Z M580.35118,1300.92837 L660.949178,1381.52637 L329.323189,1713.15236 L248.725192,1632.55436 L580.35118,1300.92837 Z M414.503986,1135.20658 L495.101983,1215.80457 L80.5979973,1630.30856 L0,1549.71056 L414.503986,1135.20658 Z M1119.32036,264.600006 C1475.79835,-91.8779816 1844.58834,86.3040124 1848.35034,88.1280123 L1848.35034,88.1280123 L1865.45034,96.564012 L1873.88634,113.664011 C1875.71034,117.312011 2053.89233,486.101999 1697.30034,842.693987 L1697.30034,842.693987 L1550.69635,989.297982 L1548.07435,1655.17196 L1325.43235,1877.81395 L993.806366,1546.30196 L415.712386,968.207982 L84.0863971,636.467994 L306.72839,413.826001 L972.602367,411.318001 Z M1436.24035,1103.75398 L1074.40436,1465.70397 L1325.43235,1716.61796 L1434.30235,1607.74796 L1436.24035,1103.75398 Z M1779.26634,182.406009 C1710.18234,156.41401 1457.90035,87.1020124 1199.91836,345.198004 L1199.91836,345.198004 L576.90838,968.207982 L993.806366,1385.10597 L1616.70235,762.095989 C1873.65834,505.139998 1804.68834,250.920007 1779.26634,182.406009 Z M858.146371,525.773997 L354.152388,527.597997 L245.282392,636.467994 L496.310383,887.609985 L858.146371,525.773997 Z"></path><path d="M1534.98715,372.558003 C1483.91515,371.190003 1403.31715,385.326002 1321.69316,466.949999 L1281.22316,507.305998 L1454.61715,680.585992 L1494.97315,640.343994 C1577.16715,558.035996 1591.87315,479.033999 1589.82115,427.164001 L1587.65515,374.610003 L1534.98715,372.558003 Z"></path></g></g></svg>'
-		const announcement_svg =
-			'<svg class="canvasrefined-todo-svg" label="Announcement" name="IconAnnouncement" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false" ><g role="presentation"><path d="M1587.16235,31.2784941 C1598.68235,7.78672942 1624.43294,-4.41091764 1650.63529,1.46202354 C1676.16,7.56084707 1694.11765,30.2620235 1694.11765,56.4643765 L1694.11765,56.4643765 L1694.11765,570.459671 C1822.87059,596.662024 1920,710.732612 1920,847.052612 C1920,983.372612 1822.87059,1097.55614 1694.11765,1123.75849 L1694.11765,1123.75849 L1694.11765,1637.64085 C1694.11765,1663.8432 1676.16,1686.65732 1650.63529,1692.6432 C1646.23059,1693.65967 1641.93882,1694.11144 1637.64706,1694.11144 C1616.52706,1694.11144 1596.87529,1682.36555 1587.16235,1662.93967 C1379.23765,1247.2032 964.178824,1242.34673 960,1242.34673 L960,1242.34673 L564.705882,1242.34673 L564.705882,1807.05261 L652.461176,1807.05261 C640.602353,1716.92555 634.955294,1560.05026 715.934118,1456.37026 C768.338824,1389.2832 845.590588,1355.28791 945.882353,1355.28791 L945.882353,1355.28791 L945.882353,1468.22908 C881.392941,1468.22908 835.312941,1487.09026 805.044706,1525.71614 C736.263529,1613.58438 759.981176,1789.54673 774.776471,1849.97026 C778.955294,1866.79849 775.115294,1884.6432 764.498824,1898.30908 C753.769412,1911.97496 737.28,1919.99379 720,1919.99379 L720,1919.99379 L508.235294,1919.99379 C477.063529,1919.99379 451.764706,1894.80791 451.764706,1863.5232 L451.764706,1863.5232 L451.764706,1242.34673 L395.294118,1242.34673 C239.548235,1242.34673 112.941176,1115.73967 112.941176,959.993788 L112.941176,959.993788 L112.941176,903.5232 L56.4705882,903.5232 C25.2988235,903.5232 0,878.337318 0,847.052612 C0,815.880847 25.2988235,790.582024 56.4705882,790.582024 L56.4705882,790.582024 L112.941176,790.582024 L112.941176,734.111435 C112.941176,578.478494 239.548235,451.758494 395.294118,451.758494 L395.294118,451.758494 L959.887059,451.758494 C976.828235,451.645553 1380.36706,444.756141 1587.16235,31.2784941 Z M1581.17647,249.706729 C1386.46588,492.078494 1128.96,547.871435 1016.47059,560.746729 L1016.47059,560.746729 L1016.47059,1133.47144 C1128.96,1146.34673 1386.46588,1202.02673 1581.17647,1444.51144 L1581.17647,1444.51144 Z M903.529412,564.699671 L395.294118,564.699671 C301.891765,564.699671 225.882353,640.709082 225.882353,734.111435 L225.882353,734.111435 L225.882353,959.993788 C225.882353,1053.39614 301.891765,1129.40555 395.294118,1129.40555 L395.294118,1129.40555 L903.529412,1129.40555 L903.529412,564.699671 Z M1694.11765,688.144376 L1694.11765,1006.07379 C1759.73647,982.694965 1807.05882,920.577318 1807.05882,847.052612 C1807.05882,773.527906 1759.73647,711.5232 1694.11765,688.144376 L1694.11765,688.144376 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>'
-		const assignment_svg =
-			'<svg class="canvasrefined-todo-svg" label="Assignment" name="IconAssignment" viewBox="0 0 1920 1920" rotate="0" aria-hidden="true" role="presentation" focusable="false"><g role="presentation"><path d="M1468.2137,0 L1468.2137,564.697578 L1355.27419,564.697578 L1355.27419,112.939516 L112.939516,112.939516 L112.939516,1807.03225 L1355.27419,1807.03225 L1355.27419,1581.15322 L1468.2137,1581.15322 L1468.2137,1919.97177 L2.5243549e-29,1919.97177 L2.5243549e-29,0 L1468.2137,0 Z M1597.64239,581.310981 C1619.77853,559.174836 1655.46742,559.174836 1677.60356,581.310981 L1677.60356,581.310981 L1903.4826,807.190012 C1925.5058,829.213217 1925.5058,864.902104 1903.4826,887.038249 L1903.4826,887.038249 L1225.8455,1564.67534 C1215.22919,1575.17872 1200.88587,1581.16451 1185.86491,1581.16451 L1185.86491,1581.16451 L959.985883,1581.16451 C928.814576,1581.16451 903.516125,1555.86606 903.516125,1524.69475 L903.516125,1524.69475 L903.516125,1298.81572 C903.516125,1283.79477 909.501919,1269.45145 920.005294,1258.94807 L920.005294,1258.94807 Z M1442.35055,896.29929 L1016.45564,1322.1942 L1016.45564,1468.225 L1162.48643,1468.225 L1588.38135,1042.33008 L1442.35055,896.29929 Z M677.637094,1242.34597 L677.637094,1355.28548 L338.818547,1355.28548 L338.818547,1242.34597 L677.637094,1242.34597 Z M903.516125,1016.46693 L903.516125,1129.40645 L338.818547,1129.40645 L338.818547,1016.46693 L903.516125,1016.46693 Z M1637.62298,701.026867 L1522.19879,816.451052 L1668.22958,962.481846 L1783.65377,847.057661 L1637.62298,701.026867 Z M1129.39516,338.829841 L1129.39516,790.587903 L338.818547,790.587903 L338.818547,338.829841 L1129.39516,338.829841 Z M1016.45564,451.769356 L451.758062,451.769356 L451.758062,677.648388 L1016.45564,677.648388 L1016.45564,451.769356 Z" fill-rule="evenodd" stroke="none" stroke-width="1"></path></g></svg>'
-		const x_svg =
-			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M18 6l-12 12"></path><path d="M6 6l12 12"></path></svg>'
-		const check_svg =
-			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12l5 5l10 -10"></path></svg>'
-		const tag_svg =
-			'<svg  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>'
-		// end of SVGs
-
-		const maxAssignmentCount = parseInt(options.num_todo_items) + moreAssignmentCount
-		const maxAnnouncementCount = parseInt(options.num_todo_items) + moreAnnouncementCount
-		const hr24 = options.todo_hr24
-		const now = new Date()
-		//const csrfToken = CSRFtoken();
-		let todoAnnouncements = document.querySelector('#canvasrefined-announcement-list')
-		let todoAssignments = document.querySelector('#canvasrefined-todo-list')
-		let assignmentsToInsert = []
-		let announcementsToInsert = []
-
-		assignments.then((data) => {
-			chrome.storage.sync.get(options.custom_assignments_overflow, (storage) => {
-				//assignmentData = assignmentData === null ? data : assignmentData;
-				let items = combineAssignments(data)
-				items.forEach((item, index) => {
-					let date = new Date(item.plannable_date)
-					let itemState = options.assignment_states[item.plannable_id]
-
-					let svg
-					switch (item.plannable_type) {
-						case 'assignment':
-							svg = assignment_svg
-							break
-						case 'discussion_topic':
-							svg = discussion_svg
-							break
-						case 'quiz':
-							svg = quiz_svg
-							break
-						case 'announcement':
-							svg = announcement_svg
-							break
-						default:
-							return
-					}
-
-					// if (item.plannable_type === "announcement") {
-					//if (announcementsToInsert.length >= maxAnnouncementCount + 1) return;
-					if (item.plannable_type !== 'announcement') {
-						// leaving one extra assignment in the array to indicate there are more and the "view more" button should be created
-						if (assignmentsToInsert.length >= maxAssignmentCount + 1) return
-						if (
-							filter === 'todo' &&
-							options.hide_completed === true &&
-							item.submissions.submitted === true
-						)
-							return
-						if (
-							filter === 'todo' &&
-							((options.todo_overdues !== true && now >= date) ||
-								(options.todo_overdues === true && item.submissions.submitted === true))
-						)
-							return
-						if (
-							filter === 'done' &&
-							now <= date &&
-							!(itemState?.['rem'] === true || item?.submissions?.submitted === true)
-						)
-							return
-						//if (item.plannable_type !== "assignment" && item.plannable_type !== "quiz" && item.plannable_type !== "discussion_topic") return;
-					}
-					if (
-						filter === 'todo' &&
-						((itemState && itemState['rem'] === true) ||
-							(item.planner_override && item.planner_override.marked_complete === true))
-					)
-						return
-
-					let listItemContainer = document.createElement('div')
-					listItemContainer.classList.add('canvasrefined-todo-container')
-					listItemContainer.innerHTML =
-						'<div class="canvasrefined-hover-preview"><p class="canvasrefined-preview-title"></p><p class="canvasrefined-preview-text"></p></div><div class="canvasrefined-todo-actions"></div><div class="canvasrefined-todo-icon"></div><a class="canvasrefined-todo-item"><div class="canvasrefined-todo-item-header"></div></a><button class="canvasrefined-todo-actions-btn"><i class="icon-more canvasrefined-dots-icon" aria-hidden="true"></i></button>'
-					listItemContainer.querySelector('.canvasrefined-todo-item').href = item.html_url
-					listItemContainer.dataset.id = item.plannable_id
-					listItemContainer.querySelector('.canvasrefined-todo-icon').innerHTML += svg
-
-					let listItem = listItemContainer.querySelector('.canvasrefined-todo-item')
-					const courseColor =
-						options.custom_cards_3?.[String(item.course_id)]?.color ??
-						options.custom_cards_3?.[item.course_id]?.color ??
-						options.custom_cards_3?.[item.plannable?.course_id]?.color ??
-						'#cccccc'
-					if (itemState?.['lbl'] && itemState['lbl'] !== '') {
-						makeElement(
-							'span',
-							listItem.querySelector('.canvasrefined-todo-item-header'),
-							{ className: 'canvasrefined-todo-label', textContent: itemState['lbl'] },
-						)
-					}
-					if (itemState?.['crs'] === true) {
-						listItemContainer.querySelector(
-							'.canvasrefined-todo-item',
-						).style.textDecoration = 'line-through'
-					}
-					let title = makeElement(
-						'a',
-						listItem.querySelector('.canvasrefined-todo-item-header'),
-						{
-							className: 'canvasrefined-todoitem-title',
-							textContent: anonTitleForItem(item),
-						},
-					)
-					if (options.todo_hide_feedback === true)
-						title.style = 'color:' + courseColor + '!important;'
-					let course = makeElement('p', listItem, {
-						className: 'canvasrefined-todoitem-course',
-						textContent: anonCourseNameForItem(item),
-					})
-					course.style.color = courseColor
-					let format = formatTodoDate(date, item.submissions, hr24)
-					let todoDate = makeElement('p', listItem, {
-						className: 'canvasrefined-todoitem-date',
-						textContent: format.date,
-					})
-					if (format.dueSoon) todoDate.classList.add('canvasrefined-due-soon')
-
-					if (options.hover_preview === true) {
-						const customItem =
-							item.planner_override &&
-							item.planner_override.custom &&
-							item.planner_override.custom === true
-						listItem.addEventListener('mouseover', () => {
-							listItem.classList.add('canvasrefined-todo-hover')
-							let preview = listItemContainer.querySelector(
-								'.canvasrefined-hover-preview',
-							)
-							let previewTitle = preview.querySelector('.canvasrefined-preview-title')
-							let previewText = preview.querySelector('.canvasrefined-preview-text')
-							clearTimeout(delay)
-							delay = setTimeout(async () => {
-								if (listItem.classList.contains('canvasrefined-todo-hover')) {
-									previewTitle.textContent = item.plannable.title
-									// custom assignment (planner note): preview its description/details
-									if (customItem) {
-										const details =
-											item.plannable && item.plannable.details
-												? item.plannable.details
-												: ''
-										previewText.textContent =
-											details === ''
-												? 'No details given'
-												: details.replace(/<\/?[^>]+(>|$)/g, ' ')
-									} else {
-										console.log(item)
-										let found = false
-										let searchCount = 1
-										while (searchCount < 5 && found === false) {
-											for (let i = 0; i < announcements.length; i++) {
-												if (announcements[i].id === item.plannable_id) {
-													found = true
-													if (previewText.textContent === '') {
-														let description =
-															item.plannable_type === 'announcement'
-																? announcements[i].message
-																: announcements[i].description
-														previewText.textContent =
-															description === ''
-																? 'No details given'
-																: description.replace(/<\/?[^>]+(>|$)/g, ' ')
-													}
-													break
-												}
-											}
-											if (found === false) {
-												let apiLink = domain + '/api/v1/'
-												if (item.plannable_type === 'assignment') {
-													apiLink += `courses/${item.course_id}/assignments/${item.plannable_id}`
-												} else if (item.plannable_type === 'announcement') {
-													apiLink += `announcements?context_codes[]=course_${item.course_id}&per_page=3&page=${searchCount}`
-												}
-												let data = await getData(apiLink)
-												item.plannable_type === 'announcement'
-													? announcements.push(...data)
-													: announcements.push(data)
-												searchCount++
-											}
-										}
-										if (found === false) {
-											previewText.textContent = "Couldn't load preview"
-										}
-									}
-									preview.style.display = 'block'
-								}
-							}, 0)
-						})
-
-						listItem.addEventListener('mouseleave', () => {
-							listItem.classList.remove('canvasrefined-todo-hover')
-							listItemContainer.querySelector(
-								'.canvasrefined-hover-preview',
-							).style.display = 'none'
-						})
-					}
-
-					const actions = listItemContainer.querySelector('.canvasrefined-todo-actions')
-
-					let clickOutActions = (e) => {
-						if (e.target.className.includes('canvasrefined')) return
-						document.body.removeEventListener('click', clickOutActions)
-						actions.style.display = 'none'
-					}
-
-					listItemContainer
-						.querySelector('.canvasrefined-todo-actions-btn')
-						.addEventListener('click', () => {
-							actions.style.display = 'block'
-							setTimeout(() => {
-								document.body.addEventListener('click', clickOutActions)
-							}, 100)
-						})
-
-					let removeBtn = makeElement('div', actions, {
-						className: 'canvasrefined-todo-action',
-						textContent: 'Remove',
-					})
-					removeBtn.innerHTML += x_svg
-					const dueAt = new Date(item.plannable_date).getTime()
-
-					let crossOffBtn = makeElement('div', actions, {
-						className: 'canvasrefined-todo-action',
-						textContent: 'Cross off',
-					})
-					crossOffBtn.innerHTML += check_svg
-					crossOffBtn.addEventListener('click', () => {
-						setAssignmentState(item.plannable_id, {
-							crs:
-								listItemContainer.querySelector('.canvasrefined-todo-item').style
-									.textDecoration === 'line-through'
-									? false
-									: true,
-							expire: dueAt,
-						})
-					})
-					let label = makeElement('span', actions, {
-						className: 'canvasrefined-todo-action-tag',
-						textContent: 'Label:',
-					})
-					label.innerHTML += tag_svg
-					let labelInput = makeElement('input', actions, {
-						className: 'canvasrefined-todo-input',
-						type: 'text',
-						placeholder: 'Label',
-						value: itemState && itemState['lbl'] ? itemState['lbl'] : '',
-					})
-					labelInput.addEventListener('change', (e) => {
-						setAssignmentState(item.plannable_id, { lbl: e.target.value, expire: dueAt })
-					})
-
-					removeBtn.addEventListener('click', function () {
-						setAssignmentState(item.plannable_id, {
-							rem: filter === 'todo',
-							expire: dueAt,
-						})
-						if (
-							item.planner_override &&
-							item.planner_override.custom &&
-							item.planner_override.custom === true
-						) {
-							// set item as complete locally
-							chrome.storage.sync.get('custom_assignments_overflow', (overflow) => {
-								chrome.storage.sync.get(
-									overflow['custom_assignments_overflow'],
-									(storage) => {
-										overflow['custom_assignments_overflow'].forEach((overflow) => {
-											for (let i = 0; i < storage[overflow].length; i++) {
-												if (storage[overflow][i].plannable_id === item.plannable_id) {
-													storage[overflow].splice(i, 1)
-													chrome.storage.sync
-														.set({ [overflow]: storage[overflow] })
-														.then(() => {})
-													break
-												}
-											}
-										})
-									},
-								)
-							})
-						}
-					})
-
-					if (item.plannable_type === 'announcement') {
-						announcementsToInsert.push(listItemContainer)
-					} else {
-						assignmentsToInsert.push(listItemContainer)
-						if (item.submissions && item.submissions.submitted) {
-							listItemContainer.classList.add('canvasrefined-todo-item-completed')
-						}
-					}
-				})
-
-				// appending assignments all at once
-				todoAssignments.textContent = ''
-				if (assignmentsToInsert.length > 0) {
-					let i
-					for (
-						i = 0;
-						i <
-						(assignmentsToInsert.length > maxAssignmentCount
-							? maxAssignmentCount
-							: assignmentsToInsert.length);
-						i++
-					) {
-						todoAssignments.append(assignmentsToInsert[i])
-					}
-					if (i !== assignmentsToInsert.length)
-						createTodoViewMore(todoAssignments, 'assignment')
-				} else {
-					makeElement('p', todoAssignments, {
-						className: 'canvasrefined-none-due',
-						textContent: 'None',
-					})
-				}
-
-				// appending announcements all at once
-				todoAnnouncements.textContent = ''
-				if (announcementsToInsert.length > 0) {
-					let i
-					for (
-						i = announcementsToInsert.length - 1;
-						i >=
-						(announcementsToInsert.length - maxAnnouncementCount < 0
-							? 0
-							: announcementsToInsert.length - maxAnnouncementCount);
-						i--
-					) {
-						todoAnnouncements.append(announcementsToInsert[i])
-					}
-					if (i !== -1) createTodoViewMore(todoAnnouncements, 'announcement')
-				} else {
-					makeElement('p', todoAnnouncements, {
-						className: 'canvasrefined-none-due',
-						textContent: 'None',
-					})
-				}
-
-				cleanCustomAssignments()
-			})
-		})
 	} catch (e) {
 		logError(e)
 	}
@@ -5099,7 +4537,6 @@ function generateDarkModeCSS() {
 		: render(options.dark_mode === true)
 }
 
-let darkStyleInserted = false
 // --- Submission tray dark-mode fixer ---------------------------------------
 // The comment chip on the grades page (…/grades) opens an InstUI
 // "Submission Comments Tray". Its "Attempt N Feedback" card, close-button
@@ -5211,7 +4648,6 @@ function toggleDarkMode() {
 	}
 	style.textContent = css
 	style.className = darkOn ? 'canvasrefined-darkmode-enabled' : ''
-	darkStyleInserted = true
 	// The InstUI submission tray is themed at runtime (emotion class hashes
 	// change between Canvas releases); keep the watcher in sync with the
 	// current mode, and undo inline fixes when dark mode turns off.
@@ -6190,13 +5626,6 @@ function createGPACalcCourse(location, course) {
 		customs = options.custom_cards[course.id]
 	} else {
 		return
-		customs = {
-			name: course.name,
-			hidden: false,
-			weight: 'regular',
-			credits: 1,
-			gr: null,
-		}
 	}
 	if (customs.hidden === true || customs.hide === true) return
 
@@ -6507,17 +5936,6 @@ function setupGPACalc() {
 				} else {
 					placeGpaWidgets(container2, container)
 				}
-
-				try {
-					if (
-						sortableContainer &&
-						window.jQuery &&
-						window.jQuery.fn &&
-						window.jQuery.fn.sortable
-					) {
-						window.jQuery(sortableContainer).sortable('refresh')
-					}
-				} catch (e) {}
 
 				refreshGpaWhatIfMode()
 			})
@@ -7509,26 +6927,6 @@ function combineAssignments(data) {
 	)
 }
 
-function cleanCustomAssignments() {
-	chrome.storage.sync.get('custom_assignments_overflow', (overflows) => {
-		chrome.storage.sync.get(overflows['custom_assignments_overflow'], (storage) => {
-			const now = new Date()
-
-			overflows['custom_assignments_overflow'].forEach((overflow) => {
-				let changed = false
-				for (let i = 0; i < storage[overflow].length; i++) {
-					let assignmentDate = new Date(storage[overflow][i].plannable_date)
-					if (!assignmentDate.getTime() || assignmentDate < now) {
-						storage[overflow].splice(i, 1)
-						changed = true
-					}
-				}
-				if (changed) chrome.storage.sync.set({ [overflow]: storage[overflow] })
-			})
-		})
-	})
-}
-
 function getGrades() {
 	if (options.gpa_calc === true || options.dashboard_grades === true) {
 		grades = getData(
@@ -7975,9 +7373,6 @@ function refreshPlannerConsumers(items) {
 		loadCardAssignments()
 	}
 	if (options.better_todo && document.getElementById('better-todo-main')) {
-		moreAnnouncementCount = 0
-		moreAssignmentCount = 0
-		moreCompletedCount = 0
 		clearTodoList()
 		createTodoSections(document.querySelector('#canvasrefined-todo-list'))
 	}
@@ -8838,14 +8233,6 @@ function gaSetTab(tab) {
 	}
 }
 
-// Severity color for an arbitrary score percentage, using the doughnut's
-// palette: a 70 renders yellow, an 85 green, etc.
-function gaSeverityColor(pct) {
-	if (pct == null || !isFinite(pct)) return 'var(--bctext-0)'
-	const b = GA_BUCKETS.find((b) => pct >= b.min && pct < b.max)
-	return (b || GA_BUCKETS[GA_BUCKETS.length - 1]).color
-}
-
 // Inverted severity for the final calculator: a LOW required score is good
 // (needing only 10% on the final is comfortably green), a high one is bad.
 // Own scale, independent of the grade chart palette: needing ≥95% on the
@@ -9075,22 +8462,26 @@ function gaDrawLine(canvas, tooltip) {
 		}
 	}
 	// Y grid: 5 evenly spaced lines across the current range.
-	ctx.textAlign = 'right'
-	ctx.textBaseline = 'middle'
 	const decimals = yMax - yMin <= 1 ? 2 : yMax - yMin <= 10 ? 1 : 0
-	for (let i = 0; i <= 5; i++) {
-		const v = yMin + (yMax - yMin) * (i / 5)
-		const y = pad.t + (1 - (v - yMin) / (yMax - yMin)) * (h - pad.t - pad.b)
-		ctx.strokeStyle = 'rgba(128,128,128,0.25)'
-		ctx.lineWidth = 1
-		ctx.beginPath()
-		ctx.moveTo(pad.l, y)
-		ctx.lineTo(w - pad.r, y)
-		ctx.stroke()
-		ctx.fillStyle = text
-		ctx.fillText(v.toFixed(decimals) + '%', pad.l - 6, y)
+	const drawGrid = () => {
+		ctx.font = '11px Lato, sans-serif'
+		ctx.textAlign = 'right'
+		ctx.textBaseline = 'middle'
+		for (let i = 0; i <= 5; i++) {
+			const v = yMin + (yMax - yMin) * (i / 5)
+			const y = pad.t + (1 - (v - yMin) / (yMax - yMin)) * (h - pad.t - pad.b)
+			ctx.strokeStyle = 'rgba(128,128,128,0.25)'
+			ctx.lineWidth = 1
+			ctx.beginPath()
+			ctx.moveTo(pad.l, y)
+			ctx.lineTo(w - pad.r, y)
+			ctx.stroke()
+			ctx.fillStyle = text
+			ctx.fillText(v.toFixed(decimals) + '%', pad.l - 6, y)
+		}
 	}
 	if (pts.length === 0) {
+		drawGrid()
 		ctx.fillStyle = text
 		ctx.textAlign = 'center'
 		ctx.fillText('No graded assignments yet', w / 2, h / 2)
@@ -9116,22 +8507,7 @@ function gaDrawLine(canvas, tooltip) {
 			ctx.fillRect(pad.l, Y(top), w - pad.l - pad.r, Y(bottom) - Y(top))
 		})
 		ctx.globalAlpha = 1
-		// Y grid: 5 evenly spaced lines across the current range.
-		ctx.font = '11px Lato, sans-serif'
-		ctx.textAlign = 'right'
-		ctx.textBaseline = 'middle'
-		for (let i = 0; i <= 5; i++) {
-			const v = yMin + (yMax - yMin) * (i / 5)
-			const y = pad.t + (1 - (v - yMin) / (yMax - yMin)) * (h - pad.t - pad.b)
-			ctx.strokeStyle = 'rgba(128,128,128,0.25)'
-			ctx.lineWidth = 1
-			ctx.beginPath()
-			ctx.moveTo(pad.l, y)
-			ctx.lineTo(w - pad.r, y)
-			ctx.stroke()
-			ctx.fillStyle = text
-			ctx.fillText(v.toFixed(decimals) + '%', pad.l - 6, y)
-		}
+		drawGrid()
 		// Line + area fill.
 		ctx.beginPath()
 		pts.forEach((p, i) => {
@@ -10162,31 +9538,6 @@ const months = [
 	'Nov',
 	'Dec',
 ]
-function formatTodoDate(date, submissions, hr24) {
-	let { time, ms } = getRelativeDate(date)
-	let fromNow = ms < 0 ? 'in ' + time : time + ' ago'
-	let dueSoon = false
-	if (submissions && submissions.submitted === false && ms >= -21600000) {
-		dueSoon = true
-	}
-	return {
-		dueSoon: dueSoon,
-		date:
-			months[date.getMonth()] +
-			' ' +
-			date.getDate() +
-			' at ' +
-			(date.getHours() - (hr24 ? '' : date.getHours() > 12 ? 12 : 0)) +
-			':' +
-			(date.getMinutes() < 10 ? '0' : '') +
-			date.getMinutes() +
-			(hr24 ? '' : date.getHours() >= 12 ? 'pm' : 'am') +
-			' (' +
-			fromNow +
-			')',
-	}
-}
-
 function formatCardDue(date) {
 	let due = new Date(date)
 	if (options.relative_dues === true) {
