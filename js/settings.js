@@ -460,6 +460,21 @@ function setupNavColorSelects() {
 	})
 }
 
+function setupTimeFormatSelect() {
+	const select = document.getElementById('time_format')
+	// Preserve saved choices and compatibility with existing settings exports.
+	const render = (hr24) => {
+		select.value = hr24 === true ? '24' : '12'
+	}
+	chrome.storage.sync.get('todo_hr24', (sync) => render(sync.todo_hr24))
+	select.addEventListener('change', () => {
+		chrome.storage.sync.set({ todo_hr24: select.value === '24' })
+	})
+	chrome.storage.onChanged.addListener((changes, area) => {
+		if (area === 'sync' && changes.todo_hr24) render(changes.todo_hr24.newValue)
+	})
+}
+
 function setupCardDateFormatSelect() {
 	const select = document.getElementById('card_date_format')
 	// Retain the existing keys so saved preferences and older exports still work.
@@ -607,7 +622,6 @@ function setup() {
 			'hide_completed_cards',
 			// "todo_overdues",
 
-			'todo_hr24',
 			'todo_separate_scrollbar',
 			'todo_alternate_colors',
 			'todo_show_scores',
@@ -748,6 +762,7 @@ function setup() {
 		})
 	})
 
+	setupTimeFormatSelect()
 	setupCardDateFormatSelect()
 	setupNavColorSelects()
 	setupCourseFontSizeSelects()

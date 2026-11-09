@@ -7761,6 +7761,42 @@ async function fetchPlannerItemsSince(startDate) {
 	return allItems
 }
 
+// The incremental refresh only re-fetches the recent window, so an item due
+// BEFORE the window that was submitted late kept its cached "unsubmitted"
+// state until the next weekly full walk. Re-check each such overdue item
+// against its submission and patch the state; failed lookups leave it as-is.
+async function refreshStaleSubmissions(items, windowStartMs) {
+	return Promise.all(
+		items.map(async (item) => {
+			const aid =
+				item.plannable_type === 'assignment'
+					? item.plannable_id
+					: item.plannable?.assignment_id
+			if (aid == null || item.course_id == null) return item
+			if (item.submissions?.submitted || item.submissions?.excused) return item
+			if (item.planner_override?.marked_complete) return item
+			if (new Date(item.plannable_date).getTime() >= windowStartMs) return item
+			try {
+				const sub = await getData(
+					`${domain}/api/v1/courses/${item.course_id}/assignments/${aid}/submissions/self`,
+				)
+				if (!sub?.submitted_at && !sub?.excused) return item
+				return {
+					...item,
+					submissions: {
+						...item.submissions,
+						submitted: !!sub.submitted_at,
+						excused: !!sub.excused,
+						missing: false,
+					},
+				}
+			} catch (e) {
+				return item
+			}
+		}),
+	)
+}
+
 // Merges a fresh window fetch into the cached list. Cached items whose due
 // date falls inside the fetched window are replaced wholesale (catches new,
 // changed, and removed items); older cached items are kept as-is.
@@ -7889,6 +7925,7 @@ function schedulePlannerRefresh(cache) {
 				// ones, so merging an empty/failed fetch would silently delete
 				// the most recent two weeks from the persisted cache.
 				if (fetched === null) return
+				const windowStartMs = Date.parse(windowStart + 'T00:00:00')
 				merged = filterPlannerItemsByActiveCourses(
 					// Drop threshold = the window start's LOCAL midnight, not
 					// UTC midnight. The window start is a date-only string
@@ -7901,9 +7938,11 @@ function schedulePlannerRefresh(cache) {
 					// full walk. Thresholding at local midnight keeps exactly
 					// the items the fetch may not return; any harmless overlap
 					// is removed by mergePlannerItems' key dedupe (fresh wins).
-					mergePlannerItems(cache.items, fetched, Date.parse(windowStart + 'T00:00:00')),
+					mergePlannerItems(cache.items, fetched, windowStartMs),
 					active,
 				)
+				// Items due before the window that were submitted late.
+				merged = await refreshStaleSubmissions(merged, windowStartMs)
 				writePlannerCache(
 					merged,
 					cache.lastFullRefresh,

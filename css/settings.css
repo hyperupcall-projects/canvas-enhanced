@@ -355,7 +355,8 @@ button:active {
 	flex: none;
 }
 .nav-color-row select,
-#card_date_format {
+#card_date_format,
+#time_format {
 	font-size: 12px;
 	background: var(--inputbg);
 	color: var(--settings-text);

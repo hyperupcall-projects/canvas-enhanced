@@ -233,6 +233,44 @@
 				<div class="tab-header"><h2 style="margin-top: 0">Home</h2></div>
 				<div class="options">
 					<div class="options-left">
+						<section class="option-container" aria-labelledby="preferences-heading">
+							<h3 class="header-small" id="preferences-heading">Preferences</h3>
+							<label for="time_format" class="sub-text">Time format</label>
+							<select id="time_format" name="time_format">
+								<option value="12">12-hour (1:00 PM)</option>
+								<option value="24">24-hour (13:00)</option>
+							</select>
+						</section>
+						<section
+							class="option-container settings-export"
+							aria-labelledby="settings-export-heading"
+						>
+							<h3 class="header-small" id="settings-export-heading">Export Settings</h3>
+							<p class="sub-text">
+								Export feature preferences, Todo options, and GPA settings. Export colors,
+								images, and card styles from Themes.
+							</p>
+							<button type="button" id="settings-export" class="customization-button">
+								Generate settings export
+							</button>
+							<textarea
+								class="card-input"
+								id="settings-export-output"
+								aria-label="Exported settings"
+								placeholder="Settings JSON"
+								readonly
+							></textarea>
+							<button
+								type="button"
+								id="settings-export-copy"
+								class="customization-button"
+							>
+								Copy settings
+							</button>
+						</section>
+					</div>
+
+					<div class="options-right">
 						<div class="option-container">
 							<div class="option" id="quiz_safe_mode">
 								<input type="radio" id="off" name="quiz_safe_mode" />
@@ -273,38 +311,6 @@
 									>
 								</button>
 							</div>
-						</div>
-						<section
-							class="option-container settings-export"
-							aria-labelledby="settings-export-heading"
-						>
-							<h3 class="header-small" id="settings-export-heading">Export Settings</h3>
-							<p class="sub-text">
-								Export feature preferences, Todo options, and GPA settings. Export colors,
-								images, and card styles from Themes.
-							</p>
-							<button type="button" id="settings-export" class="customization-button">
-								Generate settings export
-							</button>
-							<textarea
-								class="card-input"
-								id="settings-export-output"
-								aria-label="Exported settings"
-								placeholder="Settings JSON"
-								readonly
-							></textarea>
-							<button
-								type="button"
-								id="settings-export-copy"
-								class="customization-button"
-							>
-								Copy settings
-							</button>
-						</section>
-					</div>
-
-					<div class="options-right">
-						<div class="option-container">
 							<div class="option" id="remlogo">
 								<input type="radio" id="off" name="remlogo" />
 								<input type="radio" id="on" name="remlogo" />
@@ -344,8 +350,6 @@
 									>
 								</button>
 							</div>
-						</div>
-						<div class="option-container">
 							<div class="option" id="full_width">
 								<input type="radio" id="off" name="full_width" />
 								<input type="radio" id="on" name="full_width" />
@@ -1403,12 +1407,6 @@
 										class="sub-text"
 										data-i18n="todo_separate_scrollbar"
 										>Separate Scrollbar</label
-									>
-								</div>
-								<div class="sub-option">
-									<input type="checkbox" id="todo_hr24" name="todo_hr24" />
-									<label for="todo_hr24" class="sub-text" data-i18n="24hrformat"
-										>Use 24hr format</label
 									>
 								</div>
 								<div class="sub-option">
