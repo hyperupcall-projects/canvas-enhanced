@@ -1364,11 +1364,11 @@
    Rules that restyle Canvas itself are scoped to .canvasrefined-theme-active:
    selecting "No Theme" drops that class, so Canvas's native controls, inputs
    and cards come back instead of keeping the extension's styling. */
-:root.canvasrefined-theme-active:has(.ic-app-header) body {
+:root.canvasrefined-theme-active.canvasrefined-canvas-page body {
 	font-family: Arial, Helvetica, sans-serif;
 	line-height: 1.5;
 }
-:root.canvasrefined-theme-active:has(.ic-app-header)
+:root.canvasrefined-theme-active.canvasrefined-canvas-page
 	:is(.btn, .Button):not(.ic-DashboardCard__header-button),
 .canvasrefined-custom-btn,
 .canvasrefined-gpa-edit-btn,
@@ -1416,7 +1416,7 @@
 	font-size: 24px !important;
 	line-height: 1 !important;
 }
-:root.canvasrefined-theme-active:has(.ic-app-header)
+:root.canvasrefined-theme-active.canvasrefined-canvas-page
 	:is(.btn, .Button):not(.ic-DashboardCard__header-button):hover,
 .canvasrefined-custom-btn:hover,
 .canvasrefined-gpa-edit-btn:hover,
@@ -1426,11 +1426,12 @@
 .extension-linkpreview:hover {
 	background-color: var(--bcbackground-2, #dcdcdc) !important;
 }
-:root.canvasrefined-theme-active:has(.ic-app-header) :is(.btn-primary, .Button--primary) {
+:root.canvasrefined-theme-active.canvasrefined-canvas-page
+	:is(.btn-primary, .Button--primary) {
 	background-color: var(--bclinks, #0078e7) !important;
 	color: var(--bclink-text, #fff) !important;
 }
-:root.canvasrefined-theme-active:has(.ic-app-header)
+:root.canvasrefined-theme-active.canvasrefined-canvas-page
 	:is(
 		input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
 				[type='color']
@@ -1442,12 +1443,12 @@
 	border-radius: 4px;
 	box-shadow: inset 0 1px 3px #00000012;
 }
-:root.canvasrefined-theme-active:has(.ic-app-header)
+:root.canvasrefined-theme-active.canvasrefined-canvas-page
 	:is(button, a, input, select, textarea):focus-visible {
 	outline: 2px solid var(--bclinks, #0078e7);
 	outline-offset: 2px;
 }
-:root.canvasrefined-theme-active:has(.ic-app-header) .ic-DashboardCard,
+:root.canvasrefined-theme-active.canvasrefined-canvas-page .ic-DashboardCard,
 .canvasrefined-gpa-card,
 .canvasrefined-gs-modal,
 .canvasrefined-hover-preview,
@@ -1478,13 +1479,13 @@
 	box-shadow: none !important;
 }
 
-:root.canvasrefined-theme-active:has(.ic-app-header)
+:root.canvasrefined-theme-active.canvasrefined-canvas-page
 	:is(.btn-primary, .Button--primary):hover {
 	background-color: color-mix(in srgb, var(--bclinks, #0078e7) 88%, #000) !important;
 }
 
 /* Theme-aware hover feedback for Canvas controls and extension surfaces. */
-:root.canvasrefined-theme-active:has(.ic-app-header)
+:root.canvasrefined-theme-active.canvasrefined-canvas-page
 	:is(.btn, .Button, .ic-DashboardCard):not(.ic-DashboardCard__header-button):not(
 		:disabled
 	):not([aria-disabled='true']):hover,
@@ -1520,7 +1521,7 @@
 	):not(:disabled):not([aria-disabled='true']):hover {
 	box-shadow: 0 2px 5px rgb(0 0 0 / 12%) !important;
 }
-:root:has(#darkcss.canvasrefined-darkmode-enabled)
+:root.canvasrefined-darkmode-enabled
 	:is(
 		.canvasrefined-gpa-view-btn,
 		.canvasrefined-gpa-customize-btn,
@@ -1534,7 +1535,7 @@
 .canvasrefined-gpa:hover {
 	box-shadow: none !important;
 }
-:root.canvasrefined-theme-active:has(.ic-app-header)
+:root.canvasrefined-theme-active.canvasrefined-canvas-page
 	:is(
 		input:not([type='hidden']):not([type='range']):not([type='color']):not(
 				[type='button']
@@ -1553,11 +1554,12 @@
 }
 
 /* Apply instant feedback on Canvas, including dynamically inserted UI.
-   This stylesheet also loads on non-Canvas sites, so scope page-wide rules. */
-:root:has(.ic-app-header, #darkcss),
-:root:has(.ic-app-header, #darkcss) *,
-:root:has(.ic-app-header, #darkcss) *::before,
-:root:has(.ic-app-header, #darkcss) *::after,
+   Use the explicit page marker: root :has() selectors invalidate styles across
+   large Modules pages whenever Canvas inserts or removes content. */
+:root.canvasrefined-canvas-page,
+:root.canvasrefined-canvas-page *,
+:root.canvasrefined-canvas-page *::before,
+:root.canvasrefined-canvas-page *::after,
 :is([class*='canvasrefined-'], [class*='extension-'], [id^='better-todo-']),
 :is([class*='canvasrefined-'], [class*='extension-'], [id^='better-todo-']) *,
 :is([class*='canvasrefined-'], [class*='extension-'], [id^='better-todo-'])::before,

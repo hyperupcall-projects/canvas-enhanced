@@ -31,6 +31,19 @@ function setupNavigationListener() {
 	window.addEventListener('popstate', update)
 }
 
+// Only reconcile a feature when its own DOM changes. Debouncing alone still
+// scans the entire document once per frame while unrelated modules render.
+// Include removed nodes so React replacing an injected control is repaired.
+function mutationsTouchSelector(mutations, selector) {
+	return mutations.some((mutation) => {
+		if (mutation.target.nodeType === 1 && mutation.target.closest(selector)) return true
+		return [...mutation.addedNodes, ...mutation.removedNodes].some(
+			(node) =>
+				node.nodeType === 1 && (node.matches(selector) || node.querySelector(selector)),
+		)
+	})
+}
+
 function getCurrentCourseId() {
 	const match = current_page.match(/^\/courses\/(\d+)(?:\/|$)/)
 	return match ? parseInt(match[1]) : null
@@ -365,6 +378,12 @@ function maintainAssignmentNavButtons() {
 }
 
 function watchSubmissionPageButton() {
+	if (!/^\/courses\/\d+\/assignments\/\d+(?:\/|$)/.test(window.location.pathname)) {
+		submissionPageButtonObserver?.disconnect()
+		submissionPageButtonObserver = null
+		maintainAssignmentNavButtons()
+		return
+	}
 	if (submissionPageButtonObserver) return
 	maintainAssignmentNavButtons()
 	submissionPageButtonObserver = new MutationObserver(maintainAssignmentNavButtons)
@@ -392,6 +411,13 @@ function watchNewCanvasButton() {
 	removeNewCanvasButton()
 	let newCanvasButtonScheduled = false
 	newCanvasButtonObserver = new MutationObserver((mutationList) => {
+		if (
+			!mutationsTouchSelector(
+				mutationList,
+				'[data-testid="switch-to-new-dashboard-button"]',
+			)
+		)
+			return
 		if (options.hide_new_canvas !== true) {
 			if (newCanvasButtonObserver) {
 				newCanvasButtonObserver.disconnect()
@@ -777,6 +803,9 @@ function showCanvasPrompt(courses) {
 }
 
 function startExtension() {
+	// Stable markers avoid document-wide relational CSS selectors. Set this
+	// before Canvas renders, and keep it through client-side navigation.
+	document.documentElement.classList.add('canvasrefined-canvas-page')
 	// Remove footer robustly - run first so a crash below can't block it
 	const removeFooter = () => {
 		const footer = document.querySelector('footer#footer.ic-app-footer, footer#footer')
@@ -784,7 +813,8 @@ function startExtension() {
 	}
 	removeFooter()
 	let footerScheduled = false
-	const footerObserver = new MutationObserver(() => {
+	const footerObserver = new MutationObserver((mutations) => {
+		if (!mutationsTouchSelector(mutations, 'footer#footer')) return
 		// Canvas mutates the DOM constantly; only check for the footer at most once
 		// per animation frame instead of running a querySelector on every mutation.
 		if (footerScheduled) return
@@ -1030,27 +1060,22 @@ function applyOptionsChanges(changes) {
 }
 
 function checkDashboardReady() {
-	const isDashboard = () =>
-		current_page == '/' ||
-		current_page == '' ||
-		/^\/courses\/(\d+)(?:\/|$)/.test(current_page)
-
 	const callback = (mutationList) => {
-		// Ignore attribute-only mutations; only structural (childList) changes matter here.
-		let hasChildList = false
-		for (const mutation of mutationList) {
-			if (mutation.type === 'childList') {
-				hasChildList = true
-				break
-			}
-		}
-		if (!hasChildList) return
+		if (!isTodoAllowedPage()) return
+		if (
+			mutationList &&
+			!mutationsTouchSelector(
+				mutationList,
+				'#DashboardCard_Container, #right-side, .ic-Dashboard-header, #dashboard_header_container, #DashboardHeaderContainer',
+			)
+		)
+			return
 
-		if (isDashboard()) {
+		if (!dashboardReadyTimer) {
 			// Debounce: a single setup pass per burst of mutations.
-			if (dashboardReadyTimer) return
 			dashboardReadyTimer = setTimeout(() => {
 				dashboardReadyTimer = null
+				if (!isTodoAllowedPage()) return
 
 				const c = document.querySelector('#DashboardCard_Container')
 				if (c) {
@@ -1113,6 +1138,7 @@ function checkDashboardReady() {
 
 	const observer = new MutationObserver(callback)
 	observer.observe(document.documentElement, { childList: true, subtree: true })
+	callback()
 }
 
 // Canvas's active CSS bundles identify High Contrast without an API request.
@@ -4603,7 +4629,8 @@ function setupSubmissionTrayWatcher() {
 	// Canvas mutates the DOM constantly; debounce to one run per frame (same
 	// pattern as the footer observer in startExtension). Comments load into
 	// the tray asynchronously, so re-run whenever the tray subtree changes.
-	submissionTrayObserver = new MutationObserver(() => {
+	submissionTrayObserver = new MutationObserver((mutations) => {
+		if (!mutationsTouchSelector(mutations, '[data-testid="submission-tray"]')) return
 		if (submissionTrayFixScheduled) return
 		submissionTrayFixScheduled = true
 		requestAnimationFrame(run)
@@ -4648,6 +4675,7 @@ function toggleDarkMode() {
 	}
 	style.textContent = css
 	style.className = darkOn ? 'canvasrefined-darkmode-enabled' : ''
+	document.documentElement.classList.toggle('canvasrefined-darkmode-enabled', darkOn)
 	// The InstUI submission tray is themed at runtime (emotion class hashes
 	// change between Canvas releases); keep the watcher in sync with the
 	// current mode, and undo inline fixes when dark mode turns off.
@@ -6192,7 +6220,14 @@ let _gsPlacementScheduled = false
 function ensureGlobalSearchButton() {
 	placeGlobalSearchTrigger()
 	if (_gsPlacementObserver) return
-	_gsPlacementObserver = new MutationObserver(() => {
+	_gsPlacementObserver = new MutationObserver((mutations) => {
+		if (
+			!mutationsTouchSelector(
+				mutations,
+				'#menu, #DashboardCard_Container, .ic-Dashboard-header, #dashboard_header_container, #DashboardHeaderContainer, #canvasrefined-global-search-header-btn',
+			)
+		)
+			return
 		if (_gsPlacementScheduled) return
 		_gsPlacementScheduled = true
 		requestAnimationFrame(() => {
@@ -6211,8 +6246,8 @@ function placeGlobalSearchTrigger() {
 	ensureGlobalSearchNativeSidebarButton()
 
 	// Dashboard header button (in addition to the sidebar triggers).
-	const anchor = gpaHeaderAnchor()
-	if (isDashboardPage() && anchor) {
+	const anchor = isDashboardPage() ? gpaHeaderAnchor() : null
+	if (anchor) {
 		ensureGlobalSearchHeaderButton(anchor.row, anchor.before)
 	} else {
 		document.getElementById('canvasrefined-global-search-header-btn')?.remove()
