@@ -366,7 +366,6 @@ div[style*='background-color: rgb(245, 245, 245)'],
 .ui-menu .ui-menu-item a.ui-state-focus,
 .ui-menu .ui-menu-item a.ui-state-hover,
 .ui-progressbar .ui-menu .ui-menu-item a.ui-widget-header,
-::-webkit-scrollbar-track,
 div.checkbox:hover,
 .gradebook-cell.grayed-out,
 .baylor-table tr:nth-of-type(2n + 1) {
@@ -694,7 +693,6 @@ ul.outcome-level {
 .ui-button.ui-state-active:hover,
 .ui-progressbar .btn.ui-button.ui-widget-header,
 .ui-progressbar .ui-button.ui-widget-header,
-::-webkit-scrollbar-thumb,
 .ic-unread-badge__total-count,
 #calendar-app .fc-month-view .fc-today,
 .css-um72cs-view-cell {
@@ -1168,8 +1166,10 @@ input[type=color].ic-Input:focus,
     box-shadow:0 2px 5px #00000080!important
 }
 
-::-webkit-scrollbar {
-    width:15px
+/* Use the browser's own scrollbars, drawn for the theme's appearance.
+   content.js renders this as "light" for light palettes. */
+:root {
+    color-scheme: dark;
 }
 
 .ui-datepicker .ui-datepicker-time,

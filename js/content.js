@@ -3312,13 +3312,42 @@ function setOnColorGlyph(el, bgEl) {
 	else el.style.removeProperty('color')
 }
 
+// Canvas draws each course title in the course color on the card body, which
+// is unreadable when a dark color meets a dark card. Keep the hue but darken
+// or lighten the title until it reaches 7:1 on the themed card; the course
+// color itself still marks the card. Without a themed card the title is the
+// plain course color, as Canvas draws it. Writes are idempotent, like
+// setOnColorGlyph.
+function setCardTitleColor(card, cardBg) {
+	const title = card.querySelector('.ic-DashboardCard__header-title span')
+	const course = card
+		.querySelector('.ic-DashboardCard__header_hero')
+		?.style.backgroundColor.match(/\d+/g)
+	if (!title || !course || course.length < 3) return
+	const color = themeHex(course.slice(0, 3).map(Number))
+	const wanted = cardBg
+		? fitThemeColor(
+				color,
+				themeLuminance(cardBg) < 0.18,
+				(rgb) => themeContrast(rgb, cardBg) >= 7,
+			)
+		: color
+	const current = title.style.color.match(/\d+/g)
+	if (current?.length >= 3 && themeHex(current.slice(0, 3).map(Number)) === wanted) return
+	title.style.color = wanted
+}
+
 function updateCardContrast() {
+	const cardBg = Object.keys(sourceThemeValues()).length
+		? themeRGB(activeThemeValues()['background-1'])
+		: null
 	document.querySelectorAll('.ic-DashboardCard').forEach((card) => {
 		const bg = card.querySelector('.ic-DashboardCard__header-button-bg')
 		setOnColorGlyph(card.querySelector('.ic-DashboardCard__header-button .icon-more'), bg)
 		card
 			.querySelectorAll('.ic-DashboardCard__action-badge')
 			.forEach((b) => setOnColorGlyph(b, b))
+		setCardTitleColor(card, cardBg)
 	})
 }
 
@@ -4681,6 +4710,8 @@ function toggleDarkMode() {
 	// current mode, and undo inline fixes when dark mode turns off.
 	teardownSubmissionTrayFixes()
 	if (darkOn) setupSubmissionTrayWatcher()
+	// Course titles are fitted to the card color, including live previews.
+	updateCardContrast()
 	runiframeChecker()
 }
 

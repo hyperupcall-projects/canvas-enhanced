@@ -1583,12 +1583,7 @@ async function checkHighContrastWarning() {
 function displayThemeList() {
 	const container = document.getElementById('premade-themes')
 	container.textContent = ''
-	// Retain palette definitions for previously saved themes, but omit these
-	// retired presets from the picker.
-	const listedThemes = themes.filter(
-		(theme) => !['AdvTime', 'Kirby', 'McDonalds', 'Purple'].includes(theme.title),
-	)
-	listedThemes.sort((a, b) =>
+	const listedThemes = [...themes].sort((a, b) =>
 		a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }),
 	)
 	const presets = [
@@ -1602,9 +1597,10 @@ function displayThemeList() {
 		const button = makeElement('button', container, {
 			className: 'theme-button customization-button',
 		})
+		// The scrim keeps the white title at 5:1 or more even over a white photo.
 		if (theme.preview)
 			button.style.backgroundImage =
-				'linear-gradient(#00000070, #00000070), url(' + theme.preview + ')'
+				'linear-gradient(#00000094, #00000094), url(' + theme.preview + ')'
 		makeElement('p', button, {
 			className: 'theme-button-title',
 			textContent: theme.title,
