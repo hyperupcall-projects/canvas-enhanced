@@ -1,12 +1,8 @@
-# Theme photo credits
+# Credits
 
-The built-in themes use photos from [Unsplash](https://unsplash.com), free to use
-under the [Unsplash License](https://unsplash.com/license). Thank you to these
-photographers.
+The built-in themes use photos from [Unsplash](https://unsplash.com), all licensed under the [Unsplash License](https://unsplash.com/license).
 
-Theme names that reference characters or franchises belong to their respective
-owners. These themes are unofficial, and the photos show fan merchandise and
-places.
+Find the sources for each image below.
 
 ## Cinnamoroll
 
