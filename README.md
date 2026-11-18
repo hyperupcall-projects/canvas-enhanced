@@ -23,3 +23,7 @@ Canvas LMS leaves much to be desired. The most popular extension providing addit
 Compared to CanvasRefined, Canvas Enhanced has much fewer features and customization options. It opts for simplicity where possible.
 
 It is recommended to use this with [Canvas Calendar Fix](https://canvas-calendar-fix.apps.edwinkofler.com/dashboard).
+
+For the images used in the built-in theme, find their sources in [CREDITS](./CREDITS.md).
+
+Where applicable, code modifications are licensed under the GPL-3.0, copyright Edwin Kofler.
